@@ -1,12 +1,16 @@
 # Project R.A.T.
 
+[![Test and deploy web game](https://github.com/Inefy/project-rat/actions/workflows/pages.yml/badge.svg)](https://github.com/Inefy/project-rat/actions/workflows/pages.yml)
+
 **Run. Aim. Thrive.** Project R.A.T. is an open-source, endless neon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat trapped in a predator-infested sewer grid.
 
 Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
 
 ## Play
 
-The latest `main` branch is automatically exported and deployed to GitHub Pages after every push. Once Pages is enabled for this repository, the live build is available from the repository's **Deployments** section.
+**[Play Project R.A.T. in your browser](https://zacbatten.me/project-rat/)**
+
+The latest `main` branch is automatically tested, exported, and deployed to GitHub Pages after every push.
 
 To play locally:
 
@@ -73,4 +77,3 @@ Enemy archetypes, power-ups, juice, accessibility options, audio, and balance pa
 ## License
 
 [MIT](LICENSE)
-

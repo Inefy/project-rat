@@ -28,7 +28,11 @@ jobs:
           use-dotnet: false
           include-templates: true
 
+      - name: Import project assets
+        run: godot --headless --path . --import
+
       - name: Run gameplay smoke test
+        timeout-minutes: 2
         run: godot --headless --path . --script tests/smoke_test.gd
 
       - name: Export web build
@@ -49,4 +53,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5.0.1
-

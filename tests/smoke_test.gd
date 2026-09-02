@@ -19,6 +19,11 @@ func _run() -> void:
 	var game: Node = packed.instantiate()
 	root.add_child(game)
 	await process_frame
+	check(game.get_script() != null and game.has_method("start_game"), "main game script compiles")
+	if game.get_script() == null or not game.has_method("start_game"):
+		game.queue_free()
+		quit(1)
+		return
 	game.start_game()
 	await process_frame
 	check(game.game_state == "playing", "game enters playing state")

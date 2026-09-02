@@ -1,0 +1,79 @@
+; Engine configuration file.
+; Project R.A.T. — a neon survival shooter built for Godot 4 and the web.
+
+config_version=5
+
+[application]
+
+config/name="Project R.A.T."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+boot_splash/bg_color=Color(0.015, 0.02, 0.055, 1)
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.012, 0.016, 0.047, 1)
+
+[input]
+
+move_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":65), Object(InputEventKey,"physical_keycode":4194311), Object(InputEventJoypadMotion,"axis":0,"axis_value":-1.0)]
+}
+move_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":68), Object(InputEventKey,"physical_keycode":4194313), Object(InputEventJoypadMotion,"axis":0,"axis_value":1.0)]
+}
+move_up={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":87), Object(InputEventKey,"physical_keycode":4194320), Object(InputEventJoypadMotion,"axis":1,"axis_value":-1.0)]
+}
+move_down={
+"deadzone": 0.2,
+"events": [Object(InputEventKey,"physical_keycode":83), Object(InputEventKey,"physical_keycode":4194322), Object(InputEventJoypadMotion,"axis":1,"axis_value":1.0)]
+}
+aim_left={
+"deadzone": 0.25,
+"events": [Object(InputEventJoypadMotion,"axis":2,"axis_value":-1.0)]
+}
+aim_right={
+"deadzone": 0.25,
+"events": [Object(InputEventJoypadMotion,"axis":2,"axis_value":1.0)]
+}
+aim_up={
+"deadzone": 0.25,
+"events": [Object(InputEventJoypadMotion,"axis":3,"axis_value":-1.0)]
+}
+aim_down={
+"deadzone": 0.25,
+"events": [Object(InputEventJoypadMotion,"axis":3,"axis_value":1.0)]
+}
+toggle_autofire={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":70), Object(InputEventJoypadButton,"button_index":9)]
+}
+pause={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":80), Object(InputEventKey,"physical_keycode":4194305), Object(InputEventJoypadButton,"button_index":6)]
+}
+
+[layer_names]
+
+2d_physics/layer_1="Player"
+2d_physics/layer_2="Enemies"
+2d_physics/layer_3="Player shots"
+2d_physics/layer_4="Enemy shots"
+2d_physics/layer_5="Pickups"

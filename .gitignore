@@ -1,0 +1,19 @@
+# Godot-generated files
+.godot/
+
+# Export output
+build/*
+!build/web/
+build/web/*
+!build/web/.gdignore
+
+# Local tooling and editor files
+.vscode/
+.idea/
+*.tmp
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

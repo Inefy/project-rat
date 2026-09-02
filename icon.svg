@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg"><stop stop-color="#242063"/><stop offset="1" stop-color="#07091c"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+  <circle cx="129" cy="132" r="73" fill="none" stroke="#20e3d5" stroke-width="5" opacity=".45"/>
+  <g filter="url(#glow)" stroke="#ecf9ff" stroke-width="6" stroke-linejoin="round">
+    <path d="M69 151c-18 4-25 18-14 28 11 10 28-3 17-17" fill="none" stroke="#ff6fae" stroke-linecap="round"/>
+    <path d="M80 148c-8-30 8-67 42-75 38-9 75 12 78 46 3 31-28 57-70 58-22 0-42-9-50-29z" fill="#9ba9c8"/>
+    <circle cx="113" cy="76" r="20" fill="#ff91be"/><circle cx="169" cy="84" r="18" fill="#ff91be"/>
+    <path d="M193 120l28 13-27 12z" fill="#ff6fae"/>
+    <circle cx="169" cy="113" r="7" fill="#071020" stroke="#20e3d5" stroke-width="4"/>
+    <path d="M105 151l-10 30m50-27 4 29" fill="none" stroke-linecap="round"/>
+  </g>
+  <text x="128" y="224" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="35" fill="#20e3d5">R.A.T.</text>
+</svg>
+

@@ -63,7 +63,11 @@ aim_down={
 }
 toggle_autofire={
 "deadzone": 0.5,
-"events": [Object(InputEventKey,"physical_keycode":70), Object(InputEventJoypadButton,"button_index":9)]
+"events": [Object(InputEventKey,"physical_keycode":70), Object(InputEventJoypadButton,"button_index":8)]
+}
+dash={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":4194325), Object(InputEventJoypadButton,"button_index":10)]
 }
 pause={
 "deadzone": 0.5,

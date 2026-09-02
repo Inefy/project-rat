@@ -3,6 +3,8 @@ extends CanvasLayer
 signal start_requested
 signal restart_requested
 signal quit_to_menu_requested
+signal upgrade_selected(id: String)
+signal ui_sound_requested(event_name: String)
 
 var root: Control
 var menu_overlay: ColorRect
@@ -21,6 +23,10 @@ var toast_label: Label
 var final_score_label: Label
 var final_detail_label: Label
 var best_label: Label
+var dash_label: Label
+var dash_bar: ProgressBar
+var upgrade_overlay: ColorRect
+var upgrade_cards: HBoxContainer
 var gameplay_hud: Array[CanvasItem] = []
 
 var cyan := Color("62fff1")
@@ -38,6 +44,7 @@ func _ready() -> void:
 	_build_menu()
 	_build_game_over()
 	_build_pause()
+	_build_upgrade_draft()
 
 func _label(text: String, font_size: int, color: Color = Color.WHITE) -> Label:
 	var label := Label.new()
@@ -71,6 +78,8 @@ func _button(text: String) -> Button:
 	button.add_theme_stylebox_override("hover", _panel_style(Color("a1fff7"), Color.WHITE, 9))
 	button.add_theme_stylebox_override("pressed", _panel_style(pink, Color.WHITE, 9))
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.mouse_entered.connect(func(): ui_sound_requested.emit("ui_hover"))
+	button.pressed.connect(func(): ui_sound_requested.emit("ui_click"))
 	return button
 
 func _build_game_hud() -> void:
@@ -134,12 +143,30 @@ func _build_game_hud() -> void:
 	autofire_label.position = Vector2(-295, -54)
 	autofire_label.size = Vector2(265, 26)
 	root.add_child(autofire_label)
+	var dash_panel := PanelContainer.new()
+	dash_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	dash_panel.position = Vector2(-350, -140)
+	dash_panel.size = Vector2(320, 48)
+	dash_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.025, 0.04, 0.12, 0.82), Color(0.25, 0.45, 0.75, 0.55), 9))
+	root.add_child(dash_panel)
+	var dash_box := VBoxContainer.new()
+	dash_panel.add_child(dash_box)
+	dash_label = _label("DASH READY  [SHIFT / RB]", 12, cyan)
+	dash_box.add_child(dash_label)
+	dash_bar = ProgressBar.new()
+	dash_bar.custom_minimum_size = Vector2(280, 8)
+	dash_bar.max_value = 1.0
+	dash_bar.value = 1.0
+	dash_bar.show_percentage = false
+	dash_bar.add_theme_stylebox_override("background", _panel_style(Color("151a39"), Color("25305c"), 4))
+	dash_bar.add_theme_stylebox_override("fill", _panel_style(cyan, Color("c4fffb"), 4))
+	dash_box.add_child(dash_bar)
 
-	var controls := _label("WASD / LEFT STICK TO MOVE   •   MOUSE / RIGHT STICK TO AIM   •   P / ESC TO PAUSE", 13, Color(0.56, 0.65, 0.82))
+	var controls := _label("WASD MOVE   •   MOUSE AIM   •   SHIFT DASH   •   F AUTO-FIRE   •   P / ESC PAUSE", 13, Color(0.56, 0.65, 0.82))
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	controls.offset_top = -28.0
-	controls.offset_bottom = -8.0
+	controls.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	controls.position = Vector2(-350, -28)
+	controls.size = Vector2(700, 20)
 	root.add_child(controls)
 
 	banner_label = _label("WAVE 1", 48, Color.WHITE)
@@ -156,7 +183,7 @@ func _build_game_hud() -> void:
 	toast_label.size = Vector2(700, 42)
 	toast_label.modulate.a = 0.0
 	root.add_child(toast_label)
-	gameplay_hud = [score_label, wave_label, kills_label, health_panel, wave_panel, buffs_label, autofire_label, controls, banner_label, toast_label]
+	gameplay_hud = [score_label, wave_label, kills_label, health_panel, wave_panel, buffs_label, autofire_label, dash_panel, controls, banner_label, toast_label]
 
 func _build_menu() -> void:
 	menu_overlay = ColorRect.new()
@@ -191,7 +218,7 @@ func _build_menu() -> void:
 	start_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	start_button.pressed.connect(func(): start_requested.emit())
 	box.add_child(start_button)
-	var help := _label("WASD to move  •  Aim with mouse  •  F toggles auto-fire  •  Gamepad supported", 14, Color(0.55, 0.63, 0.8))
+	var help := _label("WASD to move  •  Mouse to aim  •  Shift to dash  •  F toggles auto-fire  •  Gamepad supported", 14, Color(0.55, 0.63, 0.8))
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(help)
 
@@ -248,23 +275,82 @@ func _build_pause() -> void:
 	pause_overlay.add_child(text)
 	pause_overlay.hide()
 
+func _build_upgrade_draft() -> void:
+	upgrade_overlay = ColorRect.new()
+	upgrade_overlay.color = Color(0.015, 0.02, 0.07, 0.92)
+	upgrade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	upgrade_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	upgrade_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	root.add_child(upgrade_overlay)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	upgrade_overlay.add_child(center)
+	var stack := VBoxContainer.new()
+	stack.alignment = BoxContainer.ALIGNMENT_CENTER
+	stack.add_theme_constant_override("separation", 18)
+	center.add_child(stack)
+	var eyebrow := _label("WAVE SURVIVED", 17, cyan)
+	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stack.add_child(eyebrow)
+	var title := _label("CHOOSE A MUTATION", 45, pale)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stack.add_child(title)
+	var subtitle := _label("Permanent for this run • Pick one", 16, Color(0.65, 0.72, 0.9))
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	stack.add_child(subtitle)
+	upgrade_cards = HBoxContainer.new()
+	upgrade_cards.add_theme_constant_override("separation", 18)
+	stack.add_child(upgrade_cards)
+	upgrade_overlay.hide()
+
+func show_upgrade_draft(options: Array[Dictionary]) -> void:
+	for child in upgrade_cards.get_children():
+		child.queue_free()
+	for index in range(options.size()):
+		var data := options[index]
+		var card := Button.new()
+		card.text = "[%d]  %s\n\n%s" % [index + 1, data["title"], data["description"]]
+		card.custom_minimum_size = Vector2(330, 175)
+		card.add_theme_font_size_override("font_size", 18)
+		card.add_theme_color_override("font_color", pale)
+		card.add_theme_color_override("font_hover_color", Color.WHITE)
+		var card_color: Color = data["color"]
+		card.add_theme_stylebox_override("normal", _panel_style(Color(0.035, 0.05, 0.14, 0.98), Color(card_color, 0.7), 14))
+		card.add_theme_stylebox_override("hover", _panel_style(Color(0.07, 0.09, 0.2, 1.0), card_color, 14))
+		card.add_theme_stylebox_override("pressed", _panel_style(Color(card_color, 0.25), Color.WHITE, 14))
+		card.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		card.mouse_entered.connect(func(): ui_sound_requested.emit("ui_hover"))
+		card.pressed.connect(_on_upgrade_card_pressed.bind(String(data["id"])))
+		upgrade_cards.add_child(card)
+	upgrade_overlay.show()
+
+func _on_upgrade_card_pressed(id: String) -> void:
+	ui_sound_requested.emit("ui_click")
+	upgrade_selected.emit(id)
+
+func hide_upgrade_draft() -> void:
+	upgrade_overlay.hide()
+
 func show_menu() -> void:
 	menu_overlay.show()
 	game_over_overlay.hide()
 	pause_overlay.hide()
+	upgrade_overlay.hide()
 	set_game_hud_visible(false)
 
 func begin_game() -> void:
 	menu_overlay.hide()
 	game_over_overlay.hide()
 	pause_overlay.hide()
+	upgrade_overlay.hide()
 	set_game_hud_visible(true)
 
 func set_game_hud_visible(enabled: bool) -> void:
 	for node in gameplay_hud:
 		node.visible = enabled
 
-func update_stats(score: int, wave: int, kills: int, health: float, max_health: float, progress: float, buffs: Array[String]) -> void:
+func update_stats(score: int, wave: int, kills: int, health: float, max_health: float, progress: float, buffs: Array[String], dash_charge: float = 1.0) -> void:
 	score_label.text = "SCORE %06d" % score
 	wave_label.text = "WAVE %d" % wave
 	kills_label.text = "%d THREATS CLEARED" % kills
@@ -273,6 +359,9 @@ func update_stats(score: int, wave: int, kills: int, health: float, max_health: 
 	health_bar.value = health
 	wave_bar.value = clamp(progress, 0.0, 1.0)
 	buffs_label.text = "\n".join(buffs) if not buffs.is_empty() else "NO ACTIVE MUTATIONS"
+	dash_bar.value = dash_charge
+	dash_label.text = "DASH READY  [SHIFT / RB]" if dash_charge >= 0.999 else "DASH RECHARGING"
+	dash_label.add_theme_color_override("font_color", cyan if dash_charge >= 0.999 else Color(0.55, 0.63, 0.8))
 
 func set_autofire(enabled: bool) -> void:
 	autofire_label.text = "AUTO-FIRE: %s  [F]" % ("ON" if enabled else "OFF")

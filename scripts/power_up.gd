@@ -47,8 +47,9 @@ func _physics_process(delta: float) -> void:
 	rotation += delta * 0.7
 	if is_instance_valid(magnet_target):
 		var delta_to_player := magnet_target.global_position - global_position
-		if delta_to_player.length() < 150.0:
-			global_position += delta_to_player.normalized() * (235.0 + (150.0 - delta_to_player.length()) * 2.0) * delta
+		var magnet_radius: float = float(magnet_target.get("magnet_radius"))
+		if delta_to_player.length() < magnet_radius:
+			global_position += delta_to_player.normalized() * (235.0 + (magnet_radius - delta_to_player.length()) * 1.6) * delta
 	if life <= 0.0:
 		queue_free()
 	queue_redraw()
@@ -59,7 +60,8 @@ func _on_body_entered(body: Node) -> void:
 	collected_already = true
 	body.apply_powerup(kind)
 	collected.emit(kind, global_position, tint)
-	queue_free()
+	set_deferred("monitoring", false)
+	call_deferred("queue_free")
 
 func _draw() -> void:
 	var pulse := 1.0 + sin(age * 5.0) * 0.08

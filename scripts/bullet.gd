@@ -7,6 +7,7 @@ var pierce := 0
 var radius := 5.0
 var tint := Color("62fff1")
 var hit_ids: Dictionary = {}
+var spent := false
 
 func setup(origin: Vector2, direction: Vector2, shot_speed: float, shot_damage: float, shot_radius: float, shot_pierce: int, color: Color) -> void:
 	global_position = origin
@@ -18,6 +19,7 @@ func setup(origin: Vector2, direction: Vector2, shot_speed: float, shot_damage: 
 	rotation = direction.angle()
 
 func _ready() -> void:
+	add_to_group("run_entities")
 	collision_layer = 4
 	collision_mask = 2
 	monitoring = true
@@ -37,12 +39,14 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 
 func _on_body_entered(body: Node) -> void:
-	if not body.has_method("take_damage") or hit_ids.has(body.get_instance_id()):
+	if spent or not body.has_method("take_damage") or hit_ids.has(body.get_instance_id()):
 		return
 	hit_ids[body.get_instance_id()] = true
 	body.take_damage(damage, velocity.normalized() * 75.0)
 	if pierce <= 0:
-		queue_free()
+		spent = true
+		set_deferred("monitoring", false)
+		call_deferred("queue_free")
 	else:
 		pierce -= 1
 
@@ -51,4 +55,3 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, radius * 2.0, Color(tint, 0.12))
 	draw_circle(Vector2.ZERO, radius, tint)
 	draw_circle(Vector2(radius * 0.25, -radius * 0.25), radius * 0.36, Color.WHITE)
-

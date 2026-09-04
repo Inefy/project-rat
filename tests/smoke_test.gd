@@ -40,21 +40,45 @@ func _run() -> void:
 	game._spawn_enemy("cat")
 	game._spawn_enemy("owl")
 	game._spawn_enemy("snake")
+	game._spawn_enemy("raccoon")
+	game._spawn_enemy("fox")
 	await physics_frame
 	check(game.current_wave == 1, "first wave begins")
-	check(game._living_enemy_count() >= 4, "all core enemy types spawn")
+	check(game._living_enemy_count() >= 6, "the full regular enemy roster spawns")
 	var found_snake := false
+	var found_raccoon := false
 	for spawned_enemy in get_nodes_in_group("enemies"):
 		if spawned_enemy.enemy_kind == "snake":
 			found_snake = true
+		if spawned_enemy.enemy_kind == "raccoon":
+			found_raccoon = true
+			var health_before_armour: float = spawned_enemy.health
+			var armour_before: float = spawned_enemy.armour
+			spawned_enemy.take_damage(10.0)
+			check(spawned_enemy.health == health_before_armour, "armour absorbs damage before health")
+			check(spawned_enemy.armour < armour_before, "armour loses durability when hit")
 	check(found_snake, "snake archetype is active")
+	check(found_raccoon, "armoured raccoon archetype is active")
+	check(game.get_regular_enemy_count(22) > game.get_regular_enemy_count(10), "late waves contain more enemies")
+	check(game.get_spawn_interval(22) < game.get_spawn_interval(10), "late waves spawn enemies faster")
+	check(game.get_boss_kind(5) == "alpha_cat", "wave 5 uses the Alpha Cat boss")
+	check(game.get_boss_kind(10) == "junkyard_dog", "wave 10 introduces the armoured dog boss")
+	check(game.get_boss_kind(15) == "barn_owl", "wave 15 introduces the ranged owl boss")
 
 	game.player.apply_powerup("shield")
 	var health_before: float = game.player.health
 	game.player.take_player_damage(25.0)
 	check(game.player.health == health_before, "shield absorbs one hit")
+	var base_interval_before: float = game.player.fire_interval
+	var base_damage_before: float = game.player.base_damage
+	var base_speed_before: float = game.player.move_speed
 	game.player.apply_powerup("rapid")
 	game.player.apply_powerup("triple")
+	game.player.apply_powerup("power")
+	game.player.apply_powerup("haste")
+	check(game.player.fire_interval == base_interval_before, "temporary rapid pickup does not permanently raise fire rate")
+	check(game.player.base_damage == base_damage_before, "temporary power pickup does not permanently raise damage")
+	check(game.player.move_speed == base_speed_before, "temporary haste pickup does not permanently raise speed")
 	game.player.fire()
 	await physics_frame
 	var bullet_count := 0

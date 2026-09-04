@@ -123,7 +123,7 @@ func fire() -> void:
 		projectile_count = maxi(projectile_count, 3)
 	var damage := base_damage * (1.75 if now < power_until else 1.0)
 	var shot_pierce := base_pierce + (2 if now < pierce_until else 0)
-	var color := Color("ffe66d") if now < power_until else Color("62fff1")
+	var color := Color("e98b43") if now < power_until else Color("fff1bf")
 	for index in range(projectile_count):
 		var offset := (float(index) - float(projectile_count - 1) * 0.5) * 0.17
 		var direction := aim_direction.rotated(offset)
@@ -140,7 +140,7 @@ func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> voi
 		invulnerable_until = Time.get_ticks_msec() + 650
 		hit_flash_until = invulnerable_until
 		knockback_velocity += knockback * 0.45
-		pickup_collected.emit("SHIELD BLOCK", Color("6ef7ff"))
+		pickup_collected.emit("TIN LID BLOCK", Color("8fa7b3"))
 		damage_feedback.emit(global_position, true)
 		queue_redraw()
 		return
@@ -160,25 +160,25 @@ func apply_upgrade(kind: String) -> void:
 	upgrade_levels[kind] = int(upgrade_levels.get(kind, 0)) + 1
 	match kind:
 		"quick_whiskers":
-			fire_interval = maxf(0.105, fire_interval * 0.88)
+			fire_interval = maxf(0.13, fire_interval * 0.90)
 		"heavy_seeds":
-			base_damage += 4.5
+			base_damage += 3.5
 		"fleet_feet":
-			move_speed = minf(455.0, move_speed + 24.0)
+			move_speed = minf(420.0, move_speed + 20.0)
 		"thick_fur":
-			max_health += 20.0
-			health = minf(max_health, health + 32.0)
+			max_health += 16.0
+			health = minf(max_health, health + 20.0)
 			health_changed.emit(health, max_health)
 		"long_teeth":
 			base_pierce += 1
 		"big_paws":
-			bullet_radius = minf(9.0, bullet_radius + 1.15)
+			bullet_radius = minf(8.25, bullet_radius + 1.0)
 		"lucky_tail":
-			drop_luck = minf(0.18, drop_luck + 0.035)
+			drop_luck = minf(0.12, drop_luck + 0.03)
 		"extra_pocket":
 			permanent_projectiles = mini(4, permanent_projectiles + 1)
 		"cheese_magnet":
-			magnet_radius = minf(360.0, magnet_radius + 65.0)
+			magnet_radius = minf(330.0, magnet_radius + 55.0)
 	queue_redraw()
 
 func heal(amount: float) -> void:
@@ -186,19 +186,26 @@ func heal(amount: float) -> void:
 	health_changed.emit(health, max_health)
 
 func can_take_upgrade(kind: String) -> bool:
+	var level := int(upgrade_levels.get(kind, 0))
 	match kind:
 		"quick_whiskers":
-			return fire_interval > 0.11
+			return level < 7 and fire_interval > 0.131
+		"heavy_seeds":
+			return level < 9
 		"fleet_feet":
-			return move_speed < 450.0
+			return level < 6 and move_speed < 419.0
+		"thick_fur":
+			return level < 6
+		"long_teeth":
+			return level < 4
 		"big_paws":
-			return bullet_radius < 8.9
+			return level < 4 and bullet_radius < 8.2
 		"lucky_tail":
-			return drop_luck < 0.175
+			return level < 4 and drop_luck < 0.119
 		"extra_pocket":
 			return permanent_projectiles < 4
 		"cheese_magnet":
-			return magnet_radius < 355.0
+			return level < 4 and magnet_radius < 329.0
 	return true
 
 func get_dash_charge() -> float:
@@ -211,30 +218,27 @@ func apply_powerup(kind: String) -> void:
 	var now := Time.get_ticks_msec()
 	match kind:
 		"cheese":
-			health = min(max_health, health + 32.0)
+			health = min(max_health, health + 24.0)
 			health_changed.emit(health, max_health)
-			pickup_collected.emit("CHEESE +32 HP", Color("ffe66d"))
+			pickup_collected.emit("CHEESE +24 HP", Color("f2c14e"))
 		"rapid":
 			rapid_until = max(rapid_until, now) + 11000
-			fire_interval = max(0.17, fire_interval * 0.975)
-			pickup_collected.emit("RAPID CLAWS", Color("ff75bd"))
+			pickup_collected.emit("RAPID CLAWS", Color("ef6f6c"))
 		"triple":
 			triple_until = max(triple_until, now) + 12000
-			pickup_collected.emit("TRIPLE SEED", Color("a58bff"))
+			pickup_collected.emit("TRIPLE SEED", Color("8d79ad"))
 		"power":
 			power_until = max(power_until, now) + 11000
-			base_damage += 0.75
-			pickup_collected.emit("POWER NIBBLE", Color("ff9f43"))
+			pickup_collected.emit("POWER NIBBLE", Color("e89b4f"))
 		"haste":
 			haste_until = max(haste_until, now) + 10000
-			move_speed = min(390.0, move_speed + 2.0)
-			pickup_collected.emit("SUGAR RUSH", Color("6dff95"))
+			pickup_collected.emit("SUGAR RUSH", Color("79a85b"))
 		"shield":
-			shield_charges = min(3, shield_charges + 1)
-			pickup_collected.emit("TIN-CAN SHIELD", Color("6ef7ff"))
+			shield_charges = mini(2, shield_charges + 1)
+			pickup_collected.emit("TIN-LID SHIELD", Color("8fa7b3"))
 		"pierce":
 			pierce_until = max(pierce_until, now) + 10000
-			pickup_collected.emit("NEEDLE TEETH", Color("f1f6ff"))
+			pickup_collected.emit("NEEDLE TEETH", Color("f4d7a1"))
 	queue_redraw()
 
 func get_active_buffs() -> Array[String]:
@@ -244,7 +248,7 @@ func get_active_buffs() -> Array[String]:
 	for level in upgrade_levels.values():
 		mutation_count += int(level)
 	if mutation_count > 0:
-		buffs.append("MUTATIONS x%d" % mutation_count)
+		buffs.append("PERKS x%d" % mutation_count)
 	if rapid_until > now:
 		buffs.append("RAPID %ds" % int(ceil((rapid_until - now) / 1000.0)))
 	if triple_until > now:
@@ -264,44 +268,51 @@ func get_active_buffs() -> Array[String]:
 func _draw() -> void:
 	var now := Time.get_ticks_msec()
 	var flash := now < hit_flash_until
-	var body_color := Color.WHITE if flash else Color("aab6d5")
-	var outline := Color("ff5b9e") if flash else Color("e6f4ff")
+	var body_color := Color.WHITE if flash else Color("aaa69f")
+	var outline := Color("d95863") if flash else Color("40354f")
 	var moving_bob := sin(anim_time * 12.0) * 1.8 if velocity.length() > 30.0 else sin(anim_time * 4.0) * 0.8
 
-	# Neon aura and shield rings.
-	draw_circle(Vector2.ZERO, 34.0, Color(0.20, 0.95, 0.93, 0.055))
+	# Soft shadow and little dust puffs make the rat feel like a chunky cartoon toy.
+	draw_set_transform(Vector2(0, 18), 0.0, Vector2(1.0, 0.42))
+	draw_circle(Vector2.ZERO, 27.0, Color(0.24, 0.19, 0.24, 0.2))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if now < dash_until:
 		for streak in range(4):
 			var trail_start := Vector2(-30.0 - streak * 14.0, (streak - 1.5) * 7.0)
-			draw_line(trail_start, trail_start - Vector2(28.0, 0.0), Color(0.38, 1.0, 0.95, 0.65 - streak * 0.11), 3.0, true)
+			draw_circle(trail_start - Vector2(20.0, 0.0), 7.0 - streak, Color(1.0, 0.94, 0.75, 0.62 - streak * 0.1))
 	if shield_charges > 0:
 		for ring in range(shield_charges):
-			draw_arc(Vector2.ZERO, 31.0 + ring * 4.0, anim_time + ring, anim_time + ring + 4.7, 36, Color(0.35, 0.95, 1.0, 0.75), 2.0, true)
+			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("40354f"), 5.0, true)
+			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("8fa7b3"), 2.5, true)
 
 	# Tail curls behind the rat.
 	var tail := PackedVector2Array()
 	for i in range(13):
 		var t := float(i) / 12.0
 		tail.append(Vector2(-20.0 - t * 35.0, 7.0 + sin(t * PI * 1.7) * 13.0))
-	draw_polyline(tail, Color("ff85ba"), 5.0, true)
-	draw_polyline(tail, Color(1.0, 0.75, 0.87, 0.75), 1.5, true)
+	draw_polyline(tail, outline, 8.0, true)
+	draw_polyline(tail, Color("d98b91"), 4.0, true)
 
 	# Feet, body, ears, muzzle.
-	draw_circle(Vector2(-9.0, 18.0 + moving_bob), 7.0, Color("ff85ba"))
-	draw_circle(Vector2(10.0, 18.0 - moving_bob), 7.0, Color("ff85ba"))
+	draw_circle(Vector2(-9.0, 18.0 + moving_bob), 9.0, outline)
+	draw_circle(Vector2(-9.0, 18.0 + moving_bob), 6.0, Color("d98b91"))
+	draw_circle(Vector2(10.0, 18.0 - moving_bob), 9.0, outline)
+	draw_circle(Vector2(10.0, 18.0 - moving_bob), 6.0, Color("d98b91"))
 	draw_circle(Vector2(-4.0, moving_bob), 23.0, outline)
-	draw_circle(Vector2(-4.0, moving_bob), 19.5, body_color)
-	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 10.0, outline)
-	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 6.5, Color("ff91bd"))
-	draw_circle(Vector2(9.0, -15.0 + moving_bob), 9.0, outline)
-	draw_circle(Vector2(9.0, -15.0 + moving_bob), 5.5, Color("ff91bd"))
-	draw_circle(Vector2(16.0, 2.0 + moving_bob), 13.0, body_color)
+	draw_circle(Vector2(-4.0, moving_bob), 19.0, body_color)
+	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 11.5, outline)
+	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 7.5, Color("d98b91"))
+	draw_circle(Vector2(9.0, -15.0 + moving_bob), 10.5, outline)
+	draw_circle(Vector2(9.0, -15.0 + moving_bob), 6.5, Color("d98b91"))
+	draw_circle(Vector2(16.0, 2.0 + moving_bob), 15.5, outline)
+	draw_circle(Vector2(16.0, 2.0 + moving_bob), 12.0, body_color.lightened(0.12))
 	var snout := PackedVector2Array([Vector2(18, -5 + moving_bob), Vector2(34, 2 + moving_bob), Vector2(18, 8 + moving_bob)])
-	draw_colored_polygon(snout, body_color)
-	draw_circle(Vector2(34.0, 2.0 + moving_bob), 4.0, Color("ff5b9e"))
-	draw_circle(Vector2(15.0, -4.0 + moving_bob), 3.5, Color("081126"))
+	draw_colored_polygon(snout, body_color.lightened(0.12))
+	draw_circle(Vector2(34.0, 2.0 + moving_bob), 5.5, outline)
+	draw_circle(Vector2(34.0, 2.0 + moving_bob), 3.5, Color("b85d68"))
+	draw_circle(Vector2(15.0, -4.0 + moving_bob), 4.3, outline)
 	draw_circle(Vector2(16.0, -5.0 + moving_bob), 1.2, Color.WHITE)
 	# Whiskers.
-	draw_line(Vector2(23, 4 + moving_bob), Vector2(42, 12 + moving_bob), Color(0.85, 0.95, 1.0, 0.8), 1.2, true)
-	draw_line(Vector2(23, 2 + moving_bob), Vector2(44, 2 + moving_bob), Color(0.85, 0.95, 1.0, 0.8), 1.2, true)
-	draw_line(Vector2(23, 0 + moving_bob), Vector2(41, -8 + moving_bob), Color(0.85, 0.95, 1.0, 0.8), 1.2, true)
+	draw_line(Vector2(23, 4 + moving_bob), Vector2(43, 12 + moving_bob), outline, 1.8, true)
+	draw_line(Vector2(23, 2 + moving_bob), Vector2(45, 2 + moving_bob), outline, 1.8, true)
+	draw_line(Vector2(23, 0 + moving_bob), Vector2(42, -8 + moving_bob), outline, 1.8, true)

@@ -5,7 +5,7 @@ var damage := 10.0
 var life := 1.4
 var pierce := 0
 var radius := 5.0
-var tint := Color("62fff1")
+var tint := Color("fff1bf")
 var hit_ids: Dictionary = {}
 var spent := false
 
@@ -51,7 +51,10 @@ func _on_body_entered(body: Node) -> void:
 		pierce -= 1
 
 func _draw() -> void:
-	draw_line(Vector2(-18.0, 0.0), Vector2.ZERO, Color(tint, 0.16), radius * 2.8, true)
-	draw_circle(Vector2.ZERO, radius * 2.0, Color(tint, 0.12))
-	draw_circle(Vector2.ZERO, radius, tint)
-	draw_circle(Vector2(radius * 0.25, -radius * 0.25), radius * 0.36, Color.WHITE)
+	# A chunky sunflower seed replaces the old neon bolt.
+	draw_circle(Vector2(-10.0, 0.0), radius * 0.8, Color(1.0, 0.95, 0.78, 0.28))
+	var outline := PackedVector2Array([Vector2(-radius * 1.45, 0), Vector2(-radius * 0.35, -radius), Vector2(radius * 1.35, 0), Vector2(-radius * 0.35, radius)])
+	draw_colored_polygon(outline, Color("40354f"))
+	var seed := PackedVector2Array([Vector2(-radius * 1.05, 0), Vector2(-radius * 0.25, -radius * 0.62), Vector2(radius * 0.95, 0), Vector2(-radius * 0.25, radius * 0.62)])
+	draw_colored_polygon(seed, tint)
+	draw_line(Vector2(-radius * 0.5, -radius * 0.25), Vector2(radius * 0.55, 0), Color(1, 1, 1, 0.65), 1.3, true)

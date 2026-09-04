@@ -1,5 +1,5 @@
 ; Engine configuration file.
-; Project R.A.T. — a neon survival shooter built for Godot 4 and the web.
+; Project R.A.T. — a cartoon backyard survival shooter built for Godot 4 and the web.
 
 config_version=5
 
@@ -8,7 +8,7 @@ config_version=5
 config/name="Project R.A.T."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-boot_splash/bg_color=Color(0.015, 0.02, 0.055, 1)
+boot_splash/bg_color=Color(0.675, 0.839, 0.506, 1)
 config/icon="res://icon.svg"
 
 [display]
@@ -25,7 +25,7 @@ window/handheld/orientation=1
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
-environment/defaults/default_clear_color=Color(0.012, 0.016, 0.047, 1)
+environment/defaults/default_clear_color=Color(0.675, 0.839, 0.506, 1)
 
 [input]
 

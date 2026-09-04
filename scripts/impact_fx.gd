@@ -23,10 +23,14 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var t: float = clampf(elapsed / duration, 0.0, 1.0)
 	var alpha: float = (1.0 - t) * (1.0 - t)
-	draw_circle(Vector2.ZERO, size * t, Color(tint, alpha * 0.08))
-	draw_arc(Vector2.ZERO, size * t, 0.0, TAU, 32, Color(tint, alpha * 0.7), 3.0 * (1.0 - t) + 0.5, true)
+	# Comic-book impact burst with dust puffs instead of a neon shock ring.
+	for puff in range(5):
+		var puff_angle := TAU * float(puff) / 5.0 + float(seed_value % 9) * 0.08
+		var puff_at := Vector2.from_angle(puff_angle) * size * t * 0.42
+		draw_circle(puff_at, size * (0.18 - t * 0.08), Color(tint.lightened(0.28), alpha * 0.55))
 	for i in range(spokes):
 		var angle := TAU * float(i) / float(spokes) + float(seed_value % 17) * 0.1
 		var inner: Vector2 = Vector2.from_angle(angle) * size * t * 0.25
 		var outer: Vector2 = Vector2.from_angle(angle) * size * t * (0.75 + float((i * 7) % 5) * 0.08)
+		draw_line(inner, outer, Color("40354f", alpha), 4.0, true)
 		draw_line(inner, outer, Color(tint, alpha), 2.0, true)

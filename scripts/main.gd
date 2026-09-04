@@ -8,19 +8,25 @@ const ImpactFXScript = preload("res://scripts/impact_fx.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const ReticleScript = preload("res://scripts/aim_reticle.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
+const KENNEY_TREE_TEXTURE = preload("res://assets/kenney/background/tree.png")
+const KENNEY_SMALL_TREE_TEXTURE = preload("res://assets/kenney/background/treeSmall_green2.png")
+const KENNEY_SMALL_TREE_ALT_TEXTURE = preload("res://assets/kenney/background/treeSmall_green3.png")
+const KENNEY_BUSH_TEXTURE = preload("res://assets/kenney/background/bush1.png")
+const KENNEY_BUSH_ALT_TEXTURE = preload("res://assets/kenney/background/bushAlt1.png")
+const KENNEY_FENCE_TEXTURE = preload("res://assets/kenney/background/fence.png")
 
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste", "shield", "pierce"]
 const UPGRADES := {
-	"quick_whiskers": {"id": "quick_whiskers", "title": "QUICK WHISKERS", "description": "Fire 12% faster", "color": Color("ff75bd")},
-	"heavy_seeds": {"id": "heavy_seeds", "title": "HEAVY SEEDS", "description": "+4.5 projectile damage", "color": Color("ff9f43")},
-	"fleet_feet": {"id": "fleet_feet", "title": "FLEET FEET", "description": "+24 movement speed", "color": Color("6dff95")},
-	"thick_fur": {"id": "thick_fur", "title": "THICK FUR", "description": "+20 maximum health and heal 32", "color": Color("ff6f91")},
-	"long_teeth": {"id": "long_teeth", "title": "LONG TEETH", "description": "Projectiles pierce +1 target", "color": Color("f1f6ff")},
-	"big_paws": {"id": "big_paws", "title": "BIG PAWS", "description": "Larger projectiles and hit area", "color": Color("a58bff")},
-	"lucky_tail": {"id": "lucky_tail", "title": "LUCKY TAIL", "description": "+3.5% enemy drop chance", "color": Color("ffe66d")},
-	"extra_pocket": {"id": "extra_pocket", "title": "EXTRA POCKET", "description": "+1 permanent projectile", "color": Color("62fff1")},
-	"cheese_magnet": {"id": "cheese_magnet", "title": "CHEESE MAGNET", "description": "+65 pickup attraction range", "color": Color("f5d76e")},
+	"quick_whiskers": {"id": "quick_whiskers", "title": "QUICK WHISKERS", "description": "Fire 10% faster", "color": Color("ef6f6c")},
+	"heavy_seeds": {"id": "heavy_seeds", "title": "HEAVY SEEDS", "description": "+3.5 seed damage", "color": Color("e89b4f")},
+	"fleet_feet": {"id": "fleet_feet", "title": "FLEET FEET", "description": "+20 movement speed", "color": Color("79a85b")},
+	"thick_fur": {"id": "thick_fur", "title": "THICK FUR", "description": "+16 maximum health and heal 20", "color": Color("d95863")},
+	"long_teeth": {"id": "long_teeth", "title": "LONG TEETH", "description": "Seeds pierce +1 target", "color": Color("f4d7a1")},
+	"big_paws": {"id": "big_paws", "title": "BIG PAWS", "description": "Larger seeds and hit area", "color": Color("8d79ad")},
+	"lucky_tail": {"id": "lucky_tail", "title": "LUCKY TAIL", "description": "+3% treat drop chance", "color": Color("f2c14e")},
+	"extra_pocket": {"id": "extra_pocket", "title": "EXTRA POCKET", "description": "+1 permanent seed", "color": Color("4f9f8f")},
+	"cheese_magnet": {"id": "cheese_magnet", "title": "CHEESE MAGNET", "description": "+55 pickup attraction range", "color": Color("e7b84b")},
 }
 
 var rng := RandomNumberGenerator.new()
@@ -153,7 +159,7 @@ func _physics_process(delta: float) -> void:
 		if not wave_queue.is_empty() and spawn_cooldown <= 0.0:
 			var next_kind: String = wave_queue.pop_front()
 			_spawn_enemy(next_kind)
-			spawn_cooldown = max(0.16, 0.68 - current_wave * 0.016)
+			spawn_cooldown = get_spawn_interval(current_wave)
 		if wave_queue.is_empty() and _living_enemy_count() == 0:
 			_finish_wave()
 
@@ -173,28 +179,43 @@ func _begin_next_wave() -> void:
 	current_wave += 1
 	wave_active = true
 	wave_queue.clear()
-	var regular_count := 7 + int(round(pow(float(current_wave), 0.92) * 3.4))
+	var regular_count := get_regular_enemy_count(current_wave)
 	for i in range(regular_count):
 		wave_queue.append(_choose_enemy_kind())
 	var boss_wave := current_wave % 5 == 0
+	var boss_kind := ""
 	if boss_wave:
-		wave_queue.insert(min(3, wave_queue.size()), "alpha_cat")
+		boss_kind = get_boss_kind(current_wave)
+		wave_queue.insert(mini(4, wave_queue.size()), boss_kind)
 	wave_total = wave_queue.size()
 	spawn_cooldown = 0.15
-	hud.show_wave_banner(current_wave, boss_wave)
+	hud.show_wave_banner(current_wave, boss_kind)
 	if boss_wave:
 		audio.play("shield", 0.03, -1.0)
 		_add_shake(8.0)
+
+func get_regular_enemy_count(for_wave: int) -> int:
+	return 8 + int(round(pow(float(for_wave), 0.88) * 4.4)) + int(for_wave / 5) * 2
+
+func get_spawn_interval(for_wave: int) -> float:
+	return maxf(0.11, 0.58 - for_wave * 0.015 - floorf(float(for_wave) / 10.0) * 0.025)
+
+func get_boss_kind(for_wave: int) -> String:
+	if for_wave % 15 == 0:
+		return "barn_owl"
+	if for_wave % 10 == 0:
+		return "junkyard_dog"
+	return "alpha_cat"
 
 func _finish_wave() -> void:
 	wave_active = false
 	var clear_bonus := 400 * current_wave
 	score += clear_bonus
 	intermission = max(1.8, 3.0 - current_wave * 0.035)
-	hud.show_toast("WAVE CLEARED  +%d" % clear_bonus, Color("62fff1"))
+	hud.show_toast("PICNIC SAVED!  +%d" % clear_bonus, Color("4f9f8f"))
 	audio.play("wave_clear", 0.02)
-	player.heal(10.0 + minf(10.0, current_wave))
-	# A little guaranteed recovery every third wave keeps long runs viable.
+	player.heal(4.0 + minf(6.0, current_wave * 0.25))
+	# Emergency cheese prevents one bad wave from ending an otherwise healthy run.
 	if current_wave % 3 == 0 and is_instance_valid(player) and player.health < player.max_health * 0.7:
 		_spawn_powerup("cheese", player.global_position + Vector2(110, 0).rotated(rng.randf_range(0.0, TAU)))
 	_open_upgrade_draft()
@@ -202,7 +223,7 @@ func _finish_wave() -> void:
 func _choose_enemy_kind() -> String:
 	var roll := rng.randf()
 	if current_wave < 2:
-		return "bird" if roll < 0.72 else "cat"
+		return "bird" if roll < 0.68 else "cat"
 	if current_wave < 3:
 		if roll < 0.48:
 			return "bird"
@@ -217,19 +238,46 @@ func _choose_enemy_kind() -> String:
 		if roll < 0.84:
 			return "owl"
 		return "snake"
-	if roll < 0.32:
+	if current_wave < 10:
+		if roll < 0.26:
+			return "bird"
+		if roll < 0.52:
+			return "cat"
+		if roll < 0.69:
+			return "owl"
+		if roll < 0.84:
+			return "snake"
+		return "raccoon"
+	if current_wave < 15:
+		if roll < 0.20:
+			return "bird"
+		if roll < 0.40:
+			return "cat"
+		if roll < 0.56:
+			return "owl"
+		if roll < 0.70:
+			return "snake"
+		if roll < 0.86:
+			return "raccoon"
+		return "fox"
+	if roll < 0.16:
 		return "bird"
-	if roll < 0.62:
+	if roll < 0.32:
 		return "cat"
-	if roll < 0.81:
+	if roll < 0.48:
 		return "owl"
-	return "snake"
+	if roll < 0.62:
+		return "snake"
+	if roll < 0.82:
+		return "raccoon"
+	return "fox"
 
 func _spawn_enemy(kind: String) -> void:
 	if not is_instance_valid(player):
 		return
 	var enemy := EnemyScript.new()
-	var is_elite := kind != "alpha_cat" and current_wave >= 2 and rng.randf() < minf(0.17, 0.025 + current_wave * 0.008)
+	var is_boss := kind in ["alpha_cat", "junkyard_dog", "barn_owl"]
+	var is_elite := not is_boss and current_wave >= 3 and rng.randf() < minf(0.20, 0.025 + current_wave * 0.008)
 	enemy.setup(kind, player, current_wave, is_elite)
 	enemy.global_position = _random_spawn_position()
 	enemy.add_to_group("run_entities")
@@ -274,7 +322,7 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 	if combo >= 4:
 		hud.show_toast("CHAIN x%d" % combo, Color("ffe66d"))
 
-	var drop_chance: float = minf(0.42, 0.115 + current_wave * 0.003 + player.drop_luck)
+	var drop_chance: float = minf(0.28, 0.085 + minf(0.045, current_wave * 0.0015) + player.drop_luck)
 	if enemy.get("elite") or rng.randf() < drop_chance:
 		var kind := _choose_powerup()
 		call_deferred("_spawn_powerup", kind, death_position)
@@ -314,7 +362,7 @@ func _on_powerup_collected(_kind: String, at: Vector2, color: Color) -> void:
 
 func _on_shot_fired(at: Vector2, powered: bool) -> void:
 	var fx := ImpactFXScript.new()
-	fx.setup(at, Color("62fff1"), 11.0, 0.16)
+	fx.setup(at, Color("f2c14e") if powered else Color("fff4d6"), 11.0, 0.16)
 	fx.spokes = 4
 	fx.add_to_group("run_entities")
 	add_child(fx)
@@ -322,7 +370,7 @@ func _on_shot_fired(at: Vector2, powered: bool) -> void:
 
 func _on_player_pickup_message(title: String, color: Color) -> void:
 	hud.show_toast(title, color)
-	if title == "SHIELD BLOCK":
+	if title == "TIN LID BLOCK":
 		audio.play("shield", 0.04)
 
 func _on_autofire_changed(enabled: bool) -> void:
@@ -339,13 +387,13 @@ func _on_enemy_hit(_at: Vector2) -> void:
 
 func _on_player_dash(at: Vector2) -> void:
 	audio.play("dash", 0.035)
-	_spawn_impact(at, Color("62fff1"), 34.0)
+	_spawn_impact(at, Color("f4d7a1"), 34.0)
 	_add_shake(3.0)
 
 func _on_player_damage_feedback(at: Vector2, blocked: bool) -> void:
 	if not blocked:
 		audio.play("player_hit", 0.045)
-	_spawn_impact(at, Color("6ef7ff") if blocked else Color("ff5b9e"), 65.0)
+	_spawn_impact(at, Color("8fa7b3") if blocked else Color("d95863"), 65.0)
 	_add_shake(5.0 if blocked else 14.0)
 
 func _on_ui_sound_requested(event_name: String) -> void:
@@ -395,7 +443,7 @@ func _on_player_died() -> void:
 	wave_active = false
 	reticle.enabled = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	_spawn_impact(player.global_position, Color("ff5b9e"), 110.0)
+	_spawn_impact(player.global_position, Color("d95863"), 110.0)
 	audio.play("player_hit", 0.02, 2.0)
 	_add_shake(24.0)
 	var old_best := high_score
@@ -436,19 +484,65 @@ func _save_high_score(value: int) -> void:
 		file.store_string(str(value))
 
 func _draw() -> void:
-	# Large neon arena; all art is procedural so the project has no asset dependencies.
-	draw_rect(ARENA, Color("080c26"), true)
-	for x in range(int(ARENA.position.x), int(ARENA.end.x) + 1, 100):
-		var major := posmod(x, 500) == 0
-		draw_line(Vector2(x, ARENA.position.y), Vector2(x, ARENA.end.y), Color(0.15, 0.38, 0.53, 0.15 if major else 0.065), 2.0 if major else 1.0)
-	for y in range(int(ARENA.position.y), int(ARENA.end.y) + 1, 100):
-		var major := posmod(y, 500) == 0
-		draw_line(Vector2(ARENA.position.x, y), Vector2(ARENA.end.x, y), Color(0.15, 0.38, 0.53, 0.15 if major else 0.065), 2.0 if major else 1.0)
-	# Sewer covers and scattered crumb markers give the open arena landmarks.
-	for marker in [Vector2(-760, -360), Vector2(670, 310), Vector2(-420, 440), Vector2(520, -430), Vector2.ZERO]:
-		draw_circle(marker, 58.0, Color(0.02, 0.05, 0.13, 0.75))
-		draw_arc(marker, 58.0, 0.0, TAU, 36, Color(0.18, 0.72, 0.76, 0.20), 3.0)
-		for i in range(8):
-			draw_line(marker + Vector2.from_angle(TAU * i / 8.0) * 21.0, marker + Vector2.from_angle(TAU * i / 8.0) * 49.0, Color(0.2, 0.55, 0.65, 0.14), 3.0)
-	draw_rect(ARENA, Color("35e6dc"), false, 6.0)
-	draw_rect(ARENA.grow(-14.0), Color(0.3, 0.4, 0.9, 0.25), false, 2.0)
+	# A bright storybook backyard replaces the old neon sewer grid.
+	draw_rect(ARENA, Color("acd681"), true)
+	for x in range(int(ARENA.position.x), int(ARENA.end.x), 160):
+		var stripe_color := Color(0.91, 0.95, 0.66, 0.13) if posmod(int(x / 160), 2) == 0 else Color(0.21, 0.48, 0.27, 0.08)
+		draw_rect(Rect2(x, ARENA.position.y, 160, ARENA.size.y), stripe_color, true)
+	_draw_kenney_backyard_props()
+	# Winding footpaths and oversized stepping stones provide readable landmarks.
+	var path := PackedVector2Array([Vector2(-1200, 420), Vector2(-820, 300), Vector2(-430, 350), Vector2(-40, 240), Vector2(390, 285), Vector2(780, 180), Vector2(1200, 240)])
+	draw_polyline(path, Color("6f5949"), 132.0, true)
+	draw_polyline(path, Color("d7bd86"), 118.0, true)
+	for marker in [Vector2(-760, -360), Vector2(690, 330), Vector2(-410, 470), Vector2(540, -420)]:
+		draw_circle(marker + Vector2(7, 9), 58.0, Color(0.25, 0.2, 0.2, 0.18))
+		draw_circle(marker, 58.0, Color("f1dfb8"))
+		draw_arc(marker, 58.0, 0.0, TAU, 32, Color("6f5949"), 5.0, true)
+		draw_arc(marker + Vector2(-10, -8), 33.0, 3.4, 5.5, 14, Color(1, 1, 1, 0.35), 4.0, true)
+	# Picnic blanket at the center establishes the playful food-heist theme.
+	var blanket := Rect2(-150, -105, 300, 210)
+	draw_rect(blanket.grow(7.0), Color("6f3f4d"), true)
+	for row in range(4):
+		for column in range(6):
+			var patch_color := Color("f8e6c4") if (row + column) % 2 == 0 else Color("df7772")
+			draw_rect(Rect2(blanket.position + Vector2(column * 50, row * 52.5), Vector2(50, 52.5)), patch_color, true)
+	# Small flowers and cheese crumbs add detail without creating collision noise.
+	for flower in [Vector2(-1030, -520), Vector2(-920, 560), Vector2(-580, -570), Vector2(320, -560), Vector2(980, -470), Vector2(1020, 520), Vector2(360, 540)]:
+		for petal in range(5):
+			draw_circle(flower + Vector2.from_angle(TAU * petal / 5.0) * 8.0, 5.0, Color("f7a6a1"))
+		draw_circle(flower, 4.0, Color("f2c14e"))
+	for crumb in [Vector2(-250, -280), Vector2(240, 180), Vector2(850, -110), Vector2(-870, 80)]:
+		draw_circle(crumb, 7.0, Color("e7b84b"))
+		draw_circle(crumb + Vector2(3, -2), 2.0, Color("fff4d6"))
+	# Chunky wooden fence border.
+	draw_rect(ARENA, Color("6f5949"), false, 22.0)
+	draw_rect(ARENA.grow(-16.0), Color("e5c17c"), false, 9.0)
+
+func _draw_kenney_backyard_props() -> void:
+	# CC0 Kenney props add a storybook woodland edge without blocking the arena center.
+	var tall_trees := [
+		Vector2(-570, -245), Vector2(570, -245),
+		Vector2(-570, 260), Vector2(570, 260),
+	]
+	for at in tall_trees:
+		_draw_prop(KENNEY_TREE_TEXTURE, at, Vector2(128, 276))
+
+	var small_trees := [
+		Vector2(-430, -315), Vector2(430, -315), Vector2(-430, 315), Vector2(430, 315),
+	]
+	for index in range(small_trees.size()):
+		var texture = KENNEY_SMALL_TREE_TEXTURE if index % 2 == 0 else KENNEY_SMALL_TREE_ALT_TEXTURE
+		_draw_prop(texture, small_trees[index], Vector2(52, 126))
+
+	var bushes := [
+		Vector2(-470, -280), Vector2(470, -280), Vector2(-470, 280), Vector2(470, 280),
+	]
+	for index in range(bushes.size()):
+		var texture = KENNEY_BUSH_TEXTURE if index % 2 == 0 else KENNEY_BUSH_ALT_TEXTURE
+		_draw_prop(texture, bushes[index], Vector2(150, 72))
+
+	for at in [Vector2(-620, -325), Vector2(620, -325), Vector2(-620, 325), Vector2(620, 325)]:
+		_draw_prop(KENNEY_FENCE_TEXTURE, at, Vector2(132, 98))
+
+func _draw_prop(texture: Texture2D, center: Vector2, size: Vector2) -> void:
+	draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)

@@ -2,7 +2,7 @@
 
 [![Test and deploy web game](https://github.com/Inefy/project-rat/actions/workflows/pages.yml/badge.svg)](https://github.com/Inefy/project-rat/actions/workflows/pages.yml)
 
-**Run. Aim. Thrive.** Project R.A.T. is an open-source, endless neon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat trapped in a predator-infested sewer grid.
+**Run. Aim. Snack.** Project R.A.T. is an open-source, endless cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid.
 
 Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
 
@@ -17,6 +17,7 @@ To play locally:
 1. Install [Godot 4.7.2](https://godotengine.org/download/archive/4.7.2-stable/).
 2. Import `project.godot` in the Project Manager.
 3. Press **F6** or **F5**.
+
 
 No third-party art, fonts, plug-ins, or asset packs are required. Every character and effect is drawn procedurally in GDScript.
 
@@ -34,19 +35,34 @@ No third-party art, fonts, plug-ins, or asset packs are required. Every characte
 
 ## What's in the game
 
-- Endless wave progression with enemy health, damage, count, and spawn-rate scaling.
+- Endless wave progression with accelerating enemy health and damage, larger crowds, faster deployments, and late-run elite pressure.
 - **Birds** weave through the arena at high speed.
 - **Cats** stalk, telegraph, pounce, and ricochet off the arena walls.
 - **Owls** maintain distance and launch three-feather volleys.
 - **Snakes** slither unpredictably, kite the rat, and spit venom.
-- An **Alpha Cat** arrives every fifth wave with a high-speed pounce and radial sonic attack.
-- Rare **elite predators** have boosted stats, a golden aura, and a guaranteed power-up drop.
-- Seven enemy drops: healing Cheese, Rapid Claws, Triple Seed, Power Nibble, Sugar Rush, Tin-can Shield, and Needle Teeth.
-- A three-card mutation draft after every wave permanently shapes the run with multishot, piercing, speed, health, luck, magnetism, and damage upgrades.
+- Armoured **Raccoons** join at wave 6, brace behind trash-can lids, and charge the player.
+- **Foxes** arrive at wave 10, circle the player, then telegraph a very fast ambush dash.
+- Boss waves rotate between the pouncing **Alpha Cat**, armoured **Junkyard Dog**, and ranged **Barn Owl**.
+- Breakable armour absorbs damage before health, is visible on the character and HUD bars, and also appears on late-run elites.
+- Rare **elite raiders** have boosted stats, armour, golden badges, and a guaranteed power-up drop.
+- Seven enemy drops: healing Cheese, Rapid Claws, Triple Seed, Power Nibble, Sugar Rush, Tin-lid Shield, and Needle Teeth.
+- A three-card perk draft after every wave shapes the run with capped multishot, piercing, speed, health, luck, magnetism, and damage upgrades.
 - An invulnerable combat dash with dedicated recharge feedback.
 - Chain multipliers, wave-clear bonuses, saved high scores, controller support, hit feedback, and a complete title/pause/game-over flow.
 - Pooled CC0 sound effects, varied pitch, camera shake, and stronger combat feedback.
-- A 2400×1400 camera-tracked neon arena with landmarks, animated procedural characters, glow effects, and a custom reticle.
+- A 2400×1400 camera-tracked storybook backyard with a picnic blanket, flowers, stepping stones, animated ink-outlined characters, comic impact effects, and a custom reticle.
+
+## Difficulty progression
+
+| Wave | New pressure |
+| --- | --- |
+| 3 | Ranged owls and armoured elite variants begin appearing. |
+| 4 | Venom-spitting snakes join the mix. |
+| 5 | Alpha Cat boss. |
+| 6 | Armoured raccoons join regular waves. |
+| 10 | Fox ambushers and the armoured Junkyard Dog boss arrive. |
+| 15 | The Barn Owl boss introduces a seven-feather ranged fan. |
+| 20+ | Faster spawn pacing, denser waves, accelerating stats, and a high late-run armour share. |
 
 ## Project layout
 

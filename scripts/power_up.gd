@@ -3,17 +3,17 @@ extends Area2D
 signal collected(kind: String, position: Vector2, color: Color)
 
 const DEFINITIONS := {
-	"cheese": {"color": Color("ffe66d"), "letter": "+", "name": "Cheese"},
-	"rapid": {"color": Color("ff75bd"), "letter": "R", "name": "Rapid Claws"},
-	"triple": {"color": Color("a58bff"), "letter": "3", "name": "Triple Seed"},
-	"power": {"color": Color("ff9f43"), "letter": "P", "name": "Power Nibble"},
-	"haste": {"color": Color("6dff95"), "letter": ">", "name": "Sugar Rush"},
-	"shield": {"color": Color("6ef7ff"), "letter": "S", "name": "Tin-can Shield"},
-	"pierce": {"color": Color("f1f6ff"), "letter": "!", "name": "Needle Teeth"},
+	"cheese": {"color": Color("f2c14e"), "letter": "+", "name": "Cheese"},
+	"rapid": {"color": Color("ef6f6c"), "letter": "R", "name": "Rapid Claws"},
+	"triple": {"color": Color("8d79ad"), "letter": "3", "name": "Triple Seed"},
+	"power": {"color": Color("e89b4f"), "letter": "P", "name": "Power Nibble"},
+	"haste": {"color": Color("79a85b"), "letter": ">", "name": "Sugar Rush"},
+	"shield": {"color": Color("8fa7b3"), "letter": "S", "name": "Tin-lid Shield"},
+	"pierce": {"color": Color("f4d7a1"), "letter": "!", "name": "Needle Teeth"},
 }
 
 var kind := "cheese"
-var tint := Color("ffe66d")
+var tint := Color("f2c14e")
 var age := 0.0
 var life := 16.0
 var collected_already := false
@@ -65,14 +65,15 @@ func _on_body_entered(body: Node) -> void:
 
 func _draw() -> void:
 	var pulse := 1.0 + sin(age * 5.0) * 0.08
-	var warning_alpha: float = 0.12 if life > 4.0 else 0.06 + absf(sin(age * 10.0)) * 0.13
-	draw_circle(Vector2.ZERO, 30.0 * pulse, Color(tint, warning_alpha))
+	var warning_alpha: float = 0.22 if life > 4.0 else 0.08 + absf(sin(age * 10.0)) * 0.18
+	draw_circle(Vector2(4, 7), 22.0 * pulse, Color(0.24, 0.19, 0.24, 0.18))
+	draw_circle(Vector2.ZERO, 28.0 * pulse, Color(tint, warning_alpha))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * pulse)
-	var diamond := PackedVector2Array([Vector2(0, -19), Vector2(19, 0), Vector2(0, 19), Vector2(-19, 0)])
-	draw_colored_polygon(diamond, Color("12183b"))
-	draw_polyline(PackedVector2Array([Vector2(0, -19), Vector2(19, 0), Vector2(0, 19), Vector2(-19, 0), Vector2(0, -19)]), tint, 3.0, true)
+	draw_circle(Vector2.ZERO, 21.0, Color("40354f"))
+	draw_circle(Vector2.ZERO, 17.0, Color("fff4d6"))
+	draw_arc(Vector2.ZERO, 14.0, 0.0, TAU, 24, tint, 4.0, true)
 	var data: Dictionary = DEFINITIONS.get(kind, DEFINITIONS["cheese"])
 	var font := ThemeDB.fallback_font
 	var letter: String = data["letter"]
 	var text_size := font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 18)
-	draw_string(font, -text_size * 0.5 + Vector2(0, 6), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, tint)
+	draw_string(font, -text_size * 0.5 + Vector2(0, 6), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("40354f"))

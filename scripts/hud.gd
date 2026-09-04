@@ -347,8 +347,14 @@ func show_upgrade_draft(options: Array[Dictionary]) -> void:
 		card.text = "[%d]  %s\n\n%s" % [index + 1, data["title"], data["description"]]
 		card.custom_minimum_size = Vector2(330, 175)
 		card.add_theme_font_size_override("font_size", 18)
-		card.add_theme_color_override("font_color", pale)
-		card.add_theme_color_override("font_hover_color", Color.WHITE)
+		# The normal card is pale, so pale text disappears into its background.
+		# Keep the default and hover states dark, then switch to the light palette
+		# only while the pressed card uses its saturated upgrade color.
+		card.add_theme_color_override("font_color", dark)
+		card.add_theme_color_override("font_hover_color", dark)
+		card.add_theme_color_override("font_pressed_color", pale)
+		card.add_theme_color_override("font_outline_color", Color(1.0, 1.0, 1.0, 0.35))
+		card.add_theme_constant_override("outline_size", 2)
 		var card_color: Color = data["color"]
 		card.add_theme_stylebox_override("normal", _panel_style(Color("fff4d6"), dark, 18))
 		card.add_theme_stylebox_override("hover", _panel_style(card_color.lightened(0.30), dark, 18))

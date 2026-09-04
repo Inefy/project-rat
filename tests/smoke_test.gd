@@ -106,6 +106,10 @@ func _run() -> void:
 	game._open_upgrade_draft()
 	check(game.game_state == "upgrade", "wave mutation draft pauses the run")
 	check(game.current_upgrade_ids.size() == 3, "mutation draft offers three choices")
+	if game.current_upgrade_ids.size() == 3:
+		var first_upgrade_card := game.hud.upgrade_cards.get_child(0) as Button
+		check(not first_upgrade_card.text.is_empty(), "mutation cards contain their copy")
+		check(first_upgrade_card.get_theme_color("font_color") == game.hud.dark, "mutation card copy contrasts with its pale background")
 	if not game.current_upgrade_ids.is_empty():
 		game._on_upgrade_selected(game.current_upgrade_ids[0])
 	check(game.game_state == "playing" and not paused, "choosing a mutation resumes play")

@@ -29,8 +29,11 @@ bpy.ops.object.camera_add(location=(5,-24,23)); cam=bpy.context.object; cam.rota
 gallery.view_settings.view_transform='AgX'; gallery.view_settings.look='AgX - Medium High Contrast'
 for area in bpy.context.screen.areas:
     if area.type=='VIEW_3D':
-        area.spaces.active.region_3d.view_distance=23
-        area.spaces.active.region_3d.view_location=(0,-6,1)
+        area.spaces.active.region_3d.view_distance=16
+        area.spaces.active.region_3d.view_location=(0,-1.8,1.1)
+        area.spaces.active.region_3d.view_rotation=(Vector((0,-1.8,1.1))-Vector((3,-16,12))).to_track_quat('-Z','Y')
         area.spaces.active.shading.color_type='MATERIAL'
+        area.spaces.active.overlay.show_relationship_lines=False
+        area.spaces.active.overlay.show_extras=False
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT,'art','picnic-cast.blend'))
 print('Saved editable gallery and 24 GLBs')

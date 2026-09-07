@@ -18,6 +18,7 @@ var age := 0.0
 var life := 16.0
 var collected_already := false
 var magnet_target: Node2D
+var magnetized := false
 
 func setup(power_kind: String, at: Vector2, player: Node2D) -> void:
 	kind = power_kind
@@ -43,6 +44,8 @@ func _ready() -> void:
 	queue_redraw()
 
 func _physics_process(delta: float) -> void:
+	if collected_already:
+		return
 	age += delta
 	life -= delta
 	rotation += delta * 0.7
@@ -50,7 +53,14 @@ func _physics_process(delta: float) -> void:
 		var delta_to_player := magnet_target.global_position - global_position
 		var magnet_radius: float = float(magnet_target.get("magnet_radius"))
 		if delta_to_player.length() < magnet_radius:
-			global_position += delta_to_player.normalized() * (235.0 + (magnet_radius - delta_to_player.length()) * 1.6) * delta
+			magnetized = true
+		if magnetized:
+			# Once reached, treats follow through a dash and cannot expire in transit.
+			life = maxf(life, 1.0)
+			var chase_speed := maxf(720.0, magnet_target.velocity.length() + 180.0)
+			global_position = global_position.move_toward(magnet_target.global_position, chase_speed * delta)
+			if global_position.distance_to(magnet_target.global_position) < 30.0:
+				_on_body_entered(magnet_target)
 	if life <= 0.0:
 		queue_free()
 	queue_redraw()

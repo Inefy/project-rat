@@ -14,7 +14,7 @@ const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 var max_health := 100.0
 var health := 100.0
 var move_speed := 315.0
-var base_damage := 18.0
+var base_damage := 24.0
 var fire_interval := 0.27
 var bullet_speed := 920.0
 var bullet_radius := 4.5
@@ -50,6 +50,7 @@ var dash_count := 0
 var orbit_until := 0
 var orbit_hit_cooldown := 0.0
 var aim_assist := false
+var dash_buffer_until := -1
 
 func game_time_ms() -> int:
 	return int(active_time * 1000.0)
@@ -95,14 +96,10 @@ func _physics_process(delta: float) -> void:
 	anim_time += delta
 	_update_orbit(delta)
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	var stick_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	_update_aim(stick_aim)
 	var now := game_time_ms()
-	if Input.is_action_just_pressed("dash") and now >= dash_ready_at:
-		dash_direction = move_input.normalized() if move_input.length_squared() > 0.01 else aim_direction
-		dash_until = now + 190
-		dash_ready_at = now + dash_cooldown_ms
-		invulnerable_until = maxi(invulnerable_until, dash_until + 90)
-		dash_count += 1
-		dash_started.emit(global_position)
+	_update_dash(move_input, Input.is_action_just_pressed("dash"))
 	var speed_multiplier := 1.38 if now < haste_until else 1.0
 	if now < dash_until:
 		velocity = dash_direction * 790.0 + knockback_velocity * 0.15
@@ -114,8 +111,30 @@ func _physics_process(delta: float) -> void:
 	global_position.y = clamp(global_position.y, ARENA.position.y + 30.0, ARENA.end.y - 30.0)
 	if move_input.length_squared() > 0.01:
 		distance_walked += velocity.length() * delta
+	rotation = aim_direction.angle()
 
-	var stick_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	shot_cooldown -= delta
+	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or stick_aim.length() > 0.28
+	if wants_to_fire and shot_cooldown <= 0.0:
+		fire()
+		var rapid_multiplier := 0.48 if now < rapid_until else 1.0
+		shot_cooldown = fire_interval * rapid_multiplier
+	queue_redraw()
+
+func _update_dash(move_input: Vector2, pressed: bool) -> void:
+	var now := game_time_ms()
+	if pressed:
+		dash_buffer_until = now + 140
+	if now <= dash_buffer_until and now >= dash_ready_at:
+		dash_buffer_until = -1
+		dash_direction = move_input.normalized() if move_input.length_squared() > 0.01 else aim_direction
+		dash_until = now + 190
+		dash_ready_at = now + dash_cooldown_ms
+		invulnerable_until = maxi(invulnerable_until, dash_until + 90)
+		dash_count += 1
+		dash_started.emit(global_position)
+
+func _update_aim(stick_aim: Vector2) -> void:
 	if stick_aim.length() > 0.28:
 		using_controller = true
 		aim_direction = stick_aim.normalized()
@@ -135,15 +154,6 @@ func _physics_process(delta: float) -> void:
 				best_angle = angle
 				assisted = toward
 		aim_direction = aim_direction.lerp(assisted, 0.35).normalized()
-	rotation = aim_direction.angle()
-
-	shot_cooldown -= delta
-	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or stick_aim.length() > 0.28
-	if wants_to_fire and shot_cooldown <= 0.0:
-		fire()
-		var rapid_multiplier := 0.48 if now < rapid_until else 1.0
-		shot_cooldown = fire_interval * rapid_multiplier
-	queue_redraw()
 
 func fire() -> void:
 	var now := game_time_ms()
@@ -193,6 +203,8 @@ func apply_upgrade(kind: String) -> void:
 		return
 	upgrade_levels[kind] = int(upgrade_levels.get(kind, 0)) + 1
 	match kind:
+		"snack_orbit":
+			orbit_until = game_time_ms() + 6500
 		"quick_whiskers":
 			fire_interval = maxf(0.13, fire_interval * 0.90)
 		"heavy_seeds":
@@ -333,6 +345,11 @@ func _update_orbit(delta: float) -> void:
 				break
 
 func _draw() -> void:
+	# Recharge stays close to the rat so dodging never requires looking at the HUD.
+	var charge := get_dash_charge()
+	var start := -PI * 0.5 - rotation
+	draw_arc(Vector2.ZERO, 40.0, start, start + TAU, 40, Color(0.20, 0.12, 0.17, 0.35), 3.0, true)
+	draw_arc(Vector2.ZERO, 40.0, start, start + TAU * maxf(0.001, charge), 40, Color("fff0bf") if charge >= 1.0 else Color("f6c53f"), 3.0, true)
 	if game_time_ms() < orbit_until:
 		var count := 5 if upgrade_levels.get("orbit_feast", 0) > 0 else 3
 		for index in range(count):

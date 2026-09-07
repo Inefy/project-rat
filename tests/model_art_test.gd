@@ -1,6 +1,12 @@
 extends SceneTree
 
 const Sprites = preload("res://scripts/model_sprites.gd")
+var failures: Array[String] = []
+
+func check(condition: bool, message: String) -> void:
+	if not condition:
+		failures.append(message)
+		printerr("ART FAIL: " + message)
 
 class Catalog extends Control:
 	func _draw() -> void:
@@ -28,12 +34,17 @@ func run() -> void:
 	var total := 0
 	for kind in Sprites.FRAMES:
 		for texture: Texture2D in Sprites.FRAMES[kind]:
-			assert(texture.get_size() == Vector2(192, 192), "Wrong sprite dimensions: " + kind)
+			check(texture.get_size() == Vector2(192, 192), "Wrong sprite dimensions: " + kind)
 			var image := texture.get_image()
-			assert(not image.get_used_rect().size == Vector2i.ZERO, "Empty render: " + kind)
+			check(not image.get_used_rect().size == Vector2i.ZERO, "Empty render: " + kind)
+			var bounds := image.get_used_rect()
+			check(bounds.position.x >= 2 and bounds.position.y >= 2 and bounds.end.x <= 190 and bounds.end.y <= 190, "Clipped model or missing transparent margin: " + texture.resource_path)
 			total += 1
-	assert(total == 94, "Incomplete asset set")
-	print("ART PASS: 24 assets, 94 nonempty sprite renders")
+	check(total == 94, "Incomplete asset set")
+	if not failures.is_empty():
+		quit(1)
+		return
+	print("ART PASS: 24 assets, 94 nonempty sprite renders with transparent margins")
 	if DisplayServer.get_name() != "headless":
 		root.add_child(Catalog.new())
 		await process_frame

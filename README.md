@@ -47,6 +47,10 @@ Later drafts mix stat upgrades with eligible build synergies. Cards show upgrade
 
 Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. Offscreen threats and final stragglers get edge markers. Shoot the marked fizzy cans to knock nearby enemies away.
 
+The opening birds fall to one accurate seed. Shorter waves and a quick return from each draft keep runs moving; ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge ring around your rat. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and six kills without a treat guarantee a drop.
+
+Keep kills within 2.4 seconds to build your streak. A missed beat sheds one multiplier at a time, and reaching x8 grants Rapid Claws once per wave. Your streak survives drafts and intermissions.
+
 Pausing and drafting freeze gameplay and its timers. When all mutations are exhausted, subsequent wave clears award health and score without blocking the run.
 
 ## What's in the game
@@ -102,6 +106,8 @@ Run the smoke test:
 ```bash
 godot --headless --path . --script tests/smoke_test.gd
 godot --headless --path . --script tests/fun_systems_test.gd
+
+godot --headless --path . --script tests/playability_test.gd
 ```
 
 Create the browser build after installing Godot's export templates:
@@ -110,7 +116,7 @@ Create the browser build after installing Godot's export templates:
 godot --headless --path . --export-release Web build/web/index.html
 ```
 
-The GitHub Actions workflow runs both test suites, exports the game, and deploys a Pages artifact automatically. `tests/capture_fun_preview.gd` can also be run with the graphical engine to capture title, settings, draft, gameplay, pause, victory, and game-over screenshots in `build/`.
+The GitHub Actions workflow runs all three gameplay test suites, exports the game, and deploys a Pages artifact automatically. `tests/capture_fun_preview.gd` can also be run with the graphical engine to capture title, settings, draft, gameplay, pause, victory, and game-over screenshots in `build/`.
 
 The implementation and regression tests support a first human playtest; they do not establish that a balance choice is more fun. See [FUN_AUDIT.md](FUN_AUDIT.md) for the playtest plan and later experiments such as unlockable kits and shared seeded challenges.
 

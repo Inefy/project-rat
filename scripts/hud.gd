@@ -525,7 +525,7 @@ func update_stats(score: int, wave: int, kills: int, health: float, max_health: 
 	wave_bar.value = clamp(progress, 0.0, 1.0)
 	buffs_label.text = "\n".join(buffs) if not buffs.is_empty() else "NO SHOW-OFFS YET"
 	dash_bar.value = dash_charge
-	dash_label.text = "DASH READY [%s / RB]" % dash_key if dash_charge >= 0.999 else "DASH RECHARGING"
+	dash_label.text = "DASH READY [%s / RB]" % dash_key if dash_charge >= 0.999 else "DASH %.1fs" % ((1.0 - dash_charge) * 1.35)
 	dash_label.add_theme_color_override("font_color", Color("f2c14e") if dash_charge >= 0.999 else pale)
 
 func set_autofire(enabled: bool) -> void:
@@ -582,6 +582,7 @@ func set_paused(paused: bool) -> void:
 
 func update_combo(multiplier: int, remaining: float) -> void:
 	combo_label.text = "BONK STREAK x%d" % multiplier
+	combo_label.add_theme_color_override("font_color", Color("f6c53f") if multiplier >= 4 else pale)
 	combo_bar.value = remaining
 
 func set_encounter(title: String) -> void:
@@ -607,7 +608,7 @@ func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	elif wave <= 1:
 		tip_label.text = "Aim with mouse or right stick. Firing is automatic. Clear the wave to choose a build."
 	else:
-		tip_label.text = "Yellow line: winding up. Red line: aim locked. Step aside, then strike!"
+		tip_label.text = "Reach streak x8 for Rapid Claws! Yellow attack line: wind-up. Red: step aside!"
 
 func show_death_tip(source: String, streak: int, new_wave: bool) -> void:
 	var advice := {

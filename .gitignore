@@ -3,6 +3,7 @@
 
 # Export output
 build/*
+!build/.gdignore
 !build/web/
 build/web/*
 !build/web/.gdignore
@@ -12,6 +13,8 @@ build/web/*
 .idea/
 *.tmp
 *.log
+__pycache__/
+*.blend[0-9]
 
 # OS metadata
 .DS_Store

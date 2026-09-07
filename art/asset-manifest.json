@@ -2,57 +2,67 @@
   "rat": {
     "directions": 8,
     "collection": "rat",
-    "triangles": 4842
+    "triangles": 7050,
+    "visual_identity": "Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster"
   },
   "bird": {
     "directions": 8,
     "collection": "bird",
-    "triangles": 2616
+    "triangles": 3960,
+    "visual_identity": "Compact blue dart, outstretched wings, swept yellow quiff and giant beak"
   },
   "cat": {
     "directions": 8,
     "collection": "cat",
-    "triangles": 4464
+    "triangles": 4938,
+    "visual_identity": "Squat purple pear, enormous cheeks, tiny feet and a curled tail"
   },
   "owl": {
     "directions": 8,
     "collection": "owl",
-    "triangles": 2982
+    "triangles": 3372,
+    "visual_identity": "Round chestnut barrel, huge cream eye disks and heavy brow tufts"
   },
   "snake": {
     "directions": 8,
     "collection": "snake",
-    "triangles": 6864
+    "triangles": 10368,
+    "visual_identity": "Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue"
   },
   "raccoon": {
     "directions": 8,
     "collection": "raccoon",
-    "triangles": 5256
+    "triangles": 5700,
+    "visual_identity": "Hunched slate bandit, black mask, striped tail and oversized bin lid"
   },
   "fox": {
     "directions": 8,
     "collection": "fox",
-    "triangles": 4464
+    "triangles": 4620,
+    "visual_identity": "Tall orange rake, long muzzle, black stockings and huge cream-tipped tail"
   },
   "alpha_cat": {
     "directions": 8,
     "collection": "alpha_cat",
-    "triangles": 4746
+    "triangles": 4350,
+    "visual_identity": "Magenta monarch, triangular burgundy cape and crooked gold crown"
   },
   "junkyard_dog": {
     "directions": 8,
     "collection": "junkyard_dog",
-    "triangles": 4236
+    "triangles": 4926,
+    "visual_identity": "Wide square bulldog, heavy jowls, underbite and red spiked collar"
   },
   "barn_owl": {
     "directions": 8,
     "collection": "barn_owl",
-    "triangles": 3018
+    "triangles": 4680,
+    "visual_identity": "Ivory heart face, swept dark wings, teal academic gown and mortarboard"
   },
   "cheese": {
     "directions": 1,
     "collection": "cheese",
-    "triangles": 594
+    "triangles": 586
   },
   "rapid": {
     "directions": 1,

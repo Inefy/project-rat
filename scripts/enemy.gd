@@ -52,7 +52,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 9.0 * damage_scale
 			score_value = 90 + wave * 5
 			radius = 16.0
-			tint = Color("e96f7c")
+			tint = Color("199dcc")
 			state_clock = 0.7
 		"cat":
 			max_health = 72.0 * health_scale
@@ -60,7 +60,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 18.0 * damage_scale
 			score_value = 220 + wave * 9
 			radius = 27.0
-			tint = Color("e99a4e")
+			tint = Color("914fba")
 			state_clock = 0.9 + randf() * 0.7
 		"owl":
 			max_health = 52.0 * health_scale
@@ -68,7 +68,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 13.0 * damage_scale
 			score_value = 180 + wave * 8
 			radius = 23.0
-			tint = Color("8d79ad")
+			tint = Color("996538")
 			attack_cooldown = 1.35 + randf() * 0.65
 		"snake":
 			max_health = 44.0 * health_scale
@@ -76,7 +76,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 12.0 * damage_scale
 			score_value = 165 + wave * 8
 			radius = 20.0
-			tint = Color("6ea85f")
+			tint = Color("64a83f")
 			attack_cooldown = 1.1 + randf() * 0.8
 		"raccoon":
 			max_health = 112.0 * health_scale
@@ -85,7 +85,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 22.0 * damage_scale
 			score_value = 320 + wave * 12
 			radius = 30.0
-			tint = Color("71828b")
+			tint = Color("637f86")
 			state_clock = 1.1 + randf() * 0.8
 		"fox":
 			max_health = 86.0 * health_scale
@@ -93,7 +93,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 20.0 * damage_scale
 			score_value = 300 + wave * 12
 			radius = 24.0
-			tint = Color("e26f3f")
+			tint = Color("ef7825")
 			state_clock = 0.8 + randf() * 0.7
 		"alpha_cat":
 			max_health = (390.0 + wave * 18.0) * health_scale
@@ -101,7 +101,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 28.0 * damage_scale
 			score_value = 1800 + wave * 90
 			radius = 39.0
-			tint = Color("c94f57")
+			tint = Color("c8498d")
 			state_clock = 1.1
 			scale = Vector2.ONE * 1.22
 		"junkyard_dog":
@@ -111,7 +111,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 34.0 * damage_scale
 			score_value = 2600 + wave * 115
 			radius = 44.0
-			tint = Color("9b6d4b")
+			tint = Color("b58b5c")
 			state_clock = 1.25
 			scale = Vector2.ONE * 1.18
 		"barn_owl":
@@ -120,7 +120,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 26.0 * damage_scale
 			score_value = 2850 + wave * 120
 			radius = 42.0
-			tint = Color("76628d")
+			tint = Color("ead5a5")
 			attack_cooldown = 1.15
 			scale = Vector2.ONE * 1.16
 	if elite and enemy_kind not in ["alpha_cat", "junkyard_dog", "barn_owl"]:
@@ -135,7 +135,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 
 func get_health_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
-	return 1.0 + ramp * 0.09 + ramp * ramp * 0.004
+	return 1.0 + ramp * 0.075 + ramp * ramp * 0.0025
 
 func get_damage_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
@@ -243,7 +243,7 @@ func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 	var far_distance := 250.0 if cleanup else (440.0 if is_boss else 380.0)
 	var near_distance := 160.0 if cleanup else (280.0 if is_boss else 240.0)
 	if distance > far_distance:
-		desired = direction * move_speed
+		desired = direction * maxf(move_speed, 220.0) if cleanup else direction * move_speed
 	elif distance < near_distance:
 		desired = -direction * move_speed
 	else:
@@ -265,7 +265,8 @@ func _update_snake(delta: float, direction: Vector2, distance: float) -> void:
 	var desired_direction := direction.rotated(slither)
 	if distance < (130.0 if cleanup else 255.0):
 		desired_direction = -direction.rotated(slither * 0.45)
-	velocity = velocity.move_toward(desired_direction * move_speed, 370.0 * delta)
+	var approach_speed := maxf(move_speed, 230.0) if cleanup and distance > 250.0 else move_speed
+	velocity = velocity.move_toward(desired_direction * approach_speed, 370.0 * delta)
 	if _ranged_ready(delta, direction, distance, 620.0):
 		direction = ranged_direction
 		projectile_requested.emit(global_position + direction * 20.0, direction, 270.0 + wave * 2.5, contact_damage * 0.82, "venom")

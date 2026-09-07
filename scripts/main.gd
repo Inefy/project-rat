@@ -28,10 +28,11 @@ const CREAM := Color("fff0bf")
 const TOMATO := Color("df5144")
 const CHEESE := Color("f6c53f")
 const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste", "shield", "pierce"]
+const COMBO_WINDOW_MS := 2400
 const UPGRADES := {
 	"pinball": {"id": "pinball", "title": "PINBALL RAT", "description": "Seeds bounce off the fence once. Herd enemies into the rebound!", "color": Color("55ad87")},
 	"scurry_bomb": {"id": "scurry_bomb", "title": "SCURRY MENACE", "description": "Every dash leaves an explosive crumb. Blast damage: 2.5x your seed.", "color": Color("ef6f6c")},
-	"snack_orbit": {"id": "snack_orbit", "title": "SNACK WIZARD", "description": "Treats summon 3 orbiting seeds for 6.5s. Collect snacks to keep them spinning.", "color": Color("8d79ad")},
+	"snack_orbit": {"id": "snack_orbit", "title": "SNACK WIZARD", "description": "Start with 3 orbiting seeds for 6.5s. Treats recharge your orbit!", "color": Color("8d79ad")},
 	"split_acorns": {"id": "split_acorns", "title": "SPLIT DECISION", "description": "Pinball synergy: rebounds split off one extra seed at 60% damage.", "color": Color("55ad87")},
 	"dash_refund": {"id": "dash_refund", "title": "CRUMB BACK", "description": "Scurry synergy: a crumb blast that hits refunds 0.4s of dash recharge.", "color": Color("ef6f6c")},
 	"orbit_feast": {"id": "orbit_feast", "title": "FULL PLATE", "description": "Wizard synergy: orbiting seeds increase from 3 to 5.", "color": Color("8d79ad")},
@@ -76,6 +77,8 @@ var spawned_this_wave := 0
 var run_clock := 0.0
 var best_wave := 0
 var previous_best_wave := 0
+var kills_without_treat := 0
+var streak_rewarded := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -142,6 +145,8 @@ func start_game() -> void:
 	overtime = false
 	boss_reward_pending = false
 	pending_treats.clear()
+	kills_without_treat = 0
+	streak_rewarded = false
 	shake_strength = 0.0
 	current_upgrade_ids.clear()
 	wave_queue.clear()
@@ -204,8 +209,7 @@ func _physics_process(delta: float) -> void:
 	if game_state != "playing" or get_tree().paused or not is_instance_valid(player):
 		return
 	run_clock += delta
-	if combo > 1 and int(run_clock * 1000.0) > combo_expires:
-		combo = 1
+	_update_combo_decay(delta)
 
 	if not wave_active:
 		intermission -= delta
@@ -217,7 +221,7 @@ func _physics_process(delta: float) -> void:
 			var next_kind: String = wave_queue.pop_front()
 			_spawn_enemy(next_kind)
 			spawned_this_wave += 1
-			spawn_cooldown = 2.2 if spawned_this_wave % 7 == 0 else get_spawn_interval(current_wave)
+			spawn_cooldown = 1.6 if spawned_this_wave % 7 == 0 and _living_enemy_count() >= 3 else get_spawn_interval(current_wave)
 		if wave_queue.is_empty() and _living_enemy_count() <= 3:
 			for enemy in get_tree().get_nodes_in_group("enemies"):
 				enemy.cleanup = true
@@ -225,7 +229,9 @@ func _physics_process(delta: float) -> void:
 			_finish_wave()
 
 	hud.update_stats(score, current_wave, kills, player.health, player.max_health, _wave_progress(), player.get_active_buffs(), player.get_dash_charge())
-	hud.update_combo(combo, clampf(float(combo_expires - int(run_clock * 1000.0)) / 1800.0, 0.0, 1.0))
+	hud.update_combo(combo, clampf(float(combo_expires - int(run_clock * 1000.0)) / COMBO_WINDOW_MS, 0.0, 1.0))
+	if wave_active and wave_queue.is_empty() and _living_enemy_count() <= 3:
+		hud.set_encounter("LAST %d - FOLLOW THE GOLD ARROWS" % _living_enemy_count())
 	hud.update_tip(player, current_wave, settings.tips)
 
 func _process(delta: float) -> void:
@@ -241,6 +247,7 @@ func _process(delta: float) -> void:
 func _begin_next_wave() -> void:
 	current_wave += 1
 	spawned_this_wave = 0
+	streak_rewarded = false
 	for kind in pending_treats:
 		player.apply_powerup(kind)
 	pending_treats.clear()
@@ -264,7 +271,7 @@ func _begin_next_wave() -> void:
 		_add_shake(8.0)
 
 func get_regular_enemy_count(for_wave: int) -> int:
-	return 8 + int(round(pow(float(for_wave), 0.88) * 4.4)) + int(for_wave / 5) * 2
+	return 6 + int(round(pow(float(for_wave), 0.88) * 3.6)) + int(for_wave / 5) * 2
 
 func get_spawn_interval(for_wave: int) -> float:
 	return maxf(0.18, 0.58 - for_wave * 0.015 - floorf(float(for_wave) / 10.0) * 0.025) * (1.25 if settings.cozy else 1.0)
@@ -419,16 +426,21 @@ func _on_enemy_projectile_requested(origin: Vector2, direction: Vector2, speed: 
 func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Color) -> void:
 	kills += 1
 	var now := int(run_clock * 1000.0)
-	if now <= combo_expires:
+	if combo > 1 or (kills > 1 and now <= combo_expires):
 		combo = min(8, combo + 1)
 	else:
 		combo = 1
-	combo_expires = now + 1800
+	combo_expires = now + COMBO_WINDOW_MS
 	best_combo = maxi(best_combo, combo)
 	score += points * combo
 	_spawn_impact(death_position, color, 42.0)
 	audio.play("enemy_death", 0.09, -2.0 if enemy.get("elite") else -5.0)
 	_add_shake(6.0 if enemy.get("elite") else 2.0)
+	if combo == 8 and not streak_rewarded:
+		streak_rewarded = true
+		player.apply_powerup("rapid")
+		hud.show_toast("MAX STREAK! RAPID CLAWS UNLEASHED", CHEESE)
+		audio.play("pickup", 0.04)
 	if enemy.get("enemy_kind") in ["alpha_cat", "junkyard_dog", "barn_owl"]:
 		boss_reward_pending = true
 		pending_treats.append("power")
@@ -437,9 +449,21 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 		hud.show_toast("BOSS LOOT BANKED! Bonus mutation at wave clear", Color("f6c53f"))
 
 	var drop_chance: float = minf(0.28, 0.085 + minf(0.045, current_wave * 0.0015) + player.drop_luck)
-	if enemy.get("elite") or rng.randf() < drop_chance:
+	kills_without_treat += 1
+	if enemy.get("elite") or kills_without_treat >= 6 or rng.randf() < drop_chance:
+		kills_without_treat = 0
 		var kind := _choose_powerup()
 		call_deferred("_spawn_powerup", kind, death_position)
+
+func _update_combo_decay(delta: float = 0.0) -> void:
+	if not wave_active:
+		# Drafts and the breath between waves never cost a streak.
+		combo_expires += int(round(delta * 1000.0))
+		return
+	var now := int(run_clock * 1000.0)
+	while combo > 1 and now > combo_expires:
+		combo -= 1
+		combo_expires += 650
 
 func _choose_powerup() -> String:
 	# Weighted toward sustain, with the flashier weapon mutations still common.
@@ -462,6 +486,13 @@ func _choose_powerup() -> String:
 
 func _spawn_powerup(kind: String, at: Vector2) -> void:
 	if not is_instance_valid(player):
+		return
+	# A last-kill drop may arrive after the wave-clear callback has banked loot.
+	if game_state in ["upgrade", "victory"]:
+		pending_treats.append(kind)
+		score += 75
+		return
+	if game_state != "playing":
 		return
 	var pickup := PowerUpScript.new()
 	pickup.setup(kind, at, player)
@@ -567,7 +598,7 @@ func _on_upgrade_selected(id: String) -> void:
 	hud.hide_upgrade_draft()
 	get_tree().paused = false
 	game_state = "playing"
-	intermission = maxf(1.4, 2.35 - current_wave * 0.025)
+	intermission = 0.65
 	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	hud.show_toast(String(data["title"]), data["color"])
 	audio.play("pickup", 0.025, 1.5)

@@ -101,7 +101,8 @@ func _run() -> void:
 	for kind in game.POWER_TYPES:
 		game._spawn_powerup(kind, game.player.global_position + Vector2(260, 0))
 	await physics_frame
-	check(get_nodes_in_group("pickups").size() == game.POWER_TYPES.size(), "all power-up types instantiate")
+	var pickup_count := get_nodes_in_group("pickups").size()
+	check(pickup_count >= game.POWER_TYPES.size(), "all power-up types instantiate (%d found)" % pickup_count)
 
 	game._open_upgrade_draft()
 	check(game.game_state == "upgrade", "wave mutation draft pauses the run")

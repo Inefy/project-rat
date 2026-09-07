@@ -7,7 +7,8 @@ func _process(delta: float) -> void:
 	pulse += delta
 	visible = enabled
 	if enabled:
-		global_position = get_global_mouse_position()
+		var player = get_parent().player
+		global_position = player.global_position + player.aim_direction * 150.0 if is_instance_valid(player) and player.using_controller else get_global_mouse_position()
 		queue_redraw()
 
 func _draw() -> void:

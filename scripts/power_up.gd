@@ -27,6 +27,7 @@ func setup(power_kind: String, at: Vector2, player: Node2D) -> void:
 	tint = data["color"]
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_layer = 16
 	collision_mask = 1
 	monitoring = true
@@ -69,11 +70,55 @@ func _draw() -> void:
 	draw_circle(Vector2(4, 7), 22.0 * pulse, Color(0.24, 0.19, 0.24, 0.18))
 	draw_circle(Vector2.ZERO, 28.0 * pulse, Color(tint, warning_alpha))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * pulse)
-	draw_circle(Vector2.ZERO, 21.0, Color("40354f"))
-	draw_circle(Vector2.ZERO, 17.0, Color("fff4d6"))
-	draw_arc(Vector2.ZERO, 14.0, 0.0, TAU, 24, tint, 4.0, true)
-	var data: Dictionary = DEFINITIONS.get(kind, DEFINITIONS["cheese"])
-	var font := ThemeDB.fallback_font
-	var letter: String = data["letter"]
-	var text_size := font.get_string_size(letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 18)
-	draw_string(font, -text_size * 0.5 + Vector2(0, 6), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("40354f"))
+	draw_circle(Vector2.ZERO, 22.0, Color("321f2b"))
+	draw_circle(Vector2.ZERO, 17.5, Color("fff0bf"))
+	preload("res://scripts/model_sprites.gd").paint(self, kind, rotation, 44.0, age, 0.8, pulse)
+
+func _draw_cheese() -> void:
+	var wedge := PackedVector2Array([Vector2(-13, 10), Vector2(13, 8), Vector2(7, -12), Vector2(-10, -7)])
+	draw_colored_polygon(wedge, tint)
+	draw_polyline(PackedVector2Array([wedge[0], wedge[1], wedge[2], wedge[3], wedge[0]]), Color("321f2b"), 2.5, true)
+	for hole in [Vector2(-5, 2), Vector2(5, 4), Vector2(3, -5)]:
+		draw_circle(hole, 2.2, Color("b77928"))
+
+func _draw_pepper() -> void:
+	var pepper := PackedVector2Array([Vector2(-10, -7), Vector2(8, -10), Vector2(12, -2), Vector2(2, 13), Vector2(-8, 7)])
+	draw_colored_polygon(pepper, Color("321f2b"))
+	var inset := PackedVector2Array([Vector2(-7, -5), Vector2(6, -7), Vector2(8, -2), Vector2(1, 9), Vector2(-5, 5)])
+	draw_colored_polygon(inset, tint)
+	draw_line(Vector2(-2, -8), Vector2(-7, -15), Color("4d8b49"), 4.0, true)
+
+func _draw_triple_peas() -> void:
+	draw_line(Vector2(-12, 8), Vector2(11, -9), Color("321f2b"), 9.0, true)
+	draw_line(Vector2(-11, 7), Vector2(10, -8), Color("62a55a"), 5.0, true)
+	for pea in [Vector2(-8, 5), Vector2(0, 0), Vector2(8, -5)]:
+		draw_circle(pea, 5.0, Color("321f2b"))
+		draw_circle(pea, 3.0, Color("a0cf5d"))
+
+func _draw_acorn() -> void:
+	draw_circle(Vector2(0, 4), 10.0, Color("321f2b"))
+	draw_circle(Vector2(0, 4), 7.0, Color("bd743b"))
+	draw_arc(Vector2(0, -2), 9.0, PI, TAU, 12, Color("321f2b"), 6.0, true)
+	draw_arc(Vector2(0, -2), 9.0, PI, TAU, 12, Color("81502f"), 3.0, true)
+	draw_line(Vector2(2, -10), Vector2(7, -15), Color("321f2b"), 3.0, true)
+
+func _draw_sugar_cube() -> void:
+	draw_rect(Rect2(-10, -9, 20, 20), Color("321f2b"), true)
+	draw_rect(Rect2(-7, -7, 14, 14), Color("ffffff"), true)
+	for grain in [Vector2(-3, -2), Vector2(3, 2), Vector2(-2, 5)]:
+		draw_circle(grain, 1.2, Color("c9d9c8"))
+	draw_line(Vector2(11, -8), Vector2(16, -8), tint, 2.5, true)
+	draw_line(Vector2(12, 0), Vector2(18, 0), tint, 2.5, true)
+
+func _draw_lid() -> void:
+	draw_circle(Vector2.ZERO, 13.0, Color("321f2b"))
+	draw_circle(Vector2.ZERO, 10.0, Color("8fa7b3"))
+	draw_circle(Vector2.ZERO, 4.0, Color("321f2b"))
+	draw_circle(Vector2.ZERO, 2.0, Color("d3ddd8"))
+	draw_arc(Vector2(-2, -2), 7.0, 3.4, 5.4, 10, Color(1, 1, 1, 0.45), 2.0, true)
+
+func _draw_needle() -> void:
+	draw_line(Vector2(-12, 10), Vector2(11, -11), Color("321f2b"), 6.0, true)
+	draw_line(Vector2(-11, 9), Vector2(10, -10), Color("d8ded4"), 2.8, true)
+	draw_circle(Vector2(-12, 10), 4.5, Color("321f2b"))
+	draw_circle(Vector2(-12, 10), 2.0, Color("fff0bf"))

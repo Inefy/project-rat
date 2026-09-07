@@ -2,7 +2,7 @@
 
 [![Test and deploy web game](https://github.com/Inefy/project-rat/actions/workflows/pages.yml/badge.svg)](https://github.com/Inefy/project-rat/actions/workflows/pages.yml)
 
-**Run. Aim. Snack.** Project R.A.T. is an open-source, endless cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid.
+**Run. Aim. Snack.** Project R.A.T. is an open-source cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid. Save the picnic across 15 waves, then choose whether to keep going in endless overtime.
 
 Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
 
@@ -19,7 +19,7 @@ To play locally:
 3. Press **F6** or **F5**.
 
 
-No third-party art, fonts, plug-ins, or asset packs are required. Every character and effect is drawn procedurally in GDScript.
+Gameplay characters, pickups, projectiles, and explosive props use 94 transparent sprites rendered from 24 original Blender models. Characters have eight facings with runtime bounce and squash. Editable models, GLB exports, and the concept sheet are in `art/`; the production guide is `art/README.md`. Combat effects remain procedural. Bundled CC0 Kenney art decorates the backyard; credits are in `ASSETS.md`. No external plug-ins are required to play.
 
 ## Controls
 
@@ -33,9 +33,25 @@ No third-party art, fonts, plug-ins, or asset packs are required. Every characte
 | Choose mutation | `1`, `2`, or `3` | Click / tap a card |
 | Pause | `P` or `Esc` | Start |
 
+Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button. Releasing the aiming stick preserves its direction.
+
+## Build your rat
+
+The first wave-clear draft offers three ways to play:
+
+- **Pinball Rat:** seeds rebound off the fence; Split Decision adds a secondary seed on the rebound.
+- **Scurry Menace:** every dash leaves an explosive crumb; Crumb Back refunds 0.4 seconds of recharge when the blast hits.
+- **Snack Wizard:** collected treats charge three orbiting seeds; Full Plate raises the orbit to five. Pickup-range upgrades help keep it active.
+
+Later drafts mix stat upgrades with eligible build synergies. Cards show upgrade levels and stat changes; pause to inspect the complete build. Bosses guarantee banked Power and Shield treats plus a bonus mutation draft at wave clear. Leftover treats are banked until the next wave. Full health/shield pickups convert into temporary power, and Triple Seed adds two seeds even to an upgraded weapon.
+
+Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. Offscreen threats and final stragglers get edge markers. Shoot the marked fizzy cans to knock nearby enemies away.
+
+Pausing and drafting freeze gameplay and its timers. When all mutations are exhausted, subsequent wave clears award health and score without blocking the run.
+
 ## What's in the game
 
-- Endless wave progression with accelerating enemy health and damage, larger crowds, faster deployments, and late-run elite pressure.
+- A 15-wave picnic defense followed by optional endless overtime, with growing crowds, faster deployments, and late-run elite pressure.
 - **Birds** weave through the arena at high speed.
 - **Cats** stalk, telegraph, pounce, and ricochet off the arena walls.
 - **Owls** maintain distance and launch three-feather volleys.
@@ -85,6 +101,7 @@ Run the smoke test:
 
 ```bash
 godot --headless --path . --script tests/smoke_test.gd
+godot --headless --path . --script tests/fun_systems_test.gd
 ```
 
 Create the browser build after installing Godot's export templates:
@@ -93,7 +110,9 @@ Create the browser build after installing Godot's export templates:
 godot --headless --path . --export-release Web build/web/index.html
 ```
 
-The GitHub Actions workflow runs both commands and deploys a Pages artifact automatically.
+The GitHub Actions workflow runs both test suites, exports the game, and deploys a Pages artifact automatically. `tests/capture_fun_preview.gd` can also be run with the graphical engine to capture title, settings, draft, gameplay, pause, victory, and game-over screenshots in `build/`.
+
+The implementation and regression tests support a first human playtest; they do not establish that a balance choice is more fun. See [FUN_AUDIT.md](FUN_AUDIT.md) for the playtest plan and later experiments such as unlockable kits and shared seeded challenges.
 
 ## Contributing
 

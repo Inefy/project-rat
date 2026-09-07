@@ -34,3 +34,12 @@ func _draw() -> void:
 		var outer: Vector2 = Vector2.from_angle(angle) * size * t * (0.75 + float((i * 7) % 5) * 0.08)
 		draw_line(inner, outer, Color("40354f", alpha), 4.0, true)
 		draw_line(inner, outer, Color(tint, alpha), 2.0, true)
+	if size >= 28.0:
+		var noises := ["BONK!", "OOF!", "POW!", "YIPE!"]
+		var noise: String = noises[seed_value % noises.size()]
+		var font := ThemeDB.fallback_font
+		var font_size := maxi(13, int(size * 0.42))
+		var text_size := font.get_string_size(noise, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		var text_at := Vector2(-text_size.x * 0.5, -size * (0.25 + t * 0.35))
+		draw_string(font, text_at + Vector2(3, 3), noise, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(0.10, 0.04, 0.06, alpha))
+		draw_string(font, text_at, noise, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(tint.lightened(0.34), alpha))

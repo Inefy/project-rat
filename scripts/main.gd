@@ -8,6 +8,10 @@ const ImpactFXScript = preload("res://scripts/impact_fx.gd")
 const HUDScript = preload("res://scripts/hud.gd")
 const ReticleScript = preload("res://scripts/aim_reticle.gd")
 const AudioManagerScript = preload("res://scripts/audio_manager.gd")
+const CrumbBombScript = preload("res://scripts/crumb_bomb.gd")
+const ThreatOverlayScript = preload("res://scripts/threat_overlay.gd")
+const FizzyCanScript = preload("res://scripts/fizzy_can.gd")
+const SettingsScript = preload("res://scripts/settings_panel.gd")
 const KENNEY_TREE_TEXTURE = preload("res://assets/kenney/background/tree.png")
 const KENNEY_SMALL_TREE_TEXTURE = preload("res://assets/kenney/background/treeSmall_green2.png")
 const KENNEY_SMALL_TREE_ALT_TEXTURE = preload("res://assets/kenney/background/treeSmall_green3.png")
@@ -16,17 +20,30 @@ const KENNEY_BUSH_ALT_TEXTURE = preload("res://assets/kenney/background/bushAlt1
 const KENNEY_FENCE_TEXTURE = preload("res://assets/kenney/background/fence.png")
 
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
+const INK := Color("321f2b")
+const GRASS := Color("7fbd58")
+const GRASS_DARK := Color("5b9b49")
+const DIRT := Color("c99358")
+const CREAM := Color("fff0bf")
+const TOMATO := Color("df5144")
+const CHEESE := Color("f6c53f")
 const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste", "shield", "pierce"]
 const UPGRADES := {
-	"quick_whiskers": {"id": "quick_whiskers", "title": "QUICK WHISKERS", "description": "Fire 10% faster", "color": Color("ef6f6c")},
-	"heavy_seeds": {"id": "heavy_seeds", "title": "HEAVY SEEDS", "description": "+3.5 seed damage", "color": Color("e89b4f")},
-	"fleet_feet": {"id": "fleet_feet", "title": "FLEET FEET", "description": "+20 movement speed", "color": Color("79a85b")},
-	"thick_fur": {"id": "thick_fur", "title": "THICK FUR", "description": "+16 maximum health and heal 20", "color": Color("d95863")},
-	"long_teeth": {"id": "long_teeth", "title": "LONG TEETH", "description": "Seeds pierce +1 target", "color": Color("f4d7a1")},
-	"big_paws": {"id": "big_paws", "title": "BIG PAWS", "description": "Larger seeds and hit area", "color": Color("8d79ad")},
-	"lucky_tail": {"id": "lucky_tail", "title": "LUCKY TAIL", "description": "+3% treat drop chance", "color": Color("f2c14e")},
-	"extra_pocket": {"id": "extra_pocket", "title": "EXTRA POCKET", "description": "+1 permanent seed", "color": Color("4f9f8f")},
-	"cheese_magnet": {"id": "cheese_magnet", "title": "CHEESE MAGNET", "description": "+55 pickup attraction range", "color": Color("e7b84b")},
+	"pinball": {"id": "pinball", "title": "PINBALL RAT", "description": "Seeds bounce off the fence once. Herd enemies into the rebound!", "color": Color("55ad87")},
+	"scurry_bomb": {"id": "scurry_bomb", "title": "SCURRY MENACE", "description": "Every dash leaves an explosive crumb. Blast damage: 2.5x your seed.", "color": Color("ef6f6c")},
+	"snack_orbit": {"id": "snack_orbit", "title": "SNACK WIZARD", "description": "Treats summon 3 orbiting seeds for 6.5s. Collect snacks to keep them spinning.", "color": Color("8d79ad")},
+	"split_acorns": {"id": "split_acorns", "title": "SPLIT DECISION", "description": "Pinball synergy: rebounds split off one extra seed at 60% damage.", "color": Color("55ad87")},
+	"dash_refund": {"id": "dash_refund", "title": "CRUMB BACK", "description": "Scurry synergy: a crumb blast that hits refunds 0.4s of dash recharge.", "color": Color("ef6f6c")},
+	"orbit_feast": {"id": "orbit_feast", "title": "FULL PLATE", "description": "Wizard synergy: orbiting seeds increase from 3 to 5.", "color": Color("8d79ad")},
+	"quick_whiskers": {"id": "quick_whiskers", "title": "CAFFEINE WHISKERS", "description": "Fire 10% faster. Blinking optional.", "color": Color("ef6f6c")},
+	"heavy_seeds": {"id": "heavy_seeds", "title": "ANGRY ACORNS", "description": "+3.5 damage and several grievances", "color": Color("e89b4f")},
+	"fleet_feet": {"id": "fleet_feet", "title": "PANIC LEGS", "description": "+20 speed. Dignity sold separately.", "color": Color("79a85b")},
+	"thick_fur": {"id": "thick_fur", "title": "SUSPICIOUSLY THICK FUR", "description": "+16 max health and heal 20", "color": Color("d95863")},
+	"long_teeth": {"id": "long_teeth", "title": "DENTIST'S NIGHTMARE", "description": "Seeds pierce +1 unfortunate target", "color": Color("f4d7a1")},
+	"big_paws": {"id": "big_paws", "title": "CARTOON PAWS", "description": "Bigger seeds. Questionable anatomy.", "color": Color("8d79ad")},
+	"lucky_tail": {"id": "lucky_tail", "title": "LUCKY WIGGLE", "description": "+3% treat drops, scientifically-ish", "color": Color("f2c14e")},
+	"extra_pocket": {"id": "extra_pocket", "title": "ILLEGAL POCKET", "description": "+1 permanent seed. Don't ask where.", "color": Color("4f9f8f")},
+	"cheese_magnet": {"id": "cheese_magnet", "title": "CHEESE GRAVITY", "description": "+55 pickup range. Physics resigns.", "color": Color("e7b84b")},
 }
 
 var rng := RandomNumberGenerator.new()
@@ -49,6 +66,16 @@ var combo_expires := 0
 var run_started_at := 0
 var current_upgrade_ids: Array[String] = []
 var shake_strength := 0.0
+var settings: CanvasLayer
+var pending_treats: Array[String] = []
+var boss_reward_pending := false
+var overtime := false
+var best_combo := 1
+var encounter := "BIRD SWARM"
+var spawned_this_wave := 0
+var run_clock := 0.0
+var best_wave := 0
+var previous_best_wave := 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -63,6 +90,16 @@ func _ready() -> void:
 	hud.quit_to_menu_requested.connect(return_to_menu)
 	hud.upgrade_selected.connect(_on_upgrade_selected)
 	hud.ui_sound_requested.connect(_on_ui_sound_requested)
+	hud.resume_requested.connect(_toggle_pause)
+	hud.overtime_requested.connect(_continue_overtime)
+	settings = SettingsScript.new()
+	add_child(settings)
+	settings.changed.connect(_apply_settings)
+	hud.settings_requested.connect(func(): settings.show_settings())
+	_apply_settings()
+	var records := ConfigFile.new()
+	if records.load("user://records.cfg") == OK:
+		best_wave = int(records.get_value("records", "wave", 0))
 	hud.show_menu()
 	queue_redraw()
 
@@ -98,6 +135,13 @@ func start_game() -> void:
 	score = 0
 	kills = 0
 	combo = 1
+	combo_expires = 0
+	best_combo = 1
+	run_clock = 0.0
+	previous_best_wave = best_wave
+	overtime = false
+	boss_reward_pending = false
+	pending_treats.clear()
 	shake_strength = 0.0
 	current_upgrade_ids.clear()
 	wave_queue.clear()
@@ -118,6 +162,13 @@ func start_game() -> void:
 	player.autofire_changed.connect(_on_autofire_changed)
 	player.dash_started.connect(_on_player_dash)
 	player.damage_feedback.connect(_on_player_damage_feedback)
+	player.aim_assist = settings.aim_assist
+	add_child(ThreatOverlayScript.new())
+	for at in [Vector2(-650, 190), Vector2(650, -190)]:
+		var can := FizzyCanScript.new()
+		can.position = at
+		add_child(can)
+	_spawn_powerup("triple", Vector2(85, 0))
 
 	reticle = ReticleScript.new()
 	reticle.enabled = true
@@ -129,6 +180,7 @@ func start_game() -> void:
 	hud.set_autofire(true)
 	var empty_buffs: Array[String] = []
 	hud.update_stats(0, 0, 0, player.health, player.max_health, 0.0, empty_buffs)
+	hud.update_combo(1, 0.0)
 
 func return_to_menu() -> void:
 	get_tree().paused = false
@@ -139,15 +191,20 @@ func return_to_menu() -> void:
 	hud.show_menu()
 
 func _toggle_pause() -> void:
+	if game_state != "playing" or settings.is_open():
+		return
 	var paused := not get_tree().paused
 	get_tree().paused = paused
 	hud.set_paused(paused)
+	if paused:
+		hud.set_build_text(player.get_build_description())
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_HIDDEN)
 
 func _physics_process(delta: float) -> void:
 	if game_state != "playing" or get_tree().paused or not is_instance_valid(player):
 		return
-	if combo > 1 and Time.get_ticks_msec() > combo_expires:
+	run_clock += delta
+	if combo > 1 and int(run_clock * 1000.0) > combo_expires:
 		combo = 1
 
 	if not wave_active:
@@ -156,32 +213,43 @@ func _physics_process(delta: float) -> void:
 			_begin_next_wave()
 	else:
 		spawn_cooldown -= delta
-		if not wave_queue.is_empty() and spawn_cooldown <= 0.0:
+		if not wave_queue.is_empty() and spawn_cooldown <= 0.0 and _living_enemy_count() < mini(22, 7 + current_wave):
 			var next_kind: String = wave_queue.pop_front()
 			_spawn_enemy(next_kind)
-			spawn_cooldown = get_spawn_interval(current_wave)
+			spawned_this_wave += 1
+			spawn_cooldown = 2.2 if spawned_this_wave % 7 == 0 else get_spawn_interval(current_wave)
+		if wave_queue.is_empty() and _living_enemy_count() <= 3:
+			for enemy in get_tree().get_nodes_in_group("enemies"):
+				enemy.cleanup = true
 		if wave_queue.is_empty() and _living_enemy_count() == 0:
 			_finish_wave()
 
 	hud.update_stats(score, current_wave, kills, player.health, player.max_health, _wave_progress(), player.get_active_buffs(), player.get_dash_charge())
+	hud.update_combo(combo, clampf(float(combo_expires - int(run_clock * 1000.0)) / 1800.0, 0.0, 1.0))
+	hud.update_tip(player, current_wave, settings.tips)
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(player) or not player.has_node("ArenaCamera"):
 		return
 	var camera: Camera2D = player.get_node("ArenaCamera")
 	if shake_strength > 0.05 and not get_tree().paused:
-		camera.offset = Vector2(rng.randf_range(-shake_strength, shake_strength), rng.randf_range(-shake_strength, shake_strength))
+		camera.offset = Vector2(rng.randf_range(-shake_strength, shake_strength), rng.randf_range(-shake_strength, shake_strength)) * settings.shake
 		shake_strength = maxf(0.0, shake_strength - delta * 34.0)
 	else:
 		camera.offset = camera.offset.lerp(Vector2.ZERO, minf(1.0, delta * 14.0))
 
 func _begin_next_wave() -> void:
 	current_wave += 1
+	spawned_this_wave = 0
+	for kind in pending_treats:
+		player.apply_powerup(kind)
+	pending_treats.clear()
 	wave_active = true
 	wave_queue.clear()
+	encounter = ["BIRD SWARM", "CAT PINCER", "RANGED SIEGE", "ELITE HUNT"][(current_wave - 1) % 4]
 	var regular_count := get_regular_enemy_count(current_wave)
 	for i in range(regular_count):
-		wave_queue.append(_choose_enemy_kind())
+		wave_queue.append(_encounter_enemy(i))
 	var boss_wave := current_wave % 5 == 0
 	var boss_kind := ""
 	if boss_wave:
@@ -190,6 +258,7 @@ func _begin_next_wave() -> void:
 	wave_total = wave_queue.size()
 	spawn_cooldown = 0.15
 	hud.show_wave_banner(current_wave, boss_kind)
+	hud.set_encounter("BOSS PICNIC" if boss_wave else encounter)
 	if boss_wave:
 		audio.play("shield", 0.03, -1.0)
 		_add_shake(8.0)
@@ -198,7 +267,23 @@ func get_regular_enemy_count(for_wave: int) -> int:
 	return 8 + int(round(pow(float(for_wave), 0.88) * 4.4)) + int(for_wave / 5) * 2
 
 func get_spawn_interval(for_wave: int) -> float:
-	return maxf(0.11, 0.58 - for_wave * 0.015 - floorf(float(for_wave) / 10.0) * 0.025)
+	return maxf(0.18, 0.58 - for_wave * 0.015 - floorf(float(for_wave) / 10.0) * 0.025) * (1.25 if settings.cozy else 1.0)
+
+func _encounter_enemy(index: int) -> String:
+	# Isolated introductions precede mixed encounters. Every recipe leaves room to move.
+	var introductions := {3: "owl", 4: "snake", 6: "raccoon", 10: "fox"}
+	if index == 0 and introductions.has(current_wave):
+		return introductions[current_wave]
+	if current_wave <= 2:
+		return "cat" if current_wave == 2 and index % 4 == 0 else "bird"
+	match encounter:
+		"BIRD SWARM":
+			return "bird" if index % 4 != 0 else _choose_enemy_kind()
+		"CAT PINCER":
+			return "cat" if index % 3 == 0 else "bird"
+		"RANGED SIEGE":
+			return "owl" if index % 4 == 0 else ("snake" if current_wave >= 4 and index % 4 == 2 else "bird")
+	return _choose_enemy_kind()
 
 func get_boss_kind(for_wave: int) -> String:
 	if for_wave % 15 == 0:
@@ -209,16 +294,31 @@ func get_boss_kind(for_wave: int) -> String:
 
 func _finish_wave() -> void:
 	wave_active = false
+	_clear_enemy_projectiles()
+	for pickup in get_tree().get_nodes_in_group("pickups"):
+		if pickup.collected_already or pickup.is_queued_for_deletion():
+			continue
+		pickup.collected_already = true
+		pending_treats.append(pickup.kind)
+		score += 75
+		pickup.queue_free()
 	var clear_bonus := 400 * current_wave
 	score += clear_bonus
 	intermission = max(1.8, 3.0 - current_wave * 0.035)
-	hud.show_toast("PICNIC SAVED!  +%d" % clear_bonus, Color("4f9f8f"))
+	hud.show_toast("CRUMBS TEMPORARILY SECURED!  +%d" % clear_bonus, Color("4f9f8f"))
 	audio.play("wave_clear", 0.02)
 	player.heal(4.0 + minf(6.0, current_wave * 0.25))
 	# Emergency cheese prevents one bad wave from ending an otherwise healthy run.
 	if current_wave % 3 == 0 and is_instance_valid(player) and player.health < player.max_health * 0.7:
 		_spawn_powerup("cheese", player.global_position + Vector2(110, 0).rotated(rng.randf_range(0.0, TAU)))
-	_open_upgrade_draft()
+	if current_wave == 15 and not overtime:
+		_record_run()
+		game_state = "victory"
+		get_tree().paused = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		hud.show_victory(score, best_combo)
+	else:
+		_open_upgrade_draft()
 
 func _choose_enemy_kind() -> String:
 	var roll := rng.randf()
@@ -237,7 +337,7 @@ func _choose_enemy_kind() -> String:
 			return "cat"
 		if roll < 0.84:
 			return "owl"
-		return "snake"
+		return "snake" if current_wave >= 4 else "owl"
 	if current_wave < 10:
 		if roll < 0.26:
 			return "bird"
@@ -277,9 +377,18 @@ func _spawn_enemy(kind: String) -> void:
 		return
 	var enemy := EnemyScript.new()
 	var is_boss := kind in ["alpha_cat", "junkyard_dog", "barn_owl"]
-	var is_elite := not is_boss and current_wave >= 3 and rng.randf() < minf(0.20, 0.025 + current_wave * 0.008)
+	var is_elite := not is_boss and current_wave >= 3 and ((encounter == "ELITE HUNT" and spawned_this_wave == 3) or rng.randf() < minf(0.20, 0.025 + current_wave * 0.008))
 	enemy.setup(kind, player, current_wave, is_elite)
+	if settings.cozy:
+		enemy.contact_damage *= 0.7
+		enemy.move_speed *= 0.88
 	enemy.global_position = _random_spawn_position()
+	if encounter == "CAT PINCER":
+		var side := -1.0 if spawned_this_wave % 2 == 0 else 1.0
+		var candidate: Vector2 = player.global_position + Vector2(side * 610.0, rng.randf_range(-180, 180))
+		candidate = candidate.clamp(ARENA.position + Vector2(45, 45), ARENA.end - Vector2(45, 45))
+		if candidate.distance_to(player.global_position) > 440:
+			enemy.global_position = candidate
 	enemy.add_to_group("run_entities")
 	add_child(enemy)
 	enemy.died.connect(_on_enemy_died)
@@ -309,18 +418,23 @@ func _on_enemy_projectile_requested(origin: Vector2, direction: Vector2, speed: 
 
 func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Color) -> void:
 	kills += 1
-	var now := Time.get_ticks_msec()
+	var now := int(run_clock * 1000.0)
 	if now <= combo_expires:
 		combo = min(8, combo + 1)
 	else:
 		combo = 1
-	combo_expires = now + 1150
+	combo_expires = now + 1800
+	best_combo = maxi(best_combo, combo)
 	score += points * combo
 	_spawn_impact(death_position, color, 42.0)
 	audio.play("enemy_death", 0.09, -2.0 if enemy.get("elite") else -5.0)
 	_add_shake(6.0 if enemy.get("elite") else 2.0)
-	if combo >= 4:
-		hud.show_toast("CHAIN x%d" % combo, Color("ffe66d"))
+	if enemy.get("enemy_kind") in ["alpha_cat", "junkyard_dog", "barn_owl"]:
+		boss_reward_pending = true
+		pending_treats.append("power")
+		pending_treats.append("shield")
+		_clear_enemy_projectiles()
+		hud.show_toast("BOSS LOOT BANKED! Bonus mutation at wave clear", Color("f6c53f"))
 
 	var drop_chance: float = minf(0.28, 0.085 + minf(0.045, current_wave * 0.0015) + player.drop_luck)
 	if enemy.get("elite") or rng.randf() < drop_chance:
@@ -386,6 +500,11 @@ func _on_enemy_hit(_at: Vector2) -> void:
 	audio.play("enemy_hit", 0.1, -2.0)
 
 func _on_player_dash(at: Vector2) -> void:
+	if player.upgrade_levels.get("scurry_bomb", 0) > 0:
+		var bomb := CrumbBombScript.new()
+		bomb.position = at
+		bomb.owner_player = player
+		add_child(bomb)
 	audio.play("dash", 0.035)
 	_spawn_impact(at, Color("f4d7a1"), 34.0)
 	_add_shake(3.0)
@@ -410,13 +529,31 @@ func _open_upgrade_draft() -> void:
 		if player.can_take_upgrade(String(id)):
 			candidates.append(String(id))
 	current_upgrade_ids.clear()
+	if current_wave == 1 and player.upgrade_levels.is_empty():
+		candidates.assign(["pinball", "scurry_bomb", "snack_orbit"])
+	# Sometimes guarantee one eligible synergy, leaving two unrestricted choices.
+	elif rng.randf() < 0.65:
+		for id in ["split_acorns", "dash_refund", "orbit_feast"]:
+			if id in candidates:
+				current_upgrade_ids.append(id)
+				candidates.erase(id)
+				break
 	while current_upgrade_ids.size() < 3 and not candidates.is_empty():
 		var selected_index := rng.randi_range(0, candidates.size() - 1)
 		current_upgrade_ids.append(candidates[selected_index])
 		candidates.remove_at(selected_index)
 	var cards: Array[Dictionary] = []
 	for id in current_upgrade_ids:
-		cards.append(UPGRADES[id])
+		var card: Dictionary = UPGRADES[id].duplicate()
+		card["description"] = _upgrade_description(id)
+		cards.append(card)
+	if cards.is_empty():
+		player.heal(24.0)
+		score += 1000
+		boss_reward_pending = false
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+		hud.show_toast("FULLY MUTATED! +24 health / +1000 score", Color("f6c53f"))
+		return
 	game_state = "upgrade"
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -435,11 +572,16 @@ func _on_upgrade_selected(id: String) -> void:
 	hud.show_toast(String(data["title"]), data["color"])
 	audio.play("pickup", 0.025, 1.5)
 	current_upgrade_ids.clear()
+	if boss_reward_pending:
+		boss_reward_pending = false
+		_open_upgrade_draft()
+		hud.show_toast("BOSS REWARD: one extra mutation", Color("f6c53f"))
 
 func _on_player_died() -> void:
 	if game_state != "playing":
 		return
 	game_state = "game_over"
+	get_tree().paused = true
 	wave_active = false
 	reticle.enabled = false
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
@@ -451,6 +593,56 @@ func _on_player_died() -> void:
 		high_score = score
 		_save_high_score(high_score)
 	hud.show_game_over(score, current_wave, kills, high_score, score > old_best)
+	_record_run()
+	hud.show_death_tip(player.last_damage_source, best_combo, current_wave > previous_best_wave)
+
+func _clear_enemy_projectiles() -> void:
+	for projectile in get_tree().get_nodes_in_group("enemy_projectiles"):
+		projectile.spent = true
+		projectile.set_deferred("monitoring", false)
+		projectile.queue_free()
+
+func _continue_overtime() -> void:
+	if game_state != "victory":
+		return
+	overtime = true
+	hud.hide_victory()
+	get_tree().paused = false
+	game_state = "playing"
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	_open_upgrade_draft()
+
+func _record_run() -> void:
+	if score > high_score:
+		high_score = score
+		_save_high_score(high_score)
+	best_wave = maxi(best_wave, current_wave)
+	var records := ConfigFile.new()
+	records.set_value("records", "wave", best_wave)
+	records.save("user://records.cfg")
+
+func _apply_settings() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, settings.volume)))
+	AudioServer.set_bus_mute(0, settings.volume <= 0.001)
+	if is_instance_valid(player):
+		player.aim_assist = settings.aim_assist
+	hud.large_text = settings.large_text
+	hud.set_control_labels(settings.keys)
+	hud.set_autofire(player.autofire if is_instance_valid(player) else true)
+
+func _upgrade_description(id: String) -> String:
+	var values := {
+		"quick_whiskers": "Shot interval %.2fs > %.2fs" % [player.fire_interval, maxf(0.13, player.fire_interval * 0.9)],
+		"heavy_seeds": "Damage %.1f > %.1f" % [player.base_damage, player.base_damage + 3.5],
+		"fleet_feet": "Speed %d > %d" % [player.move_speed, minf(420, player.move_speed + 20)],
+		"thick_fur": "Max health %d > %d; heal 20" % [player.max_health, player.max_health + 16],
+		"long_teeth": "Pierce %d > %d targets" % [player.base_pierce, player.base_pierce + 1],
+		"big_paws": "Seed size %.1f > %.1f" % [player.bullet_radius, minf(8.25, player.bullet_radius + 1)],
+		"lucky_tail": "Bonus drops %d%% > %d%%" % [roundi(player.drop_luck * 100), roundi((player.drop_luck + 0.03) * 100)],
+		"extra_pocket": "Seeds %d > %d" % [player.permanent_projectiles, player.permanent_projectiles + 1],
+		"cheese_magnet": "Pickup range %d > %d. Wizard synergy!" % [player.magnet_radius, minf(330, player.magnet_radius + 55)],
+	}
+	return "Level %d\n%s" % [int(player.upgrade_levels.get(id, 0)) + 1, values.get(id, UPGRADES[id]["description"])]
 
 func _living_enemy_count() -> int:
 	var count := 0
@@ -484,39 +676,78 @@ func _save_high_score(value: int) -> void:
 		file.store_string(str(value))
 
 func _draw() -> void:
-	# A bright storybook backyard replaces the old neon sewer grid.
-	draw_rect(ARENA, Color("acd681"), true)
-	for x in range(int(ARENA.position.x), int(ARENA.end.x), 160):
-		var stripe_color := Color(0.91, 0.95, 0.66, 0.13) if posmod(int(x / 160), 2) == 0 else Color(0.21, 0.48, 0.27, 0.08)
-		draw_rect(Rect2(x, ARENA.position.y, 160, ARENA.size.y), stripe_color, true)
+	# Loud, toy-like backyard colors with imperfect mowing lines.
+	draw_rect(ARENA, GRASS, true)
+	for x in range(int(ARENA.position.x) - 100, int(ARENA.end.x), 185):
+		var stripe := PackedVector2Array([
+			Vector2(x, ARENA.position.y), Vector2(x + 130, ARENA.position.y),
+			Vector2(x + 265, ARENA.end.y), Vector2(x + 85, ARENA.end.y),
+		])
+		draw_colored_polygon(stripe, Color(GRASS_DARK, 0.17 if posmod(int(x / 185), 2) == 0 else 0.08))
+	# A hose is uselessly sprawled along the upper lawn.
+	var hose := PackedVector2Array([Vector2(-1120, -545), Vector2(-810, -610), Vector2(-520, -525), Vector2(-185, -585), Vector2(105, -520)])
+	draw_polyline(hose, INK, 23.0, true)
+	draw_polyline(hose, Color("3c7767"), 14.0, true)
 	_draw_kenney_backyard_props()
-	# Winding footpaths and oversized stepping stones provide readable landmarks.
+	# Winding footpath is outlined like a chunky miniature playset.
 	var path := PackedVector2Array([Vector2(-1200, 420), Vector2(-820, 300), Vector2(-430, 350), Vector2(-40, 240), Vector2(390, 285), Vector2(780, 180), Vector2(1200, 240)])
-	draw_polyline(path, Color("6f5949"), 132.0, true)
-	draw_polyline(path, Color("d7bd86"), 118.0, true)
+	draw_polyline(path, INK, 148.0, true)
+	draw_polyline(path, DIRT, 130.0, true)
+	draw_polyline(path, Color(0.96, 0.77, 0.45, 0.25), 7.0, true)
 	for marker in [Vector2(-760, -360), Vector2(690, 330), Vector2(-410, 470), Vector2(540, -420)]:
-		draw_circle(marker + Vector2(7, 9), 58.0, Color(0.25, 0.2, 0.2, 0.18))
-		draw_circle(marker, 58.0, Color("f1dfb8"))
-		draw_arc(marker, 58.0, 0.0, TAU, 32, Color("6f5949"), 5.0, true)
+		draw_circle(marker + Vector2(9, 12), 61.0, Color(0.18, 0.08, 0.09, 0.26))
+		draw_circle(marker, 58.0, CREAM)
+		draw_arc(marker, 58.0, 0.0, TAU, 32, INK, 7.0, true)
 		draw_arc(marker + Vector2(-10, -8), 33.0, 3.4, 5.5, 14, Color(1, 1, 1, 0.35), 4.0, true)
-	# Picnic blanket at the center establishes the playful food-heist theme.
+	# The picnic is comically overstocked and clearly worth fighting over.
 	var blanket := Rect2(-150, -105, 300, 210)
-	draw_rect(blanket.grow(7.0), Color("6f3f4d"), true)
+	draw_rect(Rect2(blanket.position + Vector2(12, 15), blanket.size).grow(9.0), Color(0.16, 0.07, 0.08, 0.28), true)
+	draw_rect(blanket.grow(8.0), INK, true)
 	for row in range(4):
 		for column in range(6):
-			var patch_color := Color("f8e6c4") if (row + column) % 2 == 0 else Color("df7772")
+			var patch_color := CREAM if (row + column) % 2 == 0 else TOMATO
 			draw_rect(Rect2(blanket.position + Vector2(column * 50, row * 52.5), Vector2(50, 52.5)), patch_color, true)
+	_draw_picnic_junk()
 	# Small flowers and cheese crumbs add detail without creating collision noise.
 	for flower in [Vector2(-1030, -520), Vector2(-920, 560), Vector2(-580, -570), Vector2(320, -560), Vector2(980, -470), Vector2(1020, 520), Vector2(360, 540)]:
 		for petal in range(5):
-			draw_circle(flower + Vector2.from_angle(TAU * petal / 5.0) * 8.0, 5.0, Color("f7a6a1"))
-		draw_circle(flower, 4.0, Color("f2c14e"))
+			draw_circle(flower + Vector2.from_angle(TAU * petal / 5.0) * 8.0, 5.0, Color("f88979"))
+		draw_circle(flower, 4.0, CHEESE)
 	for crumb in [Vector2(-250, -280), Vector2(240, 180), Vector2(850, -110), Vector2(-870, 80)]:
-		draw_circle(crumb, 7.0, Color("e7b84b"))
-		draw_circle(crumb + Vector2(3, -2), 2.0, Color("fff4d6"))
-	# Chunky wooden fence border.
-	draw_rect(ARENA, Color("6f5949"), false, 22.0)
-	draw_rect(ARENA.grow(-16.0), Color("e5c17c"), false, 9.0)
+		draw_circle(crumb, 8.0, CHEESE)
+		draw_circle(crumb + Vector2(3, -2), 2.0, CREAM)
+	_draw_no_rats_sign(Vector2(880, -420))
+	# Chunky wooden fence border, complete with absurdly large nail heads.
+	draw_rect(ARENA, INK, false, 28.0)
+	draw_rect(ARENA.grow(-17.0), Color("b8733f"), false, 13.0)
+	for nail in [Vector2(-1175, -675), Vector2(1175, -675), Vector2(-1175, 675), Vector2(1175, 675)]:
+		draw_circle(nail, 11.0, INK)
+		draw_circle(nail - Vector2(2, 2), 5.0, Color("d8c29a"))
+
+func _draw_picnic_junk() -> void:
+	# Sandwich, cheese wedge, fizzy can and a dangerously unguarded cupcake.
+	draw_set_transform(Vector2(-84, 35), -0.12, Vector2.ONE)
+	draw_colored_polygon(PackedVector2Array([Vector2(-45, 22), Vector2(38, 22), Vector2(25, -28), Vector2(-30, -28)]), INK)
+	draw_colored_polygon(PackedVector2Array([Vector2(-38, 16), Vector2(31, 16), Vector2(21, -21), Vector2(-25, -21)]), Color("e5ae5a"))
+	draw_line(Vector2(-29, -5), Vector2(27, -5), TOMATO, 9.0, true)
+	draw_line(Vector2(-25, 5), Vector2(30, 5), Color("6c9f45"), 7.0, true)
+	draw_set_transform(Vector2(82, 47), 0.18, Vector2.ONE)
+	draw_texture_rect(preload("res://assets/sprites/cheese_0.png"), Rect2(-43, -42, 86, 86), false)
+	draw_set_transform(Vector2(88, -54), -0.24, Vector2.ONE)
+	draw_texture_rect(preload("res://assets/sprites/fizzy_0.png"), Rect2(-35, -39, 70, 78), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+func _draw_no_rats_sign(at: Vector2) -> void:
+	draw_set_transform(at, -0.09, Vector2.ONE)
+	draw_line(Vector2(0, 42), Vector2(0, 126), INK, 18.0, true)
+	draw_line(Vector2(0, 42), Vector2(0, 126), Color("9a6136"), 10.0, true)
+	draw_rect(Rect2(-65, -36, 144, 94), Color(0.12, 0.05, 0.06, 0.3), true)
+	draw_rect(Rect2(-72, -45, 144, 94), INK, true)
+	draw_rect(Rect2(-64, -37, 128, 78), CREAM, true)
+	var font := ThemeDB.fallback_font
+	draw_string(font, Vector2(-49, -5), "NO RATS", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, INK)
+	draw_string(font, Vector2(-42, 23), "(RUDE)", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, TOMATO)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_kenney_backyard_props() -> void:
 	# CC0 Kenney props add a storybook woodland edge without blocking the arena center.

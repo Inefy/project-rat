@@ -1,0 +1,122 @@
+{
+  "rat": {
+    "directions": 8,
+    "collection": "rat",
+    "triangles": 4842
+  },
+  "bird": {
+    "directions": 8,
+    "collection": "bird",
+    "triangles": 2616
+  },
+  "cat": {
+    "directions": 8,
+    "collection": "cat",
+    "triangles": 4464
+  },
+  "owl": {
+    "directions": 8,
+    "collection": "owl",
+    "triangles": 2982
+  },
+  "snake": {
+    "directions": 8,
+    "collection": "snake",
+    "triangles": 6864
+  },
+  "raccoon": {
+    "directions": 8,
+    "collection": "raccoon",
+    "triangles": 5256
+  },
+  "fox": {
+    "directions": 8,
+    "collection": "fox",
+    "triangles": 4464
+  },
+  "alpha_cat": {
+    "directions": 8,
+    "collection": "alpha_cat",
+    "triangles": 4746
+  },
+  "junkyard_dog": {
+    "directions": 8,
+    "collection": "junkyard_dog",
+    "triangles": 4236
+  },
+  "barn_owl": {
+    "directions": 8,
+    "collection": "barn_owl",
+    "triangles": 3018
+  },
+  "cheese": {
+    "directions": 1,
+    "collection": "cheese",
+    "triangles": 594
+  },
+  "rapid": {
+    "directions": 1,
+    "collection": "rapid",
+    "triangles": 984
+  },
+  "triple": {
+    "directions": 1,
+    "collection": "triple",
+    "triangles": 768
+  },
+  "power": {
+    "directions": 1,
+    "collection": "power",
+    "triangles": 408
+  },
+  "haste": {
+    "directions": 1,
+    "collection": "haste",
+    "triangles": 588
+  },
+  "shield": {
+    "directions": 1,
+    "collection": "shield",
+    "triangles": 408
+  },
+  "pierce": {
+    "directions": 1,
+    "collection": "pierce",
+    "triangles": 18
+  },
+  "seed": {
+    "directions": 1,
+    "collection": "seed",
+    "triangles": 240
+  },
+  "feather": {
+    "directions": 1,
+    "collection": "feather",
+    "triangles": 1176
+  },
+  "venom": {
+    "directions": 1,
+    "collection": "venom",
+    "triangles": 768
+  },
+  "bone": {
+    "directions": 1,
+    "collection": "bone",
+    "triangles": 792
+  },
+  "sonic": {
+    "directions": 1,
+    "collection": "sonic",
+    "triangles": 192
+  },
+  "crumb": {
+    "directions": 1,
+    "collection": "crumb",
+    "triangles": 234
+  },
+  "fizzy": {
+    "directions": 1,
+    "collection": "fizzy",
+    "triangles": 804
+  }
+}

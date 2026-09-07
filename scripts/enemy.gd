@@ -33,6 +33,10 @@ var state_clock := 1.0
 var pounce_direction := Vector2.ZERO
 var spawn_scale := 0.0
 var elite := false
+var cleanup := false
+var ranged_windup := false
+var ranged_clock := 0.0
+var ranged_direction := Vector2.RIGHT
 
 func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool = false) -> void:
 	enemy_kind = kind
@@ -131,13 +135,14 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 
 func get_health_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
-	return 1.0 + ramp * 0.11 + ramp * ramp * 0.008
+	return 1.0 + ramp * 0.09 + ramp * ramp * 0.004
 
 func get_damage_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
 	return 1.0 + ramp * 0.055 + ramp * ramp * 0.0018
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_layer = 2
 	collision_mask = 0
 	add_to_group("enemies")
@@ -191,7 +196,7 @@ func _physics_process(delta: float) -> void:
 		global_position.y = clampf(global_position.y, ARENA.position.y + radius, ARENA.end.y - radius)
 
 	if distance < radius + 23.0 and contact_cooldown <= 0.0:
-		target.take_player_damage(contact_damage, direction * 250.0)
+		target.take_player_damage(contact_damage, direction * 250.0, enemy_kind)
 		contact_cooldown = 0.9 if enemy_kind != "bird" else 1.08
 	queue_redraw()
 
@@ -208,10 +213,12 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 			velocity = velocity.move_toward((direction + tangent).normalized() * move_speed, 380.0 * delta)
 			if state_clock <= 0.0:
 				state = "telegraph"
+				pounce_direction = direction
 				state_clock = 0.52 if enemy_kind == "cat" else 0.66
 		"telegraph":
 			velocity = velocity.move_toward(Vector2.ZERO, 700.0 * delta)
-			pounce_direction = direction
+			if state_clock > 0.22:
+				pounce_direction = direction
 			if state_clock <= 0.0:
 				state = "pounce"
 				state_clock = 0.72 if enemy_kind == "cat" else 0.92
@@ -223,7 +230,7 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 					for i in range(10):
 						projectile_requested.emit(global_position, Vector2.from_angle(TAU * i / 10.0), 245.0 + wave * 2.0, contact_damage * 0.4, "sonic")
 				state = "recover"
-				state_clock = 0.38
+				state_clock = 0.55
 		"recover":
 			velocity = velocity.move_toward(Vector2.ZERO, 950.0 * delta)
 			if state_clock <= 0.0:
@@ -233,8 +240,8 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 	var is_boss := enemy_kind == "barn_owl"
 	var desired := Vector2.ZERO
-	var far_distance := 580.0 if is_boss else 520.0
-	var near_distance := 390.0 if is_boss else 335.0
+	var far_distance := 250.0 if cleanup else (440.0 if is_boss else 380.0)
+	var near_distance := 160.0 if cleanup else (280.0 if is_boss else 240.0)
 	if distance > far_distance:
 		desired = direction * move_speed
 	elif distance < near_distance:
@@ -242,8 +249,8 @@ func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 	else:
 		desired = direction.rotated(PI * 0.5) * move_speed * (0.85 if is_boss else 0.7)
 	velocity = velocity.move_toward(desired, 280.0 * delta)
-	attack_cooldown -= delta
-	if attack_cooldown <= 0.0 and distance < 820.0:
+	if _ranged_ready(delta, direction, distance, 740.0):
+		direction = ranged_direction
 		if is_boss:
 			for spread in [-0.36, -0.24, -0.12, 0.0, 0.12, 0.24, 0.36]:
 				projectile_requested.emit(global_position + direction * 28.0, direction.rotated(spread), 345.0 + wave * 2.8, contact_damage * 0.48, "feather")
@@ -256,13 +263,33 @@ func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 func _update_snake(delta: float, direction: Vector2, distance: float) -> void:
 	var slither := sin(age * 6.5 + float(get_instance_id() % 11)) * 0.72
 	var desired_direction := direction.rotated(slither)
-	if distance < 255.0:
+	if distance < (130.0 if cleanup else 255.0):
 		desired_direction = -direction.rotated(slither * 0.45)
 	velocity = velocity.move_toward(desired_direction * move_speed, 370.0 * delta)
-	attack_cooldown -= delta
-	if attack_cooldown <= 0.0 and distance < 620.0:
+	if _ranged_ready(delta, direction, distance, 620.0):
+		direction = ranged_direction
 		projectile_requested.emit(global_position + direction * 20.0, direction, 270.0 + wave * 2.5, contact_damage * 0.82, "venom")
 		attack_cooldown = maxf(0.88, 2.0 - wave * 0.028)
+
+func _ranged_ready(delta: float, direction: Vector2, distance: float, reach: float) -> bool:
+	if ranged_windup:
+		ranged_clock -= delta
+		if ranged_clock > 0.22:
+			ranged_direction = direction
+		velocity = velocity.move_toward(Vector2.ZERO, 800.0 * delta)
+		if ranged_clock <= 0.0:
+			ranged_windup = false
+			return true
+	else:
+		attack_cooldown -= delta
+		if attack_cooldown <= 0.0 and distance < reach:
+			ranged_windup = true
+			ranged_direction = direction
+			ranged_clock = 0.65
+	return false
+
+func is_winding_up() -> bool:
+	return ranged_windup or state in ["telegraph", "brace"]
 
 func _update_raccoon(delta: float, direction: Vector2) -> void:
 	state_clock -= delta
@@ -272,10 +299,12 @@ func _update_raccoon(delta: float, direction: Vector2) -> void:
 			velocity = velocity.move_toward(zigzag * move_speed, 330.0 * delta)
 			if state_clock <= 0.0:
 				state = "brace"
+				pounce_direction = direction
 				state_clock = 0.62
 		"brace":
 			velocity = velocity.move_toward(Vector2.ZERO, 720.0 * delta)
-			pounce_direction = direction
+			if state_clock > 0.22:
+				pounce_direction = direction
 			if state_clock <= 0.0:
 				state = "charge"
 				state_clock = 0.62
@@ -301,10 +330,12 @@ func _update_fox(delta: float, direction: Vector2, distance: float) -> void:
 			velocity = velocity.move_toward((tangent + approach).normalized() * move_speed, 460.0 * delta)
 			if state_clock <= 0.0:
 				state = "telegraph"
+				pounce_direction = direction
 				state_clock = 0.38
 		"telegraph":
 			velocity = velocity.move_toward(Vector2.ZERO, 850.0 * delta)
-			pounce_direction = direction
+			if state_clock > 0.22:
+				pounce_direction = direction
 			if state_clock <= 0.0:
 				state = "dart"
 				state_clock = 0.48
@@ -313,7 +344,7 @@ func _update_fox(delta: float, direction: Vector2, distance: float) -> void:
 			velocity = velocity.move_toward(pounce_direction * 590.0, 120.0 * delta)
 			if state_clock <= 0.0:
 				state = "recover"
-				state_clock = 0.28
+				state_clock = 0.48
 		"recover":
 			velocity = velocity.move_toward(Vector2.ZERO, 1100.0 * delta)
 			if state_clock <= 0.0:
@@ -327,10 +358,12 @@ func _update_dog(delta: float, direction: Vector2) -> void:
 			velocity = velocity.move_toward(direction * move_speed, 300.0 * delta)
 			if state_clock <= 0.0:
 				state = "brace"
+				pounce_direction = direction
 				state_clock = 0.82
 		"brace":
 			velocity = velocity.move_toward(Vector2.ZERO, 780.0 * delta)
-			pounce_direction = direction
+			if state_clock > 0.22:
+				pounce_direction = direction
 			if state_clock <= 0.0:
 				state = "charge"
 				state_clock = 0.9
@@ -366,6 +399,8 @@ func _bounce_inside_arena() -> void:
 func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	if dying:
 		return
+	if state == "recover":
+		amount *= 1.25
 	var health_damage := amount
 	if armour > 0.0:
 		var absorbed := minf(armour, amount)
@@ -386,27 +421,20 @@ func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	if is_winding_up():
+		var aim := ranged_direction if ranged_windup else pounce_direction
+		var local_aim := aim.rotated(-rotation)
+		var locked := ranged_clock <= 0.22 if ranged_windup else state_clock <= 0.22
+		draw_line(local_aim * (radius + 8), local_aim * 180, Color("df5144") if locked else Color("f6c53f"), 7.0 if locked else 3.0, true)
+		draw_arc(Vector2.ZERO, radius + 12, 0, TAU, 32, Color("fff0bf"), 3.0, true)
 	var visual_scale: float = maxf(0.05, spawn_scale)
 	draw_set_transform(Vector2(0, radius * 0.72), 0.0, Vector2(1.0, 0.42) * visual_scale)
 	draw_circle(Vector2.ZERO, radius * 0.92, Color(0.24, 0.19, 0.24, 0.18))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if hit_flash > 0.0:
 		draw_circle(Vector2.ZERO, radius + 10.0, Color(1.0, 0.95, 0.75, hit_flash * 2.8))
-	match enemy_kind:
-		"bird":
-			_draw_bird()
-		"cat", "alpha_cat":
-			_draw_cat()
-		"owl", "barn_owl":
-			_draw_owl()
-		"snake":
-			_draw_snake()
-		"raccoon":
-			_draw_raccoon()
-		"fox":
-			_draw_fox()
-		"junkyard_dog":
-			_draw_dog()
+	preload("res://scripts/model_sprites.gd").paint(self, enemy_kind, rotation, radius * 3.1, age, 1.2 if velocity.length() > 20.0 else 0.35, visual_scale, hit_flash > 0.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if elite:
 		for badge in range(3):
 			var badge_angle := -age * 1.8 + TAU * badge / 3.0
@@ -457,6 +485,10 @@ func _draw_bird() -> void:
 	draw_colored_polygon(PackedVector2Array([Vector2(12, -3), Vector2(22, 0), Vector2(12, 3)]), Color("f2c14e"))
 	_outlined_circle(Vector2(7, -4), 2.2, Color.WHITE, 1.2)
 	draw_circle(Vector2(8, -4), 1.0, INK)
+	draw_line(Vector2(2, -9), Vector2(11, -7), INK, 2.8, true)
+	# One ridiculous head feather makes the tiny menace read at a glance.
+	draw_line(Vector2(-1, -11), Vector2(-7, -22), INK, 4.5, true)
+	draw_line(Vector2(-7, -22), Vector2(2, -18), tint.lightened(0.2), 3.0, true)
 
 func _draw_cat() -> void:
 	var hop: float = absf(sin(age * 7.0)) * 4.0 if state == "pounce" else sin(age * 4.0)
@@ -474,7 +506,10 @@ func _draw_cat() -> void:
 	draw_colored_polygon(ear_b, body_color)
 	_outlined_circle(Vector2(radius * 0.69, -5 + hop), 3.2, Color.WHITE, 1.2)
 	draw_circle(Vector2(radius * 0.75, -5 + hop), 1.25, INK)
+	draw_line(Vector2(radius * 0.50, -11 + hop), Vector2(radius * 0.82, -8 + hop), INK, 3.2, true)
 	draw_circle(Vector2(radius * 0.96, 3 + hop), 2.4, Color("8b4b52"))
+	var fang := PackedVector2Array([Vector2(radius * 0.82, 8 + hop), Vector2(radius * 0.97, 8 + hop), Vector2(radius * 0.89, 15 + hop)])
+	draw_colored_polygon(fang, CREAM)
 	for offset in [-4.0, 4.0]:
 		draw_line(Vector2(radius * 0.95, 6 + hop + offset * 0.35), Vector2(radius * 1.48, 6 + hop + offset), INK, 1.6, true)
 	if enemy_kind == "alpha_cat":
@@ -496,6 +531,8 @@ func _draw_owl() -> void:
 	_outlined_circle(Vector2(8, 9), 8.5 if enemy_kind == "owl" else 11.5, CREAM, 1.8)
 	draw_circle(Vector2(11, -8), 3.0, INK)
 	draw_circle(Vector2(11, 8), 3.0, INK)
+	draw_line(Vector2(1, -17), Vector2(14, -12), INK, 3.2, true)
+	draw_line(Vector2(1, 17), Vector2(14, 12), INK, 3.2, true)
 	var beak := PackedVector2Array([Vector2(15, -4), Vector2(27, 0), Vector2(15, 4)])
 	draw_colored_polygon(beak, INK)
 	draw_colored_polygon(PackedVector2Array([Vector2(16, -2), Vector2(24, 0), Vector2(16, 2)]), Color("e3ad3d"))
@@ -531,6 +568,8 @@ func _draw_raccoon() -> void:
 	_outlined_circle(Vector2(18, -8 + bob), 3.4, Color.WHITE, 1.0)
 	draw_circle(Vector2(9, -8 + bob), 1.2, INK)
 	draw_circle(Vector2(19, -8 + bob), 1.2, INK)
+	draw_line(Vector2(3, -15 + bob), Vector2(11, -12 + bob), INK, 2.8, true)
+	draw_line(Vector2(15, -12 + bob), Vector2(23, -15 + bob), INK, 2.8, true)
 	_outlined_circle(Vector2(28, 1 + bob), 4.0, Color("513d46"), 1.2)
 	draw_circle(Vector2(-2, 15 + bob), 15.0, INK)
 	draw_circle(Vector2(-2, 15 + bob), 11.5, ARMOUR_COLOR if armour > 0.0 else Color("b9a787"))
@@ -553,6 +592,7 @@ func _draw_fox() -> void:
 	_outlined_circle(Vector2(27, bob), 3.2, Color("513d46"), 1.0)
 	_outlined_circle(Vector2(10, -7 + bob), 2.5, Color.WHITE, 1.0)
 	draw_circle(Vector2(11, -7 + bob), 1.0, INK)
+	draw_line(Vector2(5, -12 + bob), Vector2(14, -10 + bob), INK, 2.6, true)
 
 func _draw_dog() -> void:
 	var bob := sin(age * 4.0) * 1.5
@@ -568,6 +608,10 @@ func _draw_dog() -> void:
 	_outlined_circle(Vector2(46, bob), 5.0, Color("513d46"), 1.5)
 	_outlined_circle(Vector2(25, -10 + bob), 4.3, Color.WHITE, 1.2)
 	draw_circle(Vector2(27, -10 + bob), 1.6, INK)
+	draw_line(Vector2(18, -18 + bob), Vector2(31, -15 + bob), INK, 4.0, true)
+	# The boss is terrifying until its tongue falls out.
+	draw_line(Vector2(39, 11 + bob), Vector2(43, 21 + bob), INK, 7.0, true)
+	draw_line(Vector2(39, 11 + bob), Vector2(43, 20 + bob), Color("e67b83"), 4.0, true)
 	draw_line(Vector2(1, -27 + bob), Vector2(1, 27 + bob), INK, 9.0, true)
 	draw_line(Vector2(1, -25 + bob), Vector2(1, 25 + bob), Color("d95863"), 5.0, true)
 	for side in [-1.0, 1.0]:

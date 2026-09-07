@@ -43,8 +43,19 @@ var alive := true
 var anim_time := 0.0
 var distance_walked := 0.0
 var upgrade_levels: Dictionary = {}
+var active_time := 0.0
+var using_controller := false
+var last_damage_source := "garden raider"
+var dash_count := 0
+var orbit_until := 0
+var orbit_hit_cooldown := 0.0
+var aim_assist := false
+
+func game_time_ms() -> int:
+	return int(active_time * 1000.0)
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	collision_layer = 1
 	collision_mask = 0
 	z_index = 20
@@ -71,6 +82,8 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not alive:
 		return
+	if event is InputEventMouseMotion and event.relative.length_squared() > 1.0:
+		using_controller = false
 	if event.is_action_pressed("toggle_autofire"):
 		autofire = not autofire
 		autofire_changed.emit(autofire)
@@ -78,14 +91,17 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if not alive:
 		return
+	active_time += delta
 	anim_time += delta
+	_update_orbit(delta)
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var now := Time.get_ticks_msec()
+	var now := game_time_ms()
 	if Input.is_action_just_pressed("dash") and now >= dash_ready_at:
 		dash_direction = move_input.normalized() if move_input.length_squared() > 0.01 else aim_direction
 		dash_until = now + 190
 		dash_ready_at = now + dash_cooldown_ms
 		invulnerable_until = maxi(invulnerable_until, dash_until + 90)
+		dash_count += 1
 		dash_started.emit(global_position)
 	var speed_multiplier := 1.38 if now < haste_until else 1.0
 	if now < dash_until:
@@ -101,11 +117,24 @@ func _physics_process(delta: float) -> void:
 
 	var stick_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
 	if stick_aim.length() > 0.28:
+		using_controller = true
 		aim_direction = stick_aim.normalized()
-	else:
+	elif not using_controller:
 		var mouse_delta := get_global_mouse_position() - global_position
 		if mouse_delta.length() > 4.0:
 			aim_direction = mouse_delta.normalized()
+	if aim_assist:
+		var best_angle := 0.22
+		var assisted := aim_direction
+		for enemy in get_tree().get_nodes_in_group("enemies"):
+			if enemy.dying or global_position.distance_to(enemy.global_position) > 650.0:
+				continue
+			var toward: Vector2 = global_position.direction_to(enemy.global_position)
+			var angle := absf(aim_direction.angle_to(toward))
+			if angle < best_angle:
+				best_angle = angle
+				assisted = toward
+		aim_direction = aim_direction.lerp(assisted, 0.35).normalized()
 	rotation = aim_direction.angle()
 
 	shot_cooldown -= delta
@@ -117,10 +146,10 @@ func _physics_process(delta: float) -> void:
 	queue_redraw()
 
 func fire() -> void:
-	var now := Time.get_ticks_msec()
+	var now := game_time_ms()
 	var projectile_count := permanent_projectiles
 	if now < triple_until:
-		projectile_count = maxi(projectile_count, 3)
+		projectile_count = mini(projectile_count + 2, 6)
 	var damage := base_damage * (1.75 if now < power_until else 1.0)
 	var shot_pierce := base_pierce + (2 if now < pierce_until else 0)
 	var color := Color("e98b43") if now < power_until else Color("fff1bf")
@@ -129,24 +158,27 @@ func fire() -> void:
 		var direction := aim_direction.rotated(offset)
 		var bullet := BulletScript.new()
 		bullet.setup(global_position + direction * 30.0, direction, bullet_speed, damage, bullet_radius, shot_pierce, color)
+		bullet.bounces_left = int(upgrade_levels.get("pinball", 0))
+		bullet.split_on_bounce = upgrade_levels.get("split_acorns", 0) > 0
 		get_parent().add_child(bullet)
 	shot_fired.emit(global_position + aim_direction * 25.0, now < power_until)
 
-func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
-	if not alive or Time.get_ticks_msec() < invulnerable_until:
+func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO, source: String = "garden raider") -> void:
+	if not alive or game_time_ms() < invulnerable_until:
 		return
 	if shield_charges > 0:
 		shield_charges -= 1
-		invulnerable_until = Time.get_ticks_msec() + 650
+		invulnerable_until = game_time_ms() + 650
 		hit_flash_until = invulnerable_until
 		knockback_velocity += knockback * 0.45
 		pickup_collected.emit("TIN LID BLOCK", Color("8fa7b3"))
 		damage_feedback.emit(global_position, true)
 		queue_redraw()
 		return
+	last_damage_source = source
 	health = max(0.0, health - amount)
-	invulnerable_until = Time.get_ticks_msec() + 720
-	hit_flash_until = Time.get_ticks_msec() + 180
+	invulnerable_until = game_time_ms() + 720
+	hit_flash_until = game_time_ms() + 180
 	knockback_velocity += knockback
 	health_changed.emit(health, max_health)
 	damage_feedback.emit(global_position, false)
@@ -157,6 +189,8 @@ func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> voi
 	queue_redraw()
 
 func apply_upgrade(kind: String) -> void:
+	if not can_take_upgrade(kind):
+		return
 	upgrade_levels[kind] = int(upgrade_levels.get(kind, 0)) + 1
 	match kind:
 		"quick_whiskers":
@@ -188,6 +222,9 @@ func heal(amount: float) -> void:
 func can_take_upgrade(kind: String) -> bool:
 	var level := int(upgrade_levels.get(kind, 0))
 	match kind:
+		"pinball", "scurry_bomb", "snack_orbit", "split_acorns", "dash_refund", "orbit_feast":
+			var requires := {"split_acorns": "pinball", "dash_refund": "scurry_bomb", "orbit_feast": "snack_orbit"}
+			return level < 1 and (not requires.has(kind) or upgrade_levels.get(requires[kind], 0) > 0)
 		"quick_whiskers":
 			return level < 7 and fire_interval > 0.131
 		"heavy_seeds":
@@ -206,49 +243,57 @@ func can_take_upgrade(kind: String) -> bool:
 			return permanent_projectiles < 4
 		"cheese_magnet":
 			return level < 4 and magnet_radius < 329.0
-	return true
+	return false
 
 func get_dash_charge() -> float:
-	var now := Time.get_ticks_msec()
+	var now := game_time_ms()
 	if now >= dash_ready_at:
 		return 1.0
 	return clampf(1.0 - float(dash_ready_at - now) / float(dash_cooldown_ms), 0.0, 1.0)
 
 func apply_powerup(kind: String) -> void:
-	var now := Time.get_ticks_msec()
+	var now := game_time_ms()
+	if upgrade_levels.get("snack_orbit", 0) > 0:
+		orbit_until = maxi(orbit_until, now) + 6500
+	if (kind == "cheese" and health >= max_health) or (kind == "shield" and shield_charges >= 2):
+		power_until = maxi(power_until, now) + 5000
+		pickup_collected.emit("SPARE SNACK = 5s POWER", Color("f2c14e"))
+		return
 	match kind:
 		"cheese":
 			health = min(max_health, health + 24.0)
 			health_changed.emit(health, max_health)
-			pickup_collected.emit("CHEESE +24 HP", Color("f2c14e"))
+			pickup_collected.emit("MYSTERY CHEESE +24 HP", Color("f2c14e"))
 		"rapid":
 			rapid_until = max(rapid_until, now) + 11000
-			pickup_collected.emit("RAPID CLAWS", Color("ef6f6c"))
+			pickup_collected.emit("CAFFEINATED CLAWS", Color("ef6f6c"))
 		"triple":
 			triple_until = max(triple_until, now) + 12000
-			pickup_collected.emit("TRIPLE SEED", Color("8d79ad"))
+			pickup_collected.emit("THREE PEAS, ONE PLAN", Color("8d79ad"))
 		"power":
 			power_until = max(power_until, now) + 11000
-			pickup_collected.emit("POWER NIBBLE", Color("e89b4f"))
+			pickup_collected.emit("ABSURD ACORN", Color("e89b4f"))
 		"haste":
 			haste_until = max(haste_until, now) + 10000
-			pickup_collected.emit("SUGAR RUSH", Color("79a85b"))
+			pickup_collected.emit("SUGAR-POWERED LEGS", Color("79a85b"))
 		"shield":
 			shield_charges = mini(2, shield_charges + 1)
-			pickup_collected.emit("TIN-LID SHIELD", Color("8fa7b3"))
+			pickup_collected.emit("BIN LID OF DESTINY", Color("8fa7b3"))
 		"pierce":
 			pierce_until = max(pierce_until, now) + 10000
-			pickup_collected.emit("NEEDLE TEETH", Color("f4d7a1"))
+			pickup_collected.emit("DENTIST'S NIGHTMARE", Color("f4d7a1"))
 	queue_redraw()
 
 func get_active_buffs() -> Array[String]:
-	var now := Time.get_ticks_msec()
+	var now := game_time_ms()
 	var buffs: Array[String] = []
 	var mutation_count := 0
 	for level in upgrade_levels.values():
 		mutation_count += int(level)
 	if mutation_count > 0:
 		buffs.append("PERKS x%d" % mutation_count)
+	if orbit_until > now:
+		buffs.append("ORBIT %ds" % int(ceil((orbit_until - now) / 1000.0)))
 	if rapid_until > now:
 		buffs.append("RAPID %ds" % int(ceil((rapid_until - now) / 1000.0)))
 	if triple_until > now:
@@ -265,12 +310,37 @@ func get_active_buffs() -> Array[String]:
 		buffs.append("MULTISHOT x%d" % permanent_projectiles)
 	return buffs
 
+func get_build_description() -> String:
+	var lines: Array[String] = []
+	for id in upgrade_levels:
+		if get_parent().UPGRADES.has(id):
+			lines.append("%s Lv.%d" % [get_parent().UPGRADES[id]["title"], upgrade_levels[id]])
+	return " / ".join(lines) if not lines.is_empty() else "First wave cleared: choose your build."
+
+func _update_orbit(delta: float) -> void:
+	orbit_hit_cooldown -= delta
+	if game_time_ms() >= orbit_until or orbit_hit_cooldown > 0.0:
+		return
+	orbit_hit_cooldown = 0.22
+	var count := 5 if upgrade_levels.get("orbit_feast", 0) > 0 else 3
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if enemy.dying:
+			continue
+		for index in range(count):
+			var point := global_position + Vector2.from_angle(anim_time * 3.2 + TAU * index / count) * 90.0
+			if point.distance_to(enemy.global_position) < enemy.radius + 14.0:
+				enemy.take_damage(base_damage * 0.65, global_position.direction_to(enemy.global_position) * 80.0)
+				break
+
 func _draw() -> void:
-	var now := Time.get_ticks_msec()
+	if game_time_ms() < orbit_until:
+		var count := 5 if upgrade_levels.get("orbit_feast", 0) > 0 else 3
+		for index in range(count):
+			var point := Vector2.from_angle(anim_time * 3.2 + TAU * index / count - rotation) * 90.0
+			draw_circle(point, 12.0, Color("321f2b"))
+			draw_texture_rect(preload("res://assets/sprites/seed_0.png"), Rect2(point - Vector2(14, 14), Vector2(28, 28)), false)
+	var now := game_time_ms()
 	var flash := now < hit_flash_until
-	var body_color := Color.WHITE if flash else Color("aaa69f")
-	var outline := Color("d95863") if flash else Color("40354f")
-	var moving_bob := sin(anim_time * 12.0) * 1.8 if velocity.length() > 30.0 else sin(anim_time * 4.0) * 0.8
 
 	# Soft shadow and little dust puffs make the rat feel like a chunky cartoon toy.
 	draw_set_transform(Vector2(0, 18), 0.0, Vector2(1.0, 0.42))
@@ -285,34 +355,4 @@ func _draw() -> void:
 			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("40354f"), 5.0, true)
 			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("8fa7b3"), 2.5, true)
 
-	# Tail curls behind the rat.
-	var tail := PackedVector2Array()
-	for i in range(13):
-		var t := float(i) / 12.0
-		tail.append(Vector2(-20.0 - t * 35.0, 7.0 + sin(t * PI * 1.7) * 13.0))
-	draw_polyline(tail, outline, 8.0, true)
-	draw_polyline(tail, Color("d98b91"), 4.0, true)
-
-	# Feet, body, ears, muzzle.
-	draw_circle(Vector2(-9.0, 18.0 + moving_bob), 9.0, outline)
-	draw_circle(Vector2(-9.0, 18.0 + moving_bob), 6.0, Color("d98b91"))
-	draw_circle(Vector2(10.0, 18.0 - moving_bob), 9.0, outline)
-	draw_circle(Vector2(10.0, 18.0 - moving_bob), 6.0, Color("d98b91"))
-	draw_circle(Vector2(-4.0, moving_bob), 23.0, outline)
-	draw_circle(Vector2(-4.0, moving_bob), 19.0, body_color)
-	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 11.5, outline)
-	draw_circle(Vector2(-8.0, -18.0 + moving_bob), 7.5, Color("d98b91"))
-	draw_circle(Vector2(9.0, -15.0 + moving_bob), 10.5, outline)
-	draw_circle(Vector2(9.0, -15.0 + moving_bob), 6.5, Color("d98b91"))
-	draw_circle(Vector2(16.0, 2.0 + moving_bob), 15.5, outline)
-	draw_circle(Vector2(16.0, 2.0 + moving_bob), 12.0, body_color.lightened(0.12))
-	var snout := PackedVector2Array([Vector2(18, -5 + moving_bob), Vector2(34, 2 + moving_bob), Vector2(18, 8 + moving_bob)])
-	draw_colored_polygon(snout, body_color.lightened(0.12))
-	draw_circle(Vector2(34.0, 2.0 + moving_bob), 5.5, outline)
-	draw_circle(Vector2(34.0, 2.0 + moving_bob), 3.5, Color("b85d68"))
-	draw_circle(Vector2(15.0, -4.0 + moving_bob), 4.3, outline)
-	draw_circle(Vector2(16.0, -5.0 + moving_bob), 1.2, Color.WHITE)
-	# Whiskers.
-	draw_line(Vector2(23, 4 + moving_bob), Vector2(43, 12 + moving_bob), outline, 1.8, true)
-	draw_line(Vector2(23, 2 + moving_bob), Vector2(45, 2 + moving_bob), outline, 1.8, true)
-	draw_line(Vector2(23, 0 + moving_bob), Vector2(42, -8 + moving_bob), outline, 1.8, true)
+	preload("res://scripts/model_sprites.gd").paint(self, "rat", rotation, 92.0, anim_time, 1.8 if velocity.length() > 30.0 else 0.5, 1.0, flash)

@@ -21,6 +21,8 @@ func setup(origin: Vector2, direction: Vector2, shot_speed: float, shot_damage: 
 		tint = Color("fff4d6")
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_to_group("enemy_projectiles")
 	collision_layer = 8
 	collision_mask = 1
 	monitoring = true
@@ -43,31 +45,11 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if not spent and body.has_method("take_player_damage"):
 		spent = true
-		body.take_player_damage(damage, velocity.normalized() * 170.0)
+		body.take_player_damage(damage, velocity.normalized() * 170.0, projectile_kind)
 		set_deferred("monitoring", false)
 		call_deferred("queue_free")
 
 func _draw() -> void:
-	draw_circle(Vector2(3, 4), 10.0, Color(0.24, 0.19, 0.24, 0.14))
-	if projectile_kind == "sonic":
-		draw_arc(Vector2.ZERO, 9.0, 0.0, TAU, 24, Color("40354f"), 5.0, true)
-		draw_arc(Vector2.ZERO, 9.0, 0.0, TAU, 24, tint, 2.5, true)
-		draw_circle(Vector2.ZERO, 3.0, Color("fff4d6"))
-	elif projectile_kind == "venom":
-		draw_circle(Vector2.ZERO, 12.0, Color("40354f"))
-		draw_circle(Vector2.ZERO, 9.0, tint)
-		draw_circle(Vector2(2, -3), 3.0, Color("dff0b2"))
-	elif projectile_kind == "bone":
-		draw_line(Vector2(-8, 0), Vector2(8, 0), Color("40354f"), 7.0, true)
-		draw_line(Vector2(-8, 0), Vector2(8, 0), tint, 4.0, true)
-		for end_x in [-9.0, 9.0]:
-			draw_circle(Vector2(end_x, -3), 4.0, Color("40354f"))
-			draw_circle(Vector2(end_x, 3), 4.0, Color("40354f"))
-			draw_circle(Vector2(end_x, -3), 2.5, tint)
-			draw_circle(Vector2(end_x, 3), 2.5, tint)
-	else:
-		var outline := PackedVector2Array([Vector2(-12, 0), Vector2(6, -7), Vector2(12, 0), Vector2(6, 7)])
-		draw_colored_polygon(outline, Color("40354f"))
-		var feather := PackedVector2Array([Vector2(-9, 0), Vector2(6, -4), Vector2(9, 0), Vector2(6, 4)])
-		draw_colored_polygon(feather, tint)
-		draw_line(Vector2(-8, 0), Vector2(8, 0), Color("fff4d6"), 1.5, true)
+	draw_circle(Vector2.ZERO, 13.0, Color(tint, 0.25))
+	var texture: Texture2D = preload("res://scripts/model_sprites.gd").FRAMES[projectile_kind][0]
+	draw_texture_rect(texture, Rect2(-18, -18, 36, 36), false)

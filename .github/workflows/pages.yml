@@ -35,6 +35,10 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/smoke_test.gd
 
+      - name: Run fun systems regression test
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/fun_systems_test.gd
+
       - name: Export web build
         run: godot --headless --path . --export-release Web build/web/index.html
 

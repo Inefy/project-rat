@@ -15,6 +15,7 @@ func _run() -> void:
 	root.add_child(game)
 	await process_frame
 	game.start_game()
+	game.settings.cozy = false
 	game.intermission = 999
 	game.player.autofire = false
 	# Drive clocks explicitly so input windows are independent of machine speed.
@@ -85,10 +86,10 @@ func _run() -> void:
 	game._spawn_enemy("cat")
 	var enemy = get_nodes_in_group("enemies").back()
 	rapid = rat.rapid_until
-	game.kills_without_treat = 5
+	game.kills_without_treat = 11
 	enemy.take_damage(99999)
 	check(game.streak_rewarded and rat.rapid_until > rapid, "max streak awards Rapid Claws")
-	check(game.kills_without_treat == 0, "six kills without a treat guarantee a drop")
+	check(game.kills_without_treat == 0, "twelve kills without a treat guarantee a drop")
 	rapid = rat.rapid_until
 	game._spawn_enemy("cat")
 	get_nodes_in_group("enemies").back().take_damage(99999)

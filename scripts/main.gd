@@ -217,11 +217,12 @@ func _physics_process(delta: float) -> void:
 			_begin_next_wave()
 	else:
 		spawn_cooldown -= delta
-		if not wave_queue.is_empty() and spawn_cooldown <= 0.0 and _living_enemy_count() < mini(22, 7 + current_wave):
+		if not wave_queue.is_empty() and spawn_cooldown <= 0.0 and _living_enemy_count() < get_enemy_cap(current_wave):
 			var next_kind: String = wave_queue.pop_front()
 			_spawn_enemy(next_kind)
 			spawned_this_wave += 1
-			spawn_cooldown = 1.6 if spawned_this_wave % 7 == 0 and _living_enemy_count() >= 3 else get_spawn_interval(current_wave)
+			# Breathers belong in a crowded fight; fast clears should keep the pressure on.
+			spawn_cooldown = 1.0 if spawned_this_wave % 12 == 0 and _living_enemy_count() >= get_enemy_cap(current_wave) / 2 else get_spawn_interval(current_wave)
 		if wave_queue.is_empty() and _living_enemy_count() <= 3:
 			for enemy in get_tree().get_nodes_in_group("enemies"):
 				enemy.cleanup = true
@@ -271,10 +272,15 @@ func _begin_next_wave() -> void:
 		_add_shake(8.0)
 
 func get_regular_enemy_count(for_wave: int) -> int:
-	return 6 + int(round(pow(float(for_wave), 0.88) * 3.6)) + int(for_wave / 5) * 2
+	var count := 8 + for_wave * 6 + int(for_wave / 5) * 4
+	return roundi(count * 0.8) if settings.cozy else count
+
+func get_enemy_cap(for_wave: int) -> int:
+	var cap := mini(42, 10 + for_wave * 2)
+	return roundi(cap * 0.7) if settings.cozy else cap
 
 func get_spawn_interval(for_wave: int) -> float:
-	return maxf(0.18, 0.58 - for_wave * 0.015 - floorf(float(for_wave) / 10.0) * 0.025) * (1.25 if settings.cozy else 1.0)
+	return maxf(0.14, 0.48 - for_wave * 0.016 - floorf(float(for_wave) / 10.0) * 0.02) * (1.25 if settings.cozy else 1.0)
 
 func _encounter_enemy(index: int) -> String:
 	# Isolated introductions precede mixed encounters. Every recipe leaves room to move.
@@ -283,6 +289,9 @@ func _encounter_enemy(index: int) -> String:
 		return introductions[current_wave]
 	if current_wave <= 2:
 		return "cat" if current_wave == 2 and index % 4 == 0 else "bird"
+	# Keep later unlocks present in every recipe, including bird and cat waves.
+	if current_wave >= 6 and index % 5 == 4:
+		return "fox" if current_wave >= 10 and index % 10 == 9 else "raccoon"
 	match encounter:
 		"BIRD SWARM":
 			return "bird" if index % 4 != 0 else _choose_enemy_kind()
@@ -314,7 +323,7 @@ func _finish_wave() -> void:
 	intermission = max(1.8, 3.0 - current_wave * 0.035)
 	hud.show_toast("CRUMBS TEMPORARILY SECURED!  +%d" % clear_bonus, Color("4f9f8f"))
 	audio.play("wave_clear", 0.02)
-	player.heal(4.0 + minf(6.0, current_wave * 0.25))
+	player.heal(6.0 if settings.cozy else 3.0)
 	# Emergency cheese prevents one bad wave from ending an otherwise healthy run.
 	if current_wave % 3 == 0 and is_instance_valid(player) and player.health < player.max_health * 0.7:
 		_spawn_powerup("cheese", player.global_position + Vector2(110, 0).rotated(rng.randf_range(0.0, TAU)))
@@ -384,7 +393,7 @@ func _spawn_enemy(kind: String) -> void:
 		return
 	var enemy := EnemyScript.new()
 	var is_boss := kind in ["alpha_cat", "junkyard_dog", "barn_owl"]
-	var is_elite := not is_boss and current_wave >= 3 and ((encounter == "ELITE HUNT" and spawned_this_wave == 3) or rng.randf() < minf(0.20, 0.025 + current_wave * 0.008))
+	var is_elite := not is_boss and current_wave >= 3 and ((encounter == "ELITE HUNT" and spawned_this_wave == 3) or rng.randf() < minf(0.24, 0.03 + current_wave * 0.01))
 	enemy.setup(kind, player, current_wave, is_elite)
 	if settings.cozy:
 		enemy.contact_damage *= 0.7
@@ -400,6 +409,7 @@ func _spawn_enemy(kind: String) -> void:
 	add_child(enemy)
 	enemy.died.connect(_on_enemy_died)
 	enemy.hit.connect(_on_enemy_hit)
+	enemy.enraged.connect(func(boss_kind: String): hud.show_toast("%s ENRAGED! Watch the next attack!" % boss_kind.replace("_", " ").to_upper(), TOMATO))
 	enemy.projectile_requested.connect(_on_enemy_projectile_requested)
 
 func _random_spawn_position() -> Vector2:
@@ -448,9 +458,9 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 		_clear_enemy_projectiles()
 		hud.show_toast("BOSS LOOT BANKED! Bonus mutation at wave clear", Color("f6c53f"))
 
-	var drop_chance: float = minf(0.28, 0.085 + minf(0.045, current_wave * 0.0015) + player.drop_luck)
+	var drop_chance: float = minf(0.18, 0.055 + player.drop_luck)
 	kills_without_treat += 1
-	if enemy.get("elite") or kills_without_treat >= 6 or rng.randf() < drop_chance:
+	if enemy.get("elite") or kills_without_treat >= (8 if settings.cozy else 12) or rng.randf() < drop_chance:
 		kills_without_treat = 0
 		var kind := _choose_powerup()
 		call_deferred("_spawn_powerup", kind, death_position)

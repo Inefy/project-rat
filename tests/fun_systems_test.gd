@@ -96,7 +96,7 @@ func _run() -> void:
 	game.player.shield_charges = 2
 	var power_before: int = game.player.power_until
 	game.player.apply_powerup("shield")
-	check(game.player.power_until == power_before + 5000, "full shield becomes power")
+	check(game.player.power_until == mini(power_before + 2000, game.player.game_time_ms() + 9000), "full shield tops up capped power")
 	var orbit_point: Vector2 = game.player.position + Vector2.from_angle(game.player.anim_time * 3.2) * 90
 	enemy = spawn("cat", orbit_point)
 	var hp: float = enemy.health

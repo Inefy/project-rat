@@ -3,6 +3,7 @@ extends CharacterBody2D
 signal died(enemy: Node, death_position: Vector2, points: int, color: Color)
 signal projectile_requested(origin: Vector2, direction: Vector2, speed: float, damage: float, kind: String)
 signal hit(position: Vector2)
+signal enraged(kind: String)
 
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 const INK := Color("40354f")
@@ -96,7 +97,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			tint = Color("ef7825")
 			state_clock = 0.8 + randf() * 0.7
 		"alpha_cat":
-			max_health = (390.0 + wave * 18.0) * health_scale
+			max_health = (3200.0 + wave * 180.0) * health_scale
 			move_speed = minf(210.0, 112.0 + wave * 1.6)
 			contact_damage = 28.0 * damage_scale
 			score_value = 1800 + wave * 90
@@ -105,7 +106,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			state_clock = 1.1
 			scale = Vector2.ONE * 1.22
 		"junkyard_dog":
-			max_health = (660.0 + wave * 25.0) * health_scale
+			max_health = (3900.0 + wave * 200.0) * health_scale
 			max_armour = max_health * 0.38
 			move_speed = minf(180.0, 94.0 + wave * 1.6)
 			contact_damage = 34.0 * damage_scale
@@ -115,7 +116,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			state_clock = 1.25
 			scale = Vector2.ONE * 1.18
 		"barn_owl":
-			max_health = (720.0 + wave * 23.0) * health_scale
+			max_health = (4600.0 + wave * 240.0) * health_scale
 			move_speed = minf(205.0, 105.0 + wave * 1.8)
 			contact_damage = 26.0 * damage_scale
 			score_value = 2850 + wave * 120
@@ -135,7 +136,10 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 
 func get_health_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
-	return 1.0 + ramp * 0.075 + ramp * ramp * 0.0025
+	return 1.0 + ramp * 0.11 + ramp * ramp * 0.0035
+
+func is_enraged() -> bool:
+	return enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] and health <= max_health * 0.5
 
 func get_damage_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
@@ -235,7 +239,7 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 			velocity = velocity.move_toward(Vector2.ZERO, 950.0 * delta)
 			if state_clock <= 0.0:
 				state = "stalk"
-				state_clock = (0.95 + randf() * 0.8) if enemy_kind == "cat" else (1.15 + randf() * 0.55)
+				state_clock = (0.95 + randf() * 0.8) if enemy_kind == "cat" else (0.45 if is_enraged() else 0.85)
 
 func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 	var is_boss := enemy_kind == "barn_owl"
@@ -254,7 +258,7 @@ func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
 		if is_boss:
 			for spread in [-0.36, -0.24, -0.12, 0.0, 0.12, 0.24, 0.36]:
 				projectile_requested.emit(global_position + direction * 28.0, direction.rotated(spread), 345.0 + wave * 2.8, contact_damage * 0.48, "feather")
-			attack_cooldown = maxf(0.82, 1.7 - wave * 0.018)
+			attack_cooldown = maxf(0.65, 1.35 - wave * 0.018) * (0.7 if is_enraged() else 1.0)
 		else:
 			for spread in [-0.15, 0.0, 0.15]:
 				projectile_requested.emit(global_position + direction * 18.0, direction.rotated(spread), 335.0 + wave * 2.5, contact_damage * 0.62, "feather")
@@ -380,7 +384,7 @@ func _update_dog(delta: float, direction: Vector2) -> void:
 			velocity = velocity.move_toward(Vector2.ZERO, 850.0 * delta)
 			if state_clock <= 0.0:
 				state = "stalk"
-				state_clock = 1.05 + randf() * 0.5
+				state_clock = 0.5 if is_enraged() else 0.95
 
 func _bounce_inside_arena() -> void:
 	var bounced := false
@@ -400,6 +404,7 @@ func _bounce_inside_arena() -> void:
 func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	if dying:
 		return
+	var was_enraged := is_enraged()
 	if state == "recover":
 		amount *= 1.25
 	var health_damage := amount
@@ -411,6 +416,8 @@ func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 		if armour <= 0.0:
 			knockback_velocity += knockback * 0.65
 	health -= health_damage
+	if health > 0.0 and not was_enraged and is_enraged():
+		enraged.emit(enemy_kind)
 	hit.emit(global_position)
 	hit_flash = 0.11 if health_damage > 0.0 else 0.04
 	knockback_velocity += knockback * (0.18 if enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] else 1.0)

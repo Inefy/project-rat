@@ -47,7 +47,9 @@ Later drafts mix stat upgrades with eligible build synergies. Cards show upgrade
 
 Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. Offscreen threats and final stragglers get edge markers. Shoot the marked fizzy cans to knock nearby enemies away.
 
-The opening birds fall to one accurate seed. Shorter waves and a quick return from each draft keep runs moving; ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge ring around your rat. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and six kills without a treat guarantee a drop.
+The opening birds fall to one accurate seed. Waves grow from 14 enemies to 76 at wave 10 and 110 at wave 15, with up to 42 enemies active in overtime. Fast clears bring the next enemy sooner; brief recovery gaps occur only when the arena is crowded. Raccoons and foxes remain in later encounter recipes. Ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge ring around your rat. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and twelve kills without a treat guarantee a drop (eight in Cozy).
+
+Temporary power comes in bursts: Rapid Claws reduces shot intervals by 32%, Power Nibble adds 35% damage, and both last six seconds. Repeat pickups can bank up to nine seconds, Triple Seed up to ten, and the Wizard orbit up to eight. Spare health or shield treats add two seconds of Power within its cap. Permanent mutations still stack, but tougher enemies and denser waves keep pace. Bosses have substantially more health and attack more often below half health, with their full attack warnings preserved. Cozy reduces crowd sizes and deployment speed as well as enemy speed and damage.
 
 Keep kills within 2.4 seconds to build your streak. A missed beat sheds one multiplier at a time, and reaching x8 grants Rapid Claws once per wave. Your streak survives drafts and intermissions.
 
@@ -108,6 +110,7 @@ godot --headless --path . --script tests/smoke_test.gd
 godot --headless --path . --script tests/fun_systems_test.gd
 
 godot --headless --path . --script tests/playability_test.gd
+godot --headless --path . --script tests/balance_test.gd
 ```
 
 Create the browser build after installing Godot's export templates:
@@ -116,7 +119,7 @@ Create the browser build after installing Godot's export templates:
 godot --headless --path . --export-release Web build/web/index.html
 ```
 
-The GitHub Actions workflow runs all three gameplay test suites, exports the game, and deploys a Pages artifact automatically. `tests/capture_fun_preview.gd` can also be run with the graphical engine to capture title, settings, draft, gameplay, pause, victory, and game-over screenshots in `build/`.
+The GitHub Actions workflow runs the gameplay, balance, and sprite test suites, exports the game, and deploys a Pages artifact automatically. `tests/capture_fun_preview.gd` can also be run with the graphical engine to capture title, settings, draft, gameplay, pause, victory, and game-over screenshots in `build/`.
 
 The implementation and regression tests support a first human playtest; they do not establish that a balance choice is more fun. See [FUN_AUDIT.md](FUN_AUDIT.md) for the playtest plan and later experiments such as unlockable kits and shared seeded challenges.
 

@@ -10,6 +10,8 @@ signal damage_feedback(position: Vector2, blocked: bool)
 
 const BulletScript = preload("res://scripts/bullet.gd")
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
+const RAPID_INTERVAL_MULTIPLIER := 0.68
+const POWER_DAMAGE_MULTIPLIER := 1.35
 
 var max_health := 100.0
 var health := 100.0
@@ -117,7 +119,7 @@ func _physics_process(delta: float) -> void:
 	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or stick_aim.length() > 0.28
 	if wants_to_fire and shot_cooldown <= 0.0:
 		fire()
-		var rapid_multiplier := 0.48 if now < rapid_until else 1.0
+		var rapid_multiplier := RAPID_INTERVAL_MULTIPLIER if now < rapid_until else 1.0
 		shot_cooldown = fire_interval * rapid_multiplier
 	queue_redraw()
 
@@ -160,7 +162,7 @@ func fire() -> void:
 	var projectile_count := permanent_projectiles
 	if now < triple_until:
 		projectile_count = mini(projectile_count + 2, 6)
-	var damage := base_damage * (1.75 if now < power_until else 1.0)
+	var damage := base_damage * (POWER_DAMAGE_MULTIPLIER if now < power_until else 1.0)
 	var shot_pierce := base_pierce + (2 if now < pierce_until else 0)
 	var color := Color("e98b43") if now < power_until else Color("fff1bf")
 	for index in range(projectile_count):
@@ -264,12 +266,11 @@ func get_dash_charge() -> float:
 	return clampf(1.0 - float(dash_ready_at - now) / float(dash_cooldown_ms), 0.0, 1.0)
 
 func apply_powerup(kind: String) -> void:
-	var now := game_time_ms()
 	if upgrade_levels.get("snack_orbit", 0) > 0:
-		orbit_until = maxi(orbit_until, now) + 6500
+		orbit_until = _extend_buff(orbit_until, 4000, 8000)
 	if (kind == "cheese" and health >= max_health) or (kind == "shield" and shield_charges >= 2):
-		power_until = maxi(power_until, now) + 5000
-		pickup_collected.emit("SPARE SNACK = 5s POWER", Color("f2c14e"))
+		power_until = _extend_buff(power_until, 2000, 9000)
+		pickup_collected.emit("SPARE SNACK: +2s POWER (9s MAX)", Color("f2c14e"))
 		return
 	match kind:
 		"cheese":
@@ -277,24 +278,29 @@ func apply_powerup(kind: String) -> void:
 			health_changed.emit(health, max_health)
 			pickup_collected.emit("MYSTERY CHEESE +24 HP", Color("f2c14e"))
 		"rapid":
-			rapid_until = max(rapid_until, now) + 11000
+			rapid_until = _extend_buff(rapid_until, 6000, 9000)
 			pickup_collected.emit("CAFFEINATED CLAWS", Color("ef6f6c"))
 		"triple":
-			triple_until = max(triple_until, now) + 12000
+			triple_until = _extend_buff(triple_until, 7000, 10000)
 			pickup_collected.emit("THREE PEAS, ONE PLAN", Color("8d79ad"))
 		"power":
-			power_until = max(power_until, now) + 11000
+			power_until = _extend_buff(power_until, 6000, 9000)
 			pickup_collected.emit("ABSURD ACORN", Color("e89b4f"))
 		"haste":
-			haste_until = max(haste_until, now) + 10000
+			haste_until = _extend_buff(haste_until, 6000, 9000)
 			pickup_collected.emit("SUGAR-POWERED LEGS", Color("79a85b"))
 		"shield":
 			shield_charges = mini(2, shield_charges + 1)
 			pickup_collected.emit("BIN LID OF DESTINY", Color("8fa7b3"))
 		"pierce":
-			pierce_until = max(pierce_until, now) + 10000
+			pierce_until = _extend_buff(pierce_until, 6000, 9000)
 			pickup_collected.emit("DENTIST'S NIGHTMARE", Color("f4d7a1"))
 	queue_redraw()
+
+func _extend_buff(expires_at: int, duration_ms: int, reserve_ms: int) -> int:
+	# Banked loot and repeated pickups can top up a burst, never stockpile minutes.
+	var now := game_time_ms()
+	return mini(maxi(expires_at, now) + duration_ms, now + reserve_ms)
 
 func get_active_buffs() -> Array[String]:
 	var now := game_time_ms()

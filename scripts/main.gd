@@ -673,7 +673,7 @@ func _apply_settings() -> void:
 
 func _upgrade_description(id: String) -> String:
 	var values := {
-		"quick_whiskers": "Shot interval %.2fs > %.2fs" % [player.fire_interval, maxf(0.13, player.fire_interval * 0.9)],
+		"quick_whiskers": "Shot interval %.2fs > %.2fs" % [player.fire_interval, maxf(0.09, player.fire_interval * 0.9)],
 		"heavy_seeds": "Damage %.1f > %.1f" % [player.base_damage, player.base_damage + 3.5],
 		"fleet_feet": "Speed %d > %d" % [player.move_speed, minf(420, player.move_speed + 20)],
 		"thick_fur": "Max health %d > %d; heal 20" % [player.max_health, player.max_health + 16],

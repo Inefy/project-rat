@@ -50,6 +50,7 @@ var control_hint: Label
 var menu_help: Label
 var fire_key := "F"
 var dash_key := "Shift"
+var aim_keys := "Arrows"
 
 
 var cyan := Color("55ad87")
@@ -236,12 +237,12 @@ func _build_game_hud() -> void:
 	dash_bar.add_theme_stylebox_override("fill", _panel_style(Color("f2c14e"), Color("a97925"), 4))
 	dash_box.add_child(dash_bar)
 
-	var controls := _label("WASD MOVE   •   MOUSE AIM   •   SHIFT DASH   •   F AUTO-FIRE   •   P / ESC PAUSE", 13, pale)
+	var controls := _label("WASD MOVE   •   ARROWS / MOUSE AIM   •   SHIFT DASH   •   F AUTO-FIRE   •   P / ESC PAUSE", 13, pale)
 	control_hint = controls
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	controls.position = Vector2(-350, -28)
-	controls.size = Vector2(700, 20)
+	controls.position = Vector2(-490, -28)
+	controls.size = Vector2(980, 20)
 	root.add_child(controls)
 
 	banner_label = _label("WAVE 1", 48, Color.WHITE)
@@ -333,7 +334,7 @@ func _build_menu() -> void:
 	options.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	options.pressed.connect(func(): settings_requested.emit())
 	box.add_child(options)
-	var help := _label("WASD move  •  Mouse aim  •  Shift scurry  •  F auto-fire  •  Common sense optional", 13, pale)
+	var help := _label("WASD move  •  Arrows / mouse aim  •  Shift scurry  •  F auto-fire", 13, pale)
 	menu_help = help
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(help)
@@ -595,8 +596,9 @@ func set_control_labels(keys: Dictionary) -> void:
 	dash_key = OS.get_keycode_string(keys["dash"])
 	fire_key = OS.get_keycode_string(keys["toggle_autofire"])
 	var movement := "%s/%s/%s/%s" % [OS.get_keycode_string(keys["move_up"]), OS.get_keycode_string(keys["move_left"]), OS.get_keycode_string(keys["move_down"]), OS.get_keycode_string(keys["move_right"])]
-	control_hint.text = "%s MOVE / MOUSE AIM / %s DASH / ESC PAUSE" % [movement, dash_key]
-	menu_help.text = "%s move / Mouse aim / %s dash / Controller supported" % [movement, dash_key]
+	aim_keys = "Arrows" if keys["aim_up"] == KEY_UP and keys["aim_left"] == KEY_LEFT and keys["aim_down"] == KEY_DOWN and keys["aim_right"] == KEY_RIGHT else "%s/%s/%s/%s" % [OS.get_keycode_string(keys["aim_up"]), OS.get_keycode_string(keys["aim_left"]), OS.get_keycode_string(keys["aim_down"]), OS.get_keycode_string(keys["aim_right"])]
+	control_hint.text = "%s MOVE / %s OR MOUSE AIM / %s DASH / ESC PAUSE" % [movement, aim_keys.to_upper(), dash_key]
+	menu_help.text = "%s move / %s or mouse aim / %s dash / Controller supported" % [movement, aim_keys, dash_key]
 
 func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	if not enabled or wave > 3:
@@ -606,7 +608,7 @@ func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	elif player.dash_count == 0:
 		tip_label.text = "Dash through danger! %s or RB. Briefly invulnerable." % dash_key
 	elif wave <= 1:
-		tip_label.text = "Aim with mouse or right stick. Firing is automatic. Clear the wave to choose a build."
+		tip_label.text = "Aim: %s, mouse or right stick. Hold aim keys to fire. Clear the wave to choose a build." % aim_keys
 	else:
 		tip_label.text = "Reach streak x8 for Rapid Claws! Yellow attack line: wind-up. Red: step aside!"
 

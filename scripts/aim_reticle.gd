@@ -8,7 +8,7 @@ func _process(delta: float) -> void:
 	visible = enabled
 	if enabled:
 		var player = get_parent().player
-		global_position = player.global_position + player.aim_direction * 150.0 if is_instance_valid(player) and player.using_controller else get_global_mouse_position()
+		global_position = player.global_position + player.aim_direction * 150.0 if is_instance_valid(player) and player.using_directional_aim else get_global_mouse_position()
 		queue_redraw()
 
 func _draw() -> void:

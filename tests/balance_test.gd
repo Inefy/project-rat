@@ -20,6 +20,12 @@ func _run() -> void:
 	paused = true
 	var rat = game.player
 	rat.autofire = false
+	check(rat.move_speed == 350.0, "base movement speed is increased")
+	for i in range(6):
+		rat.apply_upgrade("fleet_feet")
+	check(rat.move_speed == 470.0, "Fleet Feet retains all six speed upgrades at the higher base speed")
+	check(rat.fire_interval == 0.15 and rat.base_damage == 11.5, "base seeds fire much faster for less damage")
+	check(is_equal_approx(rat.base_damage / rat.fire_interval, 76.66667), "faster base seeds retain the intended sustained damage")
 	rat.active_time = 10.0
 	rat.apply_upgrade("snack_orbit")
 	# A heap of banked loot must not buy permanent weapon buffs or orbit uptime.

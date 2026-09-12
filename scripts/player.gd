@@ -15,9 +15,10 @@ const POWER_DAMAGE_MULTIPLIER := 1.35
 
 var max_health := 100.0
 var health := 100.0
-var move_speed := 315.0
-var base_damage := 24.0
-var fire_interval := 0.27
+var move_speed := 350.0
+# Faster, lighter seeds keep the starting weapon active without increasing its sustained damage.
+var base_damage := 11.5
+var fire_interval := 0.15
 var bullet_speed := 920.0
 var bullet_radius := 4.5
 var base_pierce := 0
@@ -46,7 +47,7 @@ var anim_time := 0.0
 var distance_walked := 0.0
 var upgrade_levels: Dictionary = {}
 var active_time := 0.0
-var using_controller := false
+var using_directional_aim := false
 var last_damage_source := "garden raider"
 var dash_count := 0
 var orbit_until := 0
@@ -86,7 +87,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not alive:
 		return
 	if event is InputEventMouseMotion and event.relative.length_squared() > 1.0:
-		using_controller = false
+		using_directional_aim = false
+	if event is InputEventKey and event.pressed and not event.echo:
+		for action in ["aim_left", "aim_right", "aim_up", "aim_down"]:
+			if event.is_action_pressed(action):
+				# Keep short taps even when press and release land between physics ticks.
+				_update_aim(Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down"))
+				break
 	if event.is_action_pressed("toggle_autofire"):
 		autofire = not autofire
 		autofire_changed.emit(autofire)
@@ -98,8 +105,8 @@ func _physics_process(delta: float) -> void:
 	anim_time += delta
 	_update_orbit(delta)
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var stick_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
-	_update_aim(stick_aim)
+	var directional_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	_update_aim(directional_aim)
 	var now := game_time_ms()
 	_update_dash(move_input, Input.is_action_just_pressed("dash"))
 	var speed_multiplier := 1.38 if now < haste_until else 1.0
@@ -116,7 +123,7 @@ func _physics_process(delta: float) -> void:
 	rotation = aim_direction.angle()
 
 	shot_cooldown -= delta
-	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or stick_aim.length() > 0.28
+	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or directional_aim.length() > 0.28
 	if wants_to_fire and shot_cooldown <= 0.0:
 		fire()
 		var rapid_multiplier := RAPID_INTERVAL_MULTIPLIER if now < rapid_until else 1.0
@@ -136,11 +143,11 @@ func _update_dash(move_input: Vector2, pressed: bool) -> void:
 		dash_count += 1
 		dash_started.emit(global_position)
 
-func _update_aim(stick_aim: Vector2) -> void:
-	if stick_aim.length() > 0.28:
-		using_controller = true
-		aim_direction = stick_aim.normalized()
-	elif not using_controller:
+func _update_aim(directional_aim: Vector2) -> void:
+	if directional_aim.length() > 0.28:
+		using_directional_aim = true
+		aim_direction = directional_aim.normalized()
+	elif not using_directional_aim:
 		var mouse_delta := get_global_mouse_position() - global_position
 		if mouse_delta.length() > 4.0:
 			aim_direction = mouse_delta.normalized()
@@ -208,11 +215,11 @@ func apply_upgrade(kind: String) -> void:
 		"snack_orbit":
 			orbit_until = game_time_ms() + 6500
 		"quick_whiskers":
-			fire_interval = maxf(0.13, fire_interval * 0.90)
+			fire_interval = maxf(0.09, fire_interval * 0.90)
 		"heavy_seeds":
 			base_damage += 3.5
 		"fleet_feet":
-			move_speed = minf(420.0, move_speed + 20.0)
+			move_speed = minf(470.0, move_speed + 20.0)
 		"thick_fur":
 			max_health += 16.0
 			health = minf(max_health, health + 20.0)
@@ -240,11 +247,11 @@ func can_take_upgrade(kind: String) -> bool:
 			var requires := {"split_acorns": "pinball", "dash_refund": "scurry_bomb", "orbit_feast": "snack_orbit"}
 			return level < 1 and (not requires.has(kind) or upgrade_levels.get(requires[kind], 0) > 0)
 		"quick_whiskers":
-			return level < 7 and fire_interval > 0.131
+			return level < 7 and fire_interval > 0.091
 		"heavy_seeds":
 			return level < 9
 		"fleet_feet":
-			return level < 6 and move_speed < 419.0
+			return level < 6 and move_speed < 469.0
 		"thick_fur":
 			return level < 6
 		"long_teeth":

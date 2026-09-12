@@ -48,7 +48,8 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 	var damage_scale := get_damage_scale(wave)
 	match enemy_kind:
 		"bird":
-			max_health = 24.0 * health_scale
+			# The opening target remains a satisfying one-seed takedown.
+			max_health = 11.5 * health_scale
 			move_speed = minf(385.0, 218.0 + wave * 4.0)
 			contact_damage = 9.0 * damage_scale
 			score_value = 90 + wave * 5

@@ -43,6 +43,10 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/playability_test.gd
 
+      - name: Run keyboard aiming regression test
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/keyboard_aim_test.gd
+
       - name: Check sprite completeness and framing
         run: godot --headless --path . --script tests/model_art_test.gd
         timeout-minutes: 2

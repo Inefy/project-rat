@@ -87,9 +87,10 @@ func _run() -> void:
 			bullet_count += 1
 	check(bullet_count >= 3, "triple-shot spawns three projectiles")
 	game.player.apply_upgrade("extra_pocket")
+	var base_damage: float = game.player.base_damage
 	game.player.apply_upgrade("heavy_seeds")
 	check(game.player.permanent_projectiles == 2, "permanent multishot upgrade applies")
-	check(game.player.base_damage > 18.0, "permanent damage upgrade applies")
+	check(game.player.base_damage > base_damage, "permanent damage upgrade applies")
 
 	var enemies := get_nodes_in_group("enemies")
 	if not enemies.is_empty():

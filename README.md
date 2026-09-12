@@ -25,15 +25,17 @@ Gameplay characters, pickups, projectiles, and explosive props use 94 transparen
 
 | Action | Keyboard and mouse | Gamepad |
 | --- | --- | --- |
-| Move | `WASD` or arrow keys | Left stick |
-| Aim | Mouse | Right stick |
-| Fire | Automatic by default; left click or `Space` when disabled | Right stick |
+| Move | `WASD` | Left stick |
+| Aim | Arrow keys or mouse | Right stick |
+| Fire | Automatic by default; hold arrow keys, left click or `Space` when disabled | Right stick |
 | Dash | `Shift` | Right shoulder |
 | Toggle auto-fire | `F` | Right stick click |
 | Choose mutation | `1`, `2`, or `3` | Click / tap a card |
 | Pause | `P` or `Esc` | Start |
 
-Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button. Releasing the aiming stick preserves its direction.
+For keyboard-only play, move with **WASD** and aim/fire with the **arrow keys**. Hold two arrows for diagonal aim. Releasing the aim keys or right stick preserves the last direction; moving the mouse resumes mouse aiming. Arrow keys still navigate menus. Movement and aim keys can be remapped, including swapping WASD and arrows.
+
+Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button.
 
 ## Build your rat
 
@@ -110,6 +112,7 @@ godot --headless --path . --script tests/smoke_test.gd
 godot --headless --path . --script tests/fun_systems_test.gd
 
 godot --headless --path . --script tests/playability_test.gd
+godot --headless --path . --script tests/keyboard_aim_test.gd
 godot --headless --path . --script tests/balance_test.gd
 ```
 

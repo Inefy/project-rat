@@ -352,7 +352,7 @@ func get_build_description() -> String:
 	for id in upgrade_levels:
 		if get_parent().UPGRADES.has(id):
 			lines.append("%s Lv.%d" % [get_parent().UPGRADES[id]["title"], upgrade_levels[id]])
-	return " / ".join(lines) if not lines.is_empty() else "First wave cleared: choose your build."
+	return " • ".join(lines) if not lines.is_empty() else "No upgrades"
 
 func _update_orbit(delta: float) -> void:
 	orbit_hit_cooldown -= delta

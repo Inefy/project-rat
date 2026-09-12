@@ -248,7 +248,7 @@ func _physics_process(delta: float) -> void:
 		hud.set_boss_status(active_boss.enemy_kind.replace("_", " ").to_upper(), active_boss.boss_phase, active_boss.health / active_boss.max_health)
 	hud.update_combo(combo, clampf(float(combo_expires - int(run_clock * 1000.0)) / COMBO_WINDOW_MS, 0.0, 1.0))
 	if wave_active and wave_queue.is_empty() and _living_enemy_count() <= 3:
-		hud.set_encounter("LAST %d - FOLLOW THE GOLD ARROWS" % _living_enemy_count())
+		hud.set_encounter("%d LEFT" % _living_enemy_count())
 	hud.update_tip(player, current_wave, settings.tips)
 
 func _process(delta: float) -> void:
@@ -343,7 +343,7 @@ func _finish_wave() -> void:
 	var clear_bonus := 400 * current_wave
 	score += clear_bonus
 	intermission = max(1.8, 3.0 - current_wave * 0.035)
-	hud.show_toast("CRUMBS TEMPORARILY SECURED!  +%d" % clear_bonus, Color("4f9f8f"))
+	hud.show_toast("WAVE CLEAR +%d" % clear_bonus, Color("4f9f8f"))
 	audio.play("wave_clear", 0.02)
 	player.heal(6.0 if settings.cozy else 3.0)
 	# Emergency cheese prevents one bad wave from ending an otherwise healthy run.
@@ -473,7 +473,7 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 	if combo == 8 and not streak_rewarded:
 		streak_rewarded = true
 		player.apply_powerup("rapid")
-		hud.show_toast("MAX STREAK! RAPID CLAWS UNLEASHED", CHEESE)
+		hud.show_toast("STREAK x8: RAPID FIRE", CHEESE)
 		audio.play("pickup", 0.04)
 	if enemy.get("enemy_kind") in ["alpha_cat", "junkyard_dog", "barn_owl"]:
 		boss_reward_pending = true

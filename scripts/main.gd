@@ -1,6 +1,6 @@
 extends Node2D
 
-const PlayerScript = preload("res://scripts/player.gd")
+const PlayerScript = preload("res://scripts/first_person_player.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const EnemyProjectileScript = preload("res://scripts/enemy_projectile.gd")
 const PowerUpScript = preload("res://scripts/power_up.gd")
@@ -20,31 +20,32 @@ const KENNEY_BUSH_ALT_TEXTURE = preload("res://assets/kenney/background/bushAlt1
 const KENNEY_FENCE_TEXTURE = preload("res://assets/kenney/background/fence.png")
 
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
-const INK := Color("321f2b")
-const GRASS := Color("7fbd58")
-const GRASS_DARK := Color("5b9b49")
-const DIRT := Color("c99358")
+const INK := Color("0b0d17")
+const GRASS := Color("0d111a")
+const GRASS_DARK := Color("070b12")
+const DIRT := Color("1a1823")
 const CREAM := Color("fff0bf")
 const TOMATO := Color("df5144")
 const CHEESE := Color("f6c53f")
 const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste", "shield", "pierce"]
 const COMBO_WINDOW_MS := 2400
 const UPGRADES := {
-	"pinball": {"id": "pinball", "title": "PINBALL RAT", "description": "Seeds bounce off the fence once. Herd enemies into the rebound!", "color": Color("55ad87")},
-	"scurry_bomb": {"id": "scurry_bomb", "title": "SCURRY MENACE", "description": "Every dash leaves an explosive crumb. Blast damage: 2.5x your seed.", "color": Color("ef6f6c")},
-	"snack_orbit": {"id": "snack_orbit", "title": "SNACK WIZARD", "description": "Start with 3 orbiting seeds for 6.5s. Treats recharge your orbit!", "color": Color("8d79ad")},
-	"split_acorns": {"id": "split_acorns", "title": "SPLIT DECISION", "description": "Pinball synergy: rebounds split off one extra seed at 60% damage.", "color": Color("55ad87")},
-	"dash_refund": {"id": "dash_refund", "title": "CRUMB BACK", "description": "Scurry synergy: a crumb blast that hits refunds 0.4s of dash recharge.", "color": Color("ef6f6c")},
-	"orbit_feast": {"id": "orbit_feast", "title": "FULL PLATE", "description": "Wizard synergy: orbiting seeds increase from 3 to 5.", "color": Color("8d79ad")},
-	"quick_whiskers": {"id": "quick_whiskers", "title": "CAFFEINE WHISKERS", "description": "Fire 10% faster. Blinking optional.", "color": Color("ef6f6c")},
-	"heavy_seeds": {"id": "heavy_seeds", "title": "ANGRY ACORNS", "description": "+3.5 damage and several grievances", "color": Color("e89b4f")},
-	"fleet_feet": {"id": "fleet_feet", "title": "PANIC LEGS", "description": "+20 speed. Dignity sold separately.", "color": Color("79a85b")},
-	"thick_fur": {"id": "thick_fur", "title": "SUSPICIOUSLY THICK FUR", "description": "+16 max health and heal 20", "color": Color("d95863")},
-	"long_teeth": {"id": "long_teeth", "title": "DENTIST'S NIGHTMARE", "description": "Seeds pierce +1 unfortunate target", "color": Color("f4d7a1")},
-	"big_paws": {"id": "big_paws", "title": "CARTOON PAWS", "description": "Bigger seeds. Questionable anatomy.", "color": Color("8d79ad")},
-	"lucky_tail": {"id": "lucky_tail", "title": "LUCKY WIGGLE", "description": "+3% treat drops, scientifically-ish", "color": Color("f2c14e")},
-	"extra_pocket": {"id": "extra_pocket", "title": "ILLEGAL POCKET", "description": "+1 permanent seed. Don't ask where.", "color": Color("4f9f8f")},
-	"cheese_magnet": {"id": "cheese_magnet", "title": "CHEESE GRAVITY", "description": "+55 pickup range. Physics resigns.", "color": Color("e7b84b")},
+	"light_trail": {"id": "light_trail", "title": "LIGHT TRAIL", "description": "Leave light for 3s.\nDeals 1.5x bullet damage/s.", "color": Color("ffe7a0")},
+	"pinball": {"id": "pinball", "title": "BOUNCE", "description": "Bullets bounce off walls once.", "color": Color("55ad87")},
+	"scurry_bomb": {"id": "scurry_bomb", "title": "DASH BOMB", "description": "Dash leaves a bomb.\nDamage: 2.5x bullet damage.", "color": Color("ef6f6c")},
+	"snack_orbit": {"id": "snack_orbit", "title": "ORBIT", "description": "3 orbiting bullets for 6.5s.\nPickups recharge them.", "color": Color("8d79ad")},
+	"split_acorns": {"id": "split_acorns", "title": "SPLIT SHOT", "description": "Bounces add 1 bullet\nat 60% damage.", "color": Color("55ad87")},
+	"dash_refund": {"id": "dash_refund", "title": "DASH RECHARGE", "description": "Bomb hits reduce\ndash cooldown by 0.4s.", "color": Color("ef6f6c")},
+	"orbit_feast": {"id": "orbit_feast", "title": "EXTRA ORBITS", "description": "Orbiting bullets: 3 → 5.", "color": Color("8d79ad")},
+	"quick_whiskers": {"id": "quick_whiskers", "title": "FIRE RATE", "description": "10% shorter shot interval.", "color": Color("ef6f6c")},
+	"heavy_seeds": {"id": "heavy_seeds", "title": "DAMAGE", "description": "+3.5 damage.", "color": Color("e89b4f")},
+	"fleet_feet": {"id": "fleet_feet", "title": "SPEED", "description": "+20 speed.", "color": Color("79a85b")},
+	"thick_fur": {"id": "thick_fur", "title": "HEALTH", "description": "+16 max HP. Heal 20 HP.", "color": Color("d95863")},
+	"long_teeth": {"id": "long_teeth", "title": "PIERCING", "description": "Bullets pierce +1 target.", "color": Color("f4d7a1")},
+	"big_paws": {"id": "big_paws", "title": "BULLET SIZE", "description": "Larger bullets.", "color": Color("8d79ad")},
+	"lucky_tail": {"id": "lucky_tail", "title": "DROP CHANCE", "description": "+3% pickup drop chance.", "color": Color("f2c14e")},
+	"extra_pocket": {"id": "extra_pocket", "title": "MULTISHOT", "description": "+1 bullet per shot.", "color": Color("4f9f8f")},
+	"cheese_magnet": {"id": "cheese_magnet", "title": "PICKUP RANGE", "description": "+55 pickup range.", "color": Color("e7b84b")},
 }
 
 var rng := RandomNumberGenerator.new()
@@ -79,9 +80,12 @@ var best_wave := 0
 var previous_best_wave := 0
 var kills_without_treat := 0
 var streak_rewarded := false
+var active_boss: CharacterBody2D
+var first_person: Node3D
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	hide() # CanvasLayer menus remain visible above the 3D world.
 	rng.randomize()
 	high_score = _load_high_score()
 	audio = AudioManagerScript.new()
@@ -169,6 +173,9 @@ func start_game() -> void:
 	player.damage_feedback.connect(_on_player_damage_feedback)
 	player.aim_assist = settings.aim_assist
 	add_child(ThreatOverlayScript.new())
+	first_person = preload("res://scripts/first_person_view.gd").new()
+	add_child(first_person)
+	audio.start_ambience()
 	for at in [Vector2(-650, 190), Vector2(650, -190)]:
 		var can := FizzyCanScript.new()
 		can.position = at
@@ -180,7 +187,7 @@ func start_game() -> void:
 	reticle.z_index = 80
 	reticle.add_to_group("run_entities")
 	add_child(reticle)
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	hud.begin_game()
 	hud.set_autofire(true)
 	var empty_buffs: Array[String] = []
@@ -203,7 +210,7 @@ func _toggle_pause() -> void:
 	hud.set_paused(paused)
 	if paused:
 		hud.set_build_text(player.get_build_description())
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_HIDDEN)
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED)
 
 func _physics_process(delta: float) -> void:
 	if game_state != "playing" or get_tree().paused or not is_instance_valid(player):
@@ -236,14 +243,11 @@ func _physics_process(delta: float) -> void:
 	hud.update_tip(player, current_wave, settings.tips)
 
 func _process(delta: float) -> void:
-	if not is_instance_valid(player) or not player.has_node("ArenaCamera"):
-		return
-	var camera: Camera2D = player.get_node("ArenaCamera")
-	if shake_strength > 0.05 and not get_tree().paused:
-		camera.offset = Vector2(rng.randf_range(-shake_strength, shake_strength), rng.randf_range(-shake_strength, shake_strength)) * settings.shake
+	if not get_tree().paused:
 		shake_strength = maxf(0.0, shake_strength - delta * 34.0)
-	else:
-		camera.offset = camera.offset.lerp(Vector2.ZERO, minf(1.0, delta * 14.0))
+	# Browsers release pointer lock themselves on Escape.
+	if OS.has_feature("web") and game_state == "playing" and not get_tree().paused and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		_toggle_pause()
 
 func _begin_next_wave() -> void:
 	current_wave += 1
@@ -592,8 +596,8 @@ func _open_upgrade_draft() -> void:
 		player.heal(24.0)
 		score += 1000
 		boss_reward_pending = false
-		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-		hud.show_toast("FULLY MUTATED! +24 health / +1000 score", Color("f6c53f"))
+		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		hud.show_toast("+24 HP • +1000 SCORE", Color("f6c53f"))
 		return
 	game_state = "upgrade"
 	get_tree().paused = true
@@ -609,14 +613,14 @@ func _on_upgrade_selected(id: String) -> void:
 	get_tree().paused = false
 	game_state = "playing"
 	intermission = 0.65
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	hud.show_toast(String(data["title"]), data["color"])
 	audio.play("pickup", 0.025, 1.5)
 	current_upgrade_ids.clear()
 	if boss_reward_pending:
 		boss_reward_pending = false
 		_open_upgrade_draft()
-		hud.show_toast("BOSS REWARD: one extra mutation", Color("f6c53f"))
+		hud.show_toast("BONUS UPGRADE", Color("f6c53f"))
 
 func _on_player_died() -> void:
 	if game_state != "playing":
@@ -650,7 +654,7 @@ func _continue_overtime() -> void:
 	hud.hide_victory()
 	get_tree().paused = false
 	game_state = "playing"
-	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
+	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	_open_upgrade_draft()
 
 func _record_run() -> void:

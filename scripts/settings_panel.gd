@@ -6,6 +6,7 @@ const PATH := "user://settings.cfg"
 const DEFAULT_KEYS := {"move_up": KEY_W, "move_left": KEY_A, "move_down": KEY_S, "move_right": KEY_D, "aim_up": KEY_UP, "aim_left": KEY_LEFT, "aim_down": KEY_DOWN, "aim_right": KEY_RIGHT, "dash": KEY_SHIFT, "toggle_autofire": KEY_F, "pause": KEY_P}
 var volume := 0.8
 var shake := 0.5
+var mouse_sensitivity := 1.0
 var aim_assist := false
 var cozy := false
 var tips := true
@@ -44,12 +45,13 @@ func _ready() -> void:
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	options.add_theme_constant_override("separation", 10)
 	scroll.add_child(options)
-	_slider(options, "Sound volume", volume, func(value): volume = value; _save())
+	_slider(options, "Volume", volume, func(value): volume = value; _save())
 	_slider(options, "Camera shake", shake, func(value): shake = value; _save())
-	_toggle(options, "Gentle aim assist", aim_assist, func(value): aim_assist = value; _save())
-	_toggle(options, "Cozy difficulty (gentler new enemies)", cozy, func(value): cozy = value; _save())
-	_toggle(options, "Larger gameplay and upgrade text", large_text, func(value): large_text = value; _save())
-	_toggle(options, "Show learn-as-you-play hints", tips, func(value): tips = value; _save())
+	_slider(options, "Mouse sensitivity", mouse_sensitivity / 2.0, func(value): mouse_sensitivity = maxf(0.1, value * 2.0); _save())
+	_toggle(options, "Aim assist", aim_assist, func(value): aim_assist = value; _save())
+	_toggle(options, "Easy mode", cozy, func(value): cozy = value; _save())
+	_toggle(options, "Large text", large_text, func(value): large_text = value; _save())
+	_toggle(options, "Hints", tips, func(value): tips = value; _save())
 	for action in DEFAULT_KEYS:
 		var button := Button.new()
 		button.custom_minimum_size.y = 38
@@ -165,6 +167,7 @@ func _load() -> void:
 		return
 	volume = clampf(float(config.get_value("comfort", "volume", volume)), 0, 1)
 	shake = clampf(float(config.get_value("comfort", "shake", shake)), 0, 1)
+	mouse_sensitivity = clampf(float(config.get_value("comfort", "mouse_sensitivity", 1.0)), 0.1, 2.0)
 	aim_assist = bool(config.get_value("comfort", "aim_assist", false))
 	cozy = bool(config.get_value("comfort", "cozy", false))
 	tips = bool(config.get_value("comfort", "tips", true))
@@ -176,7 +179,7 @@ func _load() -> void:
 
 func _save() -> void:
 	var config := ConfigFile.new()
-	for property in ["volume", "shake", "aim_assist", "cozy", "tips", "large_text"]:
+	for property in ["volume", "shake", "mouse_sensitivity", "aim_assist", "cozy", "tips", "large_text"]:
 		config.set_value("comfort", property, get(property))
 	for action in keys:
 		config.set_value("keys", action, keys[action])

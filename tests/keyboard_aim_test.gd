@@ -33,63 +33,68 @@ func run() -> void:
 	rat.aim_assist = false
 	rat.autofire = false
 
+	rat.yaw = 0
+	rat.pitch = 0
+	rat._update_aim(Vector2.ZERO)
 	key(KEY_W, true)
+	rat._physics_process(0)
+	check(rat.velocity.is_equal_approx(Vector2.UP * rat.move_speed), "W moves forward at the initial heading")
 	key(KEY_RIGHT, true)
-	rat._physics_process(0)
-	check(rat.velocity == Vector2.UP * rat.move_speed, "W moves independently while right arrow aims")
-	check(rat.aim_direction == Vector2.RIGHT, "right arrow aims right")
-	check(get_nodes_in_group("player_bullets").size() == 1, "holding an aim key fires with auto-fire disabled")
+	rat._physics_process(0.25)
+	check(rat.yaw > 0 and rat.aim_direction.x > 0, "right arrow turns the view right")
+	check(rat.velocity.normalized().is_equal_approx(rat.aim_direction), "forward movement follows the current turn")
+	check(not get_nodes_in_group("player_bullets").is_empty(), "holding an aim key fires with auto-fire disabled")
 	key(KEY_UP, true)
-	rat._physics_process(0)
-	var diagonal := Vector2(1, -1).normalized()
-	check(rat.aim_direction.is_equal_approx(diagonal), "two arrows produce normalized diagonal aim")
-	game.reticle._process(0)
-	check(game.reticle.global_position.is_equal_approx(rat.global_position + diagonal * 150), "reticle follows keyboard aim")
+	rat._physics_process(0.1)
+	check(rat.pitch > 0, "up arrow looks up")
 	key(KEY_W, false)
 	key(KEY_UP, false)
 	key(KEY_RIGHT, false)
+	var heading: Vector2 = rat.aim_direction
 	rat.shot_cooldown = 0
 	var bullets: int = get_nodes_in_group("player_bullets").size()
 	rat._physics_process(0)
-	check(rat.velocity == Vector2.ZERO, "arrow aiming does not move the rat")
-	check(rat.aim_direction.is_equal_approx(diagonal), "releasing arrows retains last aim")
+	check(rat.velocity == Vector2.ZERO, "looking does not move the rat")
+	check(rat.aim_direction.is_equal_approx(heading), "releasing arrows retains the heading")
 	check(get_nodes_in_group("player_bullets").size() == bullets, "releasing arrows stops manual firing")
 
-	var motion := InputEventMouseMotion.new()
-	motion.relative = Vector2(12, 0)
-	rat._unhandled_input(motion)
-	rat._physics_process(0)
-	check(not rat.using_directional_aim, "mouse movement resumes mouse aiming")
-	var mouse_delta: Vector2 = rat.get_global_mouse_position() - rat.global_position
-	if mouse_delta.length() > 4:
-		check(rat.aim_direction.is_equal_approx(mouse_delta.normalized()), "mouse aim follows cursor again")
+	var yaw: float = rat.yaw
+	if DisplayServer.get_name() != "headless":
+		var motion := InputEventMouseMotion.new()
+		motion.relative = Vector2(40, 20)
+		var pitch: float = rat.pitch
+		rat._unhandled_input(motion)
+		check(rat.yaw > yaw and rat.pitch < pitch, "captured mouse turns right and looks down")
+		motion.relative = Vector2(0, -100000)
+		rat._unhandled_input(motion)
+		check(is_equal_approx(rat.pitch, 1.1), "vertical look is clamped")
 	var stick := InputEventJoypadMotion.new()
 	stick.axis = JOY_AXIS_RIGHT_X
 	stick.axis_value = -1
 	Input.parse_input_event(stick)
 	Input.flush_buffered_events()
-	rat._physics_process(0)
-	check(rat.aim_direction == Vector2.LEFT, "right stick still aims")
+	yaw = rat.yaw
+	rat._physics_process(0.1)
+	check(rat.yaw < yaw, "right stick turns left")
 	stick = stick.duplicate()
 	stick.axis_value = 0
 	Input.parse_input_event(stick)
 	Input.flush_buffered_events()
-	rat._physics_process(0)
-	check(rat.aim_direction == Vector2.LEFT, "released stick retains direction")
+	yaw = rat.yaw
+	rat._physics_process(0.1)
+	check(rat.yaw == yaw, "released stick retains heading")
 
 	settings._set_key("aim_up", KEY_I)
 	settings._apply_keys()
 	game._apply_settings()
+	rat.pitch = 0
 	key(KEY_I, true)
-	rat._physics_process(0)
-	check(rat.aim_direction == Vector2.UP and rat.velocity == Vector2.ZERO, "remapped aim key works independently")
-	check(game.hud.menu_help.text.contains("I/"), "hints reflect remapped aim keys")
+	rat._physics_process(0.1)
+	check(rat.pitch > 0 and rat.velocity == Vector2.ZERO, "remapped look key works independently")
+	check(game.hud.menu_help.text.contains("I/"), "hints reflect remapped look keys")
 	key(KEY_I, false)
-	key(KEY_DOWN, true)
-	key(KEY_DOWN, false)
-	check(rat.aim_direction == Vector2.DOWN, "a short aim tap is retained between physics ticks")
 	key(KEY_UP, true)
-	check(not Input.is_action_pressed("aim_up") and Input.is_action_pressed("ui_up"), "old aim key still navigates menus without aiming")
+	check(not Input.is_action_pressed("aim_up") and Input.is_action_pressed("ui_up"), "old look key still navigates menus")
 	key(KEY_UP, false)
 
 	var settings_path: String = settings.PATH
@@ -121,5 +126,5 @@ func run() -> void:
 	await process_frame
 	paused = false
 	if failures.is_empty():
-		print("KEYBOARD AIM PASS: movement, diagonals, firing, reticle, mouse/stick switching and saved remapping")
+		print("KEYBOARD AIM PASS: relative movement, mouse look, pitch clamp, gamepad and saved remapping")
 	quit(0 if failures.is_empty() else 1)

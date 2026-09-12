@@ -39,7 +39,8 @@ func _run() -> void:
 	rat.active_time = 3.31
 	rat._update_dash(Vector2.LEFT, false)
 	check(rat.dash_count == 1, "expired buffer cannot cause a surprise dash")
-	rat._update_aim(Vector2.DOWN)
+	rat.yaw = PI
+	rat._update_aim(Vector2.ZERO)
 	rat._update_dash(Vector2.ZERO, true)
 	check(rat.dash_direction == Vector2.DOWN, "stationary dash uses this frame's aiming direction")
 

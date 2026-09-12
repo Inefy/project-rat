@@ -8,6 +8,9 @@ var radius := 5.0
 var tint := Color("fff1bf")
 var hit_ids: Dictionary = {}
 var spent := false
+var uses_height := false
+var height := 58.0
+var vertical_speed := 0.0
 var bounces_left := 0
 var split_on_bounce := false
 const FENCE := Rect2(-1170, -670, 2340, 1340)
@@ -39,6 +42,13 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	global_position += velocity * delta
+	if uses_height:
+		height += vertical_speed * delta
+		if height < 0.0:
+			queue_free()
+			return
+		for body in get_overlapping_bodies():
+			_on_body_entered(body)
 	if bounces_left > 0 and not FENCE.has_point(global_position):
 		if global_position.x < FENCE.position.x or global_position.x > FENCE.end.x:
 			velocity.x *= -1.0
@@ -51,6 +61,9 @@ func _physics_process(delta: float) -> void:
 		if split_on_bounce and get_tree().get_nodes_in_group("player_bullets").size() < 160:
 			var child = get_script().new()
 			child.setup(global_position, velocity.normalized().rotated(0.3), velocity.length(), damage * 0.6, radius, 0, tint)
+			child.uses_height = uses_height
+			child.height = height
+			child.vertical_speed = vertical_speed
 			get_parent().add_child(child)
 			split_on_bounce = false
 	life -= delta
@@ -60,6 +73,11 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node) -> void:
 	if spent or not body.has_method("take_damage") or hit_ids.has(body.get_instance_id()):
 		return
+	if uses_height:
+		var body_radius = body.get("radius")
+		var top := maxf(80.0, float(body_radius) * 3.0 * body.scale.y) if body_radius != null else 80.0
+		if height > top + radius or height < -radius:
+			return
 	hit_ids[body.get_instance_id()] = true
 	body.take_damage(damage, velocity.normalized() * 75.0)
 	if pierce <= 0:

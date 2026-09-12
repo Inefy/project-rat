@@ -32,9 +32,19 @@ const VOLUMES := {
 
 var pool: Array[AudioStreamPlayer] = []
 var pool_cursor := 0
+var ambience: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	ambience = AudioStreamPlayer.new()
+	var drone: AudioStreamWAV = preload("res://assets/audio/night_drone.wav").duplicate()
+	drone.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	drone.loop_begin = 0
+	drone.loop_end = 264600
+	ambience.stream = drone
+	ambience.volume_db = -23.0
+	ambience.bus = &"Master"
+	add_child(ambience)
 	for i in range(18):
 		var player := AudioStreamPlayer.new()
 		player.bus = &"Master"
@@ -51,6 +61,10 @@ func play(event_name: String, pitch_jitter: float = 0.05, volume_offset: float =
 	player.pitch_scale = randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter)
 	player.play()
 
+func start_ambience() -> void:
+	if not ambience.playing:
+		ambience.play()
+
 func _next_player() -> AudioStreamPlayer:
 	for offset in range(pool.size()):
 		var index := (pool_cursor + offset) % pool.size()
@@ -62,6 +76,7 @@ func _next_player() -> AudioStreamPlayer:
 	return fallback
 
 func stop_all() -> void:
+	ambience.stop()
 	for player in pool:
 		player.stop()
 		player.stream = null

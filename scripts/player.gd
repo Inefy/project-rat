@@ -104,9 +104,9 @@ func _physics_process(delta: float) -> void:
 	active_time += delta
 	anim_time += delta
 	_update_orbit(delta)
-	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var directional_aim := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
-	_update_aim(directional_aim)
+	_update_aim(directional_aim, delta)
+	var move_input := _get_move_input()
 	var now := game_time_ms()
 	_update_dash(move_input, Input.is_action_just_pressed("dash"))
 	var speed_multiplier := 1.38 if now < haste_until else 1.0
@@ -143,7 +143,10 @@ func _update_dash(move_input: Vector2, pressed: bool) -> void:
 		dash_count += 1
 		dash_started.emit(global_position)
 
-func _update_aim(directional_aim: Vector2) -> void:
+func _get_move_input() -> Vector2:
+	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+
+func _update_aim(directional_aim: Vector2, _delta: float = 0.0) -> void:
 	if directional_aim.length() > 0.28:
 		using_directional_aim = true
 		aim_direction = directional_aim.normalized()
@@ -177,10 +180,14 @@ func fire() -> void:
 		var direction := aim_direction.rotated(offset)
 		var bullet := BulletScript.new()
 		bullet.setup(global_position + direction * 30.0, direction, bullet_speed, damage, bullet_radius, shot_pierce, color)
+		_configure_bullet(bullet)
 		bullet.bounces_left = int(upgrade_levels.get("pinball", 0))
 		bullet.split_on_bounce = upgrade_levels.get("split_acorns", 0) > 0
 		get_parent().add_child(bullet)
 	shot_fired.emit(global_position + aim_direction * 25.0, now < power_until)
+
+func _configure_bullet(_bullet: Area2D) -> void:
+	pass
 
 func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO, source: String = "garden raider") -> void:
 	if not alive or game_time_ms() < invulnerable_until:

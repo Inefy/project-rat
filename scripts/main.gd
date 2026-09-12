@@ -225,12 +225,17 @@ func _physics_process(delta: float) -> void:
 			_begin_next_wave()
 	else:
 		spawn_cooldown -= delta
-		if not wave_queue.is_empty() and spawn_cooldown <= 0.0 and _living_enemy_count() < get_enemy_cap(current_wave):
+		var living := _living_enemy_count()
+		var spawned_this_frame := 0
+		while not wave_queue.is_empty() and spawn_cooldown <= 0.0 and living < get_spawn_limit() and spawned_this_frame < 6:
 			var next_kind: String = wave_queue.pop_front()
 			_spawn_enemy(next_kind)
 			spawned_this_wave += 1
-			# Breathers belong in a crowded fight; fast clears should keep the pressure on.
-			spawn_cooldown = 1.0 if spawned_this_wave % 12 == 0 and _living_enemy_count() >= get_enemy_cap(current_wave) / 2 else get_spawn_interval(current_wave)
+			spawned_this_frame += 1
+			living += 1
+			spawn_cooldown += get_spawn_interval(current_wave)
+		if living >= get_spawn_limit():
+			spawn_cooldown = maxf(0.0, spawn_cooldown)
 		if wave_queue.is_empty() and _living_enemy_count() <= 3:
 			for enemy in get_tree().get_nodes_in_group("enemies"):
 				enemy.cleanup = true
@@ -279,11 +284,11 @@ func _begin_next_wave() -> void:
 		_add_shake(8.0)
 
 func get_regular_enemy_count(for_wave: int) -> int:
-	var count := 8 + for_wave * 6 + int(for_wave / 5) * 4
+	var count := 12 + for_wave * 8 + roundi(for_wave * for_wave * 0.85) + floori(run_clock / 60.0) * 8
 	return roundi(count * 0.8) if settings.cozy else count
 
 func get_enemy_cap(for_wave: int) -> int:
-	var cap := mini(42, 10 + for_wave * 2)
+	var cap := mini(180, 12 + for_wave * 5 + floori(run_clock / 60.0) * 5)
 	return roundi(cap * 0.7) if settings.cozy else cap
 
 func get_spawn_limit() -> int:
@@ -294,7 +299,7 @@ func get_spawn_limit() -> int:
 	return cap
 
 func get_spawn_interval(for_wave: int) -> float:
-	return maxf(0.14, 0.48 - for_wave * 0.016 - floorf(float(for_wave) / 10.0) * 0.02) * (1.25 if settings.cozy else 1.0)
+	return maxf(0.055, 0.44 / (1.0 + for_wave * 0.11 + run_clock / 180.0)) * (1.25 if settings.cozy else 1.0)
 
 func _encounter_enemy(index: int) -> String:
 	# Isolated introductions precede mixed encounters. Every recipe leaves room to move.

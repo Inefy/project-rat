@@ -21,3 +21,9 @@ The original 24-model picnic cast is authored with Blender Python and rendered i
 | [UI Audio](https://kenney.nl/assets/ui-audio) | `ui_click.ogg`, `ui_hover.ogg`, `pickup.ogg`, `dash.ogg` | [CC0 1.0](third_party/licenses/kenney-ui-audio.txt) |
 
 The files are stored in `assets/audio/` under descriptive names. Credit is not required by CC0, but Kenney's generous asset library deserves the shout-out.
+
+## Original atmosphere and feedback
+
+`assets/audio/night_drone.wav` is an original, mathematically synthesized 12-second ambient loop, built from low sine tones with slow amplitude modulation. It contains no third-party samples and is covered by the repository license. The eclipse, watchers, drifting fog, pickup bursts, and damage overlay are drawn directly in GDScript.
+
+The first-person branch uses runtime copies of the original `art/models/*.glb` models in `assets/models/`; the garden, weapon, crosshair, and radar use native Godot geometry.

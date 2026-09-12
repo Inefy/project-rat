@@ -2,6 +2,8 @@
 
 [![Test and deploy web game](https://github.com/Inefy/project-rat/actions/workflows/pages.yml/badge.svg)](https://github.com/Inefy/project-rat/actions/workflows/pages.yml)
 
+**First-person branch: `codex/first-person`.** Play from the rat’s eye level in a 3D nightmare garden, with mouse look, a seed blaster, and a threat radar.
+
 **Run. Aim. Snack.** Project R.A.T. is an open-source cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid. Save the picnic across 15 waves, then choose whether to keep going in endless overtime.
 
 Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
@@ -19,23 +21,23 @@ To play locally:
 3. Press **F6** or **F5**.
 
 
-Gameplay characters, pickups, projectiles, and explosive props use 94 transparent sprites rendered from 24 original Blender models. Characters have eight facings with runtime bounce and squash. Editable models, GLB exports, and the concept sheet are in `art/`; the production guide is `art/README.md`. Combat effects remain procedural. Bundled CC0 Kenney art decorates the backyard; credits are in `ASSETS.md`. No external plug-ins are required to play.
+This branch renders enemies, pickups, projectiles, and explosive props from the original Blender models in `assets/models/`. Mesh parts are merged by material for the arena renderer. The existing 2D simulation still handles movement, collisions, waves, and upgrades; seed projectiles also track height so shots follow vertical aim. Editable models, GLB exports, and the concept sheet are in `art/`; the production guide is `art/README.md`. Combat effects remain procedural. Bundled CC0 Kenney art decorates the backyard; credits are in `ASSETS.md`. No external plug-ins are required to play.
 
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
 | --- | --- | --- |
-| Move | `WASD` | Left stick |
-| Aim | Arrow keys or mouse | Right stick |
+| Move / strafe | `WASD`, relative to your facing | Left stick |
+| Look | Mouse or arrow keys | Right stick |
 | Fire | Automatic by default; hold arrow keys, left click or `Space` when disabled | Right stick |
 | Dash | `Shift` | Right shoulder |
 | Toggle auto-fire | `F` | Right stick click |
 | Choose mutation | `1`, `2`, or `3` | Click / tap a card |
 | Pause | `P` or `Esc` | Start |
 
-For keyboard-only play, move with **WASD** and aim/fire with the **arrow keys**. Hold two arrows for diagonal aim. Releasing the aim keys or right stick preserves the last direction; moving the mouse resumes mouse aiming. Arrow keys still navigate menus. Movement and aim keys can be remapped, including swapping WASD and arrows.
+Move with **WASD** and look around with the **mouse**. For keyboard-only play, the **arrow keys** turn left/right and look up/down; holding them also fires. Releasing look input preserves your heading. **Esc** pauses and releases the mouse; Resume captures it again. Drafts, game over, and the title screen release the mouse for UI navigation. The radar shows nearby raiders, incoming attack wind-ups, and pickups, including those behind you. Look and movement keys can be remapped.
 
-Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button.
+Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, mouse sensitivity, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button.
 
 ## Build your rat
 
@@ -47,9 +49,9 @@ The first wave-clear draft offers three ways to play:
 
 Later drafts mix stat upgrades with eligible build synergies. Cards show upgrade levels and stat changes; pause to inspect the complete build. Bosses guarantee banked Power and Shield treats plus a bonus mutation draft at wave clear. Leftover treats are banked until the next wave. Full health/shield pickups convert into temporary power, and Triple Seed adds two seeds even to an upgraded weapon.
 
-Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. Offscreen threats and final stragglers get edge markers. Shoot the marked fizzy cans to knock nearby enemies away.
+Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. The threat radar reveals raiders behind you and final stragglers. Shoot the marked fizzy cans to knock nearby enemies away.
 
-The opening birds fall to one accurate seed. Waves grow from 14 enemies to 76 at wave 10 and 110 at wave 15, with up to 42 enemies active in overtime. Fast clears bring the next enemy sooner; brief recovery gaps occur only when the arena is crowded. Raccoons and foxes remain in later encounter recipes. Ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge ring around your rat. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and twelve kills without a treat guarantee a drop (eight in Cozy).
+The opening birds fall to one accurate seed. Waves grow from 14 enemies to 76 at wave 10 and 110 at wave 15, with up to 42 enemies active in overtime. Fast clears bring the next enemy sooner; brief recovery gaps occur only when the arena is crowded. Raccoons and foxes remain in later encounter recipes. Ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge meter on the HUD. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and twelve kills without a treat guarantee a drop (eight in Cozy).
 
 Temporary power comes in bursts: Rapid Claws reduces shot intervals by 32%, Power Nibble adds 35% damage, and both last six seconds. Repeat pickups can bank up to nine seconds, Triple Seed up to ten, and the Wizard orbit up to eight. Spare health or shield treats add two seconds of Power within its cap. Permanent mutations still stack, but tougher enemies and denser waves keep pace. Bosses have substantially more health and attack more often below half health, with their full attack warnings preserved. Cozy reduces crowd sizes and deployment speed as well as enemy speed and damage.
 
@@ -64,37 +66,46 @@ Pausing and drafting freeze gameplay and its timers. When all mutations are exha
 - **Cats** stalk, telegraph, pounce, and ricochet off the arena walls.
 - **Owls** maintain distance and launch three-feather volleys.
 - **Snakes** slither unpredictably, kite the rat, and spit venom.
-- Armoured **Raccoons** join at wave 6, brace behind trash-can lids, and charge the player.
+- **Raccoons** join at wave 6, telegraph, and charge the player.
 - **Foxes** arrive at wave 10, circle the player, then telegraph a very fast ambush dash.
-- Boss waves rotate between the pouncing **Alpha Cat**, armoured **Junkyard Dog**, and ranged **Barn Owl**.
-- Breakable armour absorbs damage before health, is visible on the character and HUD bars, and also appears on late-run elites.
-- Rare **elite raiders** have boosted stats, armour, golden badges, and a guaranteed power-up drop.
+- Bosses have three health-based phases, clear attack warnings, and vulnerable recovery windows. The HUD shows their health and phase thresholds.
+- All enemy hits go directly to health. Regular enemy health scaling is gentle and capped; pressure comes from larger, faster hordes.
+- Rare **elite raiders** have boosted stats, golden badges, and a guaranteed power-up drop.
 - Seven enemy drops: healing Cheese, Rapid Claws, Triple Seed, Power Nibble, Sugar Rush, Tin-lid Shield, and Needle Teeth.
 - A three-card perk draft after every wave shapes the run with capped multishot, piercing, speed, health, luck, magnetism, and damage upgrades.
 - An invulnerable combat dash with dedicated recharge feedback.
+- **Light Trail** leaves a glowing, damaging path for three seconds while moving or dashing. It deals 1.5× base bullet damage per second, does not stack at intersections, and is guaranteed as an upgrade choice after wave 2.
 - Chain multipliers, wave-clear bonuses, saved high scores, controller support, hit feedback, and a complete title/pause/game-over flow.
-- Pooled CC0 sound effects, varied pitch, camera shake, and stronger combat feedback.
-- A 2400×1400 camera-tracked storybook backyard with a picnic blanket, flowers, stepping stones, animated ink-outlined characters, comic impact effects, and a custom reticle.
+- Pickups burst into colored rings and sparks with longer, simple labels. Damage triggers a red edge pulse, health-panel highlight, brighter hit flash, stronger sound, and camera shake; shield blocks have a separate blue effect. Feedback freezes while paused, and damage warnings take priority over pickup pulses.
+- A 24×14 meter first-person nightmare garden with a tiled floor, iron fence, watching trees, candlelit altar, and eclipsed moon. The seed blaster recoils when firing; a centered crosshair flashes on hits. Attack paths and ring escape gaps remain visible on the ground. An eclipsed title screen, charcoal menus, and a low ambient drone carry the horror theme through the game.
 
 ## Difficulty progression
 
 | Wave | New pressure |
 | --- | --- |
-| 3 | Ranged owls and armoured elite variants begin appearing. |
+| 3 | Ranged owls and elite variants begin appearing. |
 | 4 | Venom-spitting snakes join the mix. |
-| 5 | Alpha Cat boss. |
-| 6 | Armoured raccoons join regular waves. |
-| 10 | Fox ambushers and the armoured Junkyard Dog boss arrive. |
-| 15 | The Barn Owl boss introduces a seven-feather ranged fan. |
-| 20+ | Faster spawn pacing, denser waves, accelerating stats, and a high late-run armour share. |
+| 5 | Alpha Cat: single pounce → double pounce and sonic ring → triple pounce and denser ring. |
+| 6 | Charging raccoons join regular waves. |
+| 10 | Fox ambushers and Junkyard Dog: charge → repeated shockwaves → bone trails and three shockwaves. |
+| 15 | Barn Owl: aimed fans → sweeping volleys → rotating rings and dives. |
+| 20+ | Larger reserves and faster reinforcements, up to 180 active enemies. |
+
+Wave size, active enemy limits, and spawn speed also increase with elapsed play time. Pauses and upgrade choices stop the clock. Boss fights limit active reinforcements to 24 / 30 / 36 across their phases; normal horde pressure resumes when the boss dies.
+
+Story boss health is 1,800 / 2,800 / 4,000. Phases begin at two-thirds and one-third health. Transitions cancel pending attacks without blocking damage, and recovery takes 25% extra damage. Ring attacks leave a visible escape gap. Overtime health increases gently and caps at twice story health.
 
 ## Project layout
 
 ```text
 scenes/main.tscn        Entry scene
 scripts/main.gd         Run, wave, spawning, score, and persistence systems
-scripts/player.gd       Rat movement, aiming, weapon, health, and mutations
-scripts/enemy.gd        Bird, cat, owl, snake, elite, and Alpha Cat behavior
+scripts/player.gd       Shared movement, weapon, health, and mutations
+scripts/first_person_player.gd Mouse look and movement relative to facing
+scripts/first_person_view.gd   3D arena, models, weapon, and attack warnings
+scripts/first_person_overlay.gd Crosshair and threat radar
+scripts/enemy.gd        Enemy movement, damage, and phase transitions
+scripts/boss_patterns.gd Boss attack sequences and warnings
 scripts/hud.gd          Title screen, HUD, pause, and game-over UI
 scripts/audio_manager.gd Pooled web-safe sound playback
 scripts/power_up.gd     Drop behavior and visual language
@@ -113,8 +124,11 @@ godot --headless --path . --script tests/fun_systems_test.gd
 
 godot --headless --path . --script tests/playability_test.gd
 godot --headless --path . --script tests/keyboard_aim_test.gd
+godot --headless --path . --script tests/first_person_test.gd
 godot --headless --path . --script tests/balance_test.gd
 ```
+
+Run `godot --path . --script tests/first_person_test.gd` to check real mouse capture and save `build/first-person.png`. Headless Godot cannot capture a physical pointer.
 
 Create the browser build after installing Godot's export templates:
 

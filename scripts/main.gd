@@ -12,6 +12,7 @@ const CrumbBombScript = preload("res://scripts/crumb_bomb.gd")
 const ThreatOverlayScript = preload("res://scripts/threat_overlay.gd")
 const FizzyCanScript = preload("res://scripts/fizzy_can.gd")
 const SettingsScript = preload("res://scripts/settings_panel.gd")
+const NightmareMotifs = preload("res://scripts/nightmare_motifs.gd")
 const KENNEY_TREE_TEXTURE = preload("res://assets/kenney/background/tree.png")
 const KENNEY_SMALL_TREE_TEXTURE = preload("res://assets/kenney/background/treeSmall_green2.png")
 const KENNEY_SMALL_TREE_ALT_TEXTURE = preload("res://assets/kenney/background/treeSmall_green3.png")
@@ -745,66 +746,80 @@ func _save_high_score(value: int) -> void:
 		file.store_string(str(value))
 
 func _draw() -> void:
-	# Loud, toy-like backyard colors with imperfect mowing lines.
+	# A low-contrast nightmare garden sits beneath the bright combat sprites.
 	draw_rect(ARENA, GRASS, true)
 	for x in range(int(ARENA.position.x) - 100, int(ARENA.end.x), 185):
 		var stripe := PackedVector2Array([
 			Vector2(x, ARENA.position.y), Vector2(x + 130, ARENA.position.y),
 			Vector2(x + 265, ARENA.end.y), Vector2(x + 85, ARENA.end.y),
 		])
-		draw_colored_polygon(stripe, Color(GRASS_DARK, 0.17 if posmod(int(x / 185), 2) == 0 else 0.08))
-	# A hose is uselessly sprawled along the upper lawn.
+		draw_colored_polygon(stripe, Color(GRASS_DARK, 0.55 if posmod(int(x / 185), 2) == 0 else 0.25))
+	# Broken contour lines bend the ground without looking like attack warnings.
+	for row in range(13):
+		var contour := PackedVector2Array()
+		for column in range(49):
+			var x := -1200.0 + column * 50.0
+			var y := -645.0 + row * 104.0 + sin(x * 0.005 + row * 0.7) * 24.0
+			contour.append(Vector2(x, y))
+		draw_polyline(contour, Color("23202d"), 1.0, true)
+	for index in range(160):
+		var at := Vector2(-1160 + posmod(index * 317, 2320), -660 + posmod(index * 191, 1320))
+		draw_line(at, at + Vector2(8, -4), Color("292332"), 1.0, true)
+	for at in [Vector2(-370, -120), Vector2(390, 90), Vector2(-830, 320), Vector2(870, -220)]:
+		NightmareMotifs.spiral(self, at, 90, Color("373247"))
+	for at in [Vector2(-370, -120), Vector2(390, 90), Vector2(-890, -460), Vector2(820, 480)]:
+		NightmareMotifs.eye(self, at, 46.0, Color("465265"), -0.16)
+	# The old hose becomes an almost living, tangled root.
 	var hose := PackedVector2Array([Vector2(-1120, -545), Vector2(-810, -610), Vector2(-520, -525), Vector2(-185, -585), Vector2(105, -520)])
 	draw_polyline(hose, INK, 23.0, true)
-	draw_polyline(hose, Color("3c7767"), 14.0, true)
+	draw_polyline(hose, Color("354553"), 14.0, true)
 	_draw_kenney_backyard_props()
-	# Winding footpath is outlined like a chunky miniature playset.
+	# A bruised, cracked path runs through the garden.
 	var path := PackedVector2Array([Vector2(-1200, 420), Vector2(-820, 300), Vector2(-430, 350), Vector2(-40, 240), Vector2(390, 285), Vector2(780, 180), Vector2(1200, 240)])
 	draw_polyline(path, INK, 148.0, true)
 	draw_polyline(path, DIRT, 130.0, true)
-	draw_polyline(path, Color(0.96, 0.77, 0.45, 0.25), 7.0, true)
+	draw_polyline(path, Color("302638"), 2.0, true)
 	for marker in [Vector2(-760, -360), Vector2(690, 330), Vector2(-410, 470), Vector2(540, -420)]:
 		draw_circle(marker + Vector2(9, 12), 61.0, Color(0.18, 0.08, 0.09, 0.26))
-		draw_circle(marker, 58.0, CREAM)
+		draw_circle(marker, 58.0, Color("282b36"))
 		draw_arc(marker, 58.0, 0.0, TAU, 32, INK, 7.0, true)
-		draw_arc(marker + Vector2(-10, -8), 33.0, 3.4, 5.5, 14, Color(1, 1, 1, 0.35), 4.0, true)
-	# The picnic is comically overstocked and clearly worth fighting over.
+		draw_arc(marker + Vector2(-10, -8), 33.0, 3.4, 5.5, 14, Color("576174"), 2.0, true)
+		NightmareMotifs.eye(self, marker, 25.0, Color("75868e"))
+	# The familiar picnic survives as a desaturated, crooked patchwork.
 	var blanket := Rect2(-150, -105, 300, 210)
 	draw_rect(Rect2(blanket.position + Vector2(12, 15), blanket.size).grow(9.0), Color(0.16, 0.07, 0.08, 0.28), true)
 	draw_rect(blanket.grow(8.0), INK, true)
 	for row in range(4):
 		for column in range(6):
-			var patch_color := CREAM if (row + column) % 2 == 0 else TOMATO
-			draw_rect(Rect2(blanket.position + Vector2(column * 50, row * 52.5), Vector2(50, 52.5)), patch_color, true)
+			var patch_color := Color("373744") if (row + column) % 2 == 0 else Color("281b2d")
+			var top := blanket.position + Vector2(column * 50, row * 52.5)
+			var skew := sin(row * 1.8) * 8.0
+			var next_skew := sin((row + 1) * 1.8) * 8.0
+			draw_colored_polygon(PackedVector2Array([top + Vector2(skew, 0), top + Vector2(50 + skew, 0), top + Vector2(50 + next_skew, 52.5), top + Vector2(next_skew, 52.5)]), patch_color)
 	_draw_picnic_junk()
-	# Small flowers and cheese crumbs add detail without creating collision noise.
+	# Wilted flowers and chalk flecks stay dimmer than real pickups.
 	for flower in [Vector2(-1030, -520), Vector2(-920, 560), Vector2(-580, -570), Vector2(320, -560), Vector2(980, -470), Vector2(1020, 520), Vector2(360, 540)]:
 		for petal in range(5):
-			draw_circle(flower + Vector2.from_angle(TAU * petal / 5.0) * 8.0, 5.0, Color("f88979"))
-		draw_circle(flower, 4.0, CHEESE)
+			draw_circle(flower + Vector2.from_angle(TAU * petal / 5.0) * 8.0, 5.0, Color("62425c"))
+		draw_circle(flower, 4.0, Color("859091"))
 	for crumb in [Vector2(-250, -280), Vector2(240, 180), Vector2(850, -110), Vector2(-870, 80)]:
-		draw_circle(crumb, 8.0, CHEESE)
-		draw_circle(crumb + Vector2(3, -2), 2.0, CREAM)
+		draw_circle(crumb, 5.0, Color("54566b"))
 	_draw_no_rats_sign(Vector2(880, -420))
-	# Chunky wooden fence border, complete with absurdly large nail heads.
+	# A cold double border makes the arena limits visible in the dark.
 	draw_rect(ARENA, INK, false, 28.0)
-	draw_rect(ARENA.grow(-17.0), Color("b8733f"), false, 13.0)
+	draw_rect(ARENA.grow(-17.0), Color("526277"), false, 7.0)
 	for nail in [Vector2(-1175, -675), Vector2(1175, -675), Vector2(-1175, 675), Vector2(1175, 675)]:
 		draw_circle(nail, 11.0, INK)
-		draw_circle(nail - Vector2(2, 2), 5.0, Color("d8c29a"))
+		draw_circle(nail - Vector2(2, 2), 5.0, Color("8a8e9c"))
 
 func _draw_picnic_junk() -> void:
-	# Sandwich, cheese wedge, fizzy can and a dangerously unguarded cupcake.
-	draw_set_transform(Vector2(-84, 35), -0.12, Vector2.ONE)
-	draw_colored_polygon(PackedVector2Array([Vector2(-45, 22), Vector2(38, 22), Vector2(25, -28), Vector2(-30, -28)]), INK)
-	draw_colored_polygon(PackedVector2Array([Vector2(-38, 16), Vector2(31, 16), Vector2(21, -21), Vector2(-25, -21)]), Color("e5ae5a"))
-	draw_line(Vector2(-29, -5), Vector2(27, -5), TOMATO, 9.0, true)
-	draw_line(Vector2(-25, 5), Vector2(30, 5), Color("6c9f45"), 7.0, true)
-	draw_set_transform(Vector2(82, 47), 0.18, Vector2.ONE)
-	draw_texture_rect(preload("res://assets/sprites/cheese_0.png"), Rect2(-43, -42, 86, 86), false)
-	draw_set_transform(Vector2(88, -54), -0.24, Vector2.ONE)
-	draw_texture_rect(preload("res://assets/sprites/fizzy_0.png"), Rect2(-35, -39, 70, 78), false)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# A familiar cloth has become the frame of something looking back.
+	for ring in range(4):
+		draw_arc(Vector2.ZERO, 32 + ring * 18, ring * 0.8, ring * 0.8 + 4.8, 64, Color("514153"), 1.5, true)
+	NightmareMotifs.eye(self, Vector2.ZERO, 72, Color("77717e"), -0.1)
+	for i in range(8):
+		var at := Vector2.from_angle(i * TAU / 8.0) * Vector2(120, 83)
+		draw_line(at, at * 0.8 + Vector2(7, -5), Color("716675"), 2, true)
 
 func _draw_no_rats_sign(at: Vector2) -> void:
 	draw_set_transform(at, -0.09, Vector2.ONE)
@@ -812,27 +827,24 @@ func _draw_no_rats_sign(at: Vector2) -> void:
 	draw_line(Vector2(0, 42), Vector2(0, 126), Color("9a6136"), 10.0, true)
 	draw_rect(Rect2(-65, -36, 144, 94), Color(0.12, 0.05, 0.06, 0.3), true)
 	draw_rect(Rect2(-72, -45, 144, 94), INK, true)
-	draw_rect(Rect2(-64, -37, 128, 78), CREAM, true)
-	var font := ThemeDB.fallback_font
-	draw_string(font, Vector2(-49, -5), "NO RATS", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, INK)
-	draw_string(font, Vector2(-42, 23), "(RUDE)", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, TOMATO)
+	draw_rect(Rect2(-64, -37, 128, 78), Color("5d6174"), true)
+	NightmareMotifs.eye(self, Vector2(0, 2), 32.0, Color("c2b6ca"))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _draw_kenney_backyard_props() -> void:
-	# CC0 Kenney props add a storybook woodland edge without blocking the arena center.
+	# Crooked bare trees frame the arena; familiar shrubs recede into blue shadow.
 	var tall_trees := [
 		Vector2(-570, -245), Vector2(570, -245),
 		Vector2(-570, 260), Vector2(570, 260),
 	]
 	for at in tall_trees:
-		_draw_prop(KENNEY_TREE_TEXTURE, at, Vector2(128, 276))
+		NightmareMotifs.tree(self, at + Vector2(0, 100), 245.0, -32.0 if at.x < 0 else 32.0)
 
 	var small_trees := [
 		Vector2(-430, -315), Vector2(430, -315), Vector2(-430, 315), Vector2(430, 315),
 	]
 	for index in range(small_trees.size()):
-		var texture = KENNEY_SMALL_TREE_TEXTURE if index % 2 == 0 else KENNEY_SMALL_TREE_ALT_TEXTURE
-		_draw_prop(texture, small_trees[index], Vector2(52, 126))
+		NightmareMotifs.tree(self, small_trees[index] + Vector2(0, 50), 120.0, 26.0 if index % 2 == 0 else -26.0)
 
 	var bushes := [
 		Vector2(-470, -280), Vector2(470, -280), Vector2(-470, 280), Vector2(470, 280),
@@ -845,4 +857,4 @@ func _draw_kenney_backyard_props() -> void:
 		_draw_prop(KENNEY_FENCE_TEXTURE, at, Vector2(132, 98))
 
 func _draw_prop(texture: Texture2D, center: Vector2, size: Vector2) -> void:
-	draw_texture_rect(texture, Rect2(center - size * 0.5, size), false)
+	draw_texture_rect(texture, Rect2(center - size * 0.5, size), false, Color("455063"))

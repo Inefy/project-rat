@@ -24,7 +24,7 @@ func _ready() -> void:
 	_load()
 	_apply_keys()
 	overlay = ColorRect.new()
-	overlay.color = Color("211c29")
+	overlay.color = Color("0b0e15")
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(overlay)
 	var center := CenterContainer.new()
@@ -35,7 +35,7 @@ func _ready() -> void:
 	column.add_theme_constant_override("separation", 12)
 	center.add_child(column)
 	var title := Label.new()
-	title.text = "MAKE YOURSELF COMFORTABLE"
+	title.text = "SETTINGS"
 	title.add_theme_font_size_override("font_size", 30)
 	column.add_child(title)
 	var scroll := ScrollContainer.new()
@@ -59,12 +59,12 @@ func _ready() -> void:
 		key_buttons[action] = button
 		button.pressed.connect(func():
 			waiting_action = action
-			button.text = "Press a keyboard key (Esc cancels)"
+			button.text = "Press a key • Esc: cancel"
 		)
 		options.add_child(button)
 	_refresh_keys()
 	var reset := Button.new()
-	reset.text = "Restore keyboard controls"
+	reset.text = "Reset keys"
 	reset.pressed.connect(func():
 		keys = DEFAULT_KEYS.duplicate()
 		waiting_action = ""
@@ -159,7 +159,8 @@ func _apply_keys() -> void:
 
 func _refresh_keys() -> void:
 	for action in key_buttons:
-		key_buttons[action].text = "%s: %s" % [action.replace("_", " ").capitalize(), OS.get_keycode_string(keys[action])]
+		var label: String = "Auto-fire" if action == "toggle_autofire" else action.replace("aim_", "look_").replace("_", " ").capitalize()
+		key_buttons[action].text = "%s: %s" % [label, OS.get_keycode_string(keys[action])]
 
 func _load() -> void:
 	var config := ConfigFile.new()

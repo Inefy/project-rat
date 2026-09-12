@@ -36,5 +36,5 @@ static func paint(canvas: CanvasItem, kind: String, facing: float, size: float, 
 	var bob := sin(age * 10.0) * bounce
 	var squash := 1.0 + sin(age * 10.0) * bounce * 0.008
 	var rect := Rect2(Vector2(-size * squash * 0.5, -size * 0.56 + bob), Vector2(size * squash, size / squash))
-	canvas.draw_texture_rect(texture, rect, false, Color(1.7, 1.7, 1.7) if flash else Color.WHITE)
+	canvas.draw_texture_rect(texture, rect, false, Color(1.7, 1.7, 1.7) if flash else (Color("b9c3ce") if frames.size() == 8 else Color.WHITE))
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

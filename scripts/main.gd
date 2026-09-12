@@ -83,6 +83,7 @@ var kills_without_treat := 0
 var streak_rewarded := false
 var active_boss: CharacterBody2D
 var first_person: Node3D
+var mouse_was_captured := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -254,8 +255,10 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		shake_strength = maxf(0.0, shake_strength - delta * 34.0)
 	# Browsers release pointer lock themselves on Escape.
-	if OS.has_feature("web") and game_state == "playing" and not get_tree().paused and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	if OS.has_feature("web") and mouse_was_captured and not captured and game_state == "playing" and not get_tree().paused:
 		_toggle_pause()
+	mouse_was_captured = captured
 
 func _begin_next_wave() -> void:
 	current_wave += 1

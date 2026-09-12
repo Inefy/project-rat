@@ -587,6 +587,9 @@ func _open_upgrade_draft() -> void:
 	current_upgrade_ids.clear()
 	if current_wave == 1 and player.upgrade_levels.is_empty():
 		candidates.assign(["pinball", "scurry_bomb", "snack_orbit"])
+	elif current_wave == 2 and "light_trail" in candidates:
+		current_upgrade_ids.append("light_trail")
+		candidates.erase("light_trail")
 	# Sometimes guarantee one eligible synergy, leaving two unrestricted choices.
 	elif rng.randf() < 0.65:
 		for id in ["split_acorns", "dash_refund", "orbit_feast"]:
@@ -688,15 +691,15 @@ func _apply_settings() -> void:
 
 func _upgrade_description(id: String) -> String:
 	var values := {
-		"quick_whiskers": "Shot interval %.2fs > %.2fs" % [player.fire_interval, maxf(0.09, player.fire_interval * 0.9)],
-		"heavy_seeds": "Damage %.1f > %.1f" % [player.base_damage, player.base_damage + 3.5],
-		"fleet_feet": "Speed %d > %d" % [player.move_speed, minf(420, player.move_speed + 20)],
-		"thick_fur": "Max health %d > %d; heal 20" % [player.max_health, player.max_health + 16],
-		"long_teeth": "Pierce %d > %d targets" % [player.base_pierce, player.base_pierce + 1],
-		"big_paws": "Seed size %.1f > %.1f" % [player.bullet_radius, minf(8.25, player.bullet_radius + 1)],
-		"lucky_tail": "Bonus drops %d%% > %d%%" % [roundi(player.drop_luck * 100), roundi((player.drop_luck + 0.03) * 100)],
-		"extra_pocket": "Seeds %d > %d" % [player.permanent_projectiles, player.permanent_projectiles + 1],
-		"cheese_magnet": "Pickup range %d > %d. Wizard synergy!" % [player.magnet_radius, minf(330, player.magnet_radius + 55)],
+		"quick_whiskers": "Shot interval %.2fs → %.2fs" % [player.fire_interval, maxf(0.09, player.fire_interval * 0.9)],
+		"heavy_seeds": "Damage %.1f → %.1f" % [player.base_damage, player.base_damage + 3.5],
+		"fleet_feet": "Speed %d → %d" % [player.move_speed, minf(470, player.move_speed + 20)],
+		"thick_fur": "Max HP %d → %d\nHeal 20 HP" % [player.max_health, player.max_health + 16],
+		"long_teeth": "Pierce %d → %d targets" % [player.base_pierce, player.base_pierce + 1],
+		"big_paws": "Bullet size %.1f → %.1f" % [player.bullet_radius, minf(8.25, player.bullet_radius + 1)],
+		"lucky_tail": "Bonus drops %d%% → %d%%" % [roundi(player.drop_luck * 100), roundi((player.drop_luck + 0.03) * 100)],
+		"extra_pocket": "Bullets per shot %d → %d" % [player.permanent_projectiles, player.permanent_projectiles + 1],
+		"cheese_magnet": "Pickup range %d → %d" % [player.magnet_radius, minf(330, player.magnet_radius + 55)],
 	}
 	return "Level %d\n%s" % [int(player.upgrade_levels.get(id, 0)) + 1, values.get(id, UPGRADES[id]["description"])]
 

@@ -9,6 +9,7 @@ signal dash_started(position: Vector2)
 signal damage_feedback(position: Vector2, blocked: bool)
 
 const BulletScript = preload("res://scripts/bullet.gd")
+const LightTrailScript = preload("res://scripts/light_trail.gd")
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 const RAPID_INTERVAL_MULTIPLIER := 0.68
 const POWER_DAMAGE_MULTIPLIER := 1.35
@@ -219,6 +220,10 @@ func apply_upgrade(kind: String) -> void:
 		return
 	upgrade_levels[kind] = int(upgrade_levels.get(kind, 0)) + 1
 	match kind:
+		"light_trail":
+			var trail := LightTrailScript.new()
+			trail.owner_player = self
+			get_parent().add_child(trail)
 		"snack_orbit":
 			orbit_until = game_time_ms() + 6500
 		"quick_whiskers":
@@ -250,7 +255,7 @@ func heal(amount: float) -> void:
 func can_take_upgrade(kind: String) -> bool:
 	var level := int(upgrade_levels.get(kind, 0))
 	match kind:
-		"pinball", "scurry_bomb", "snack_orbit", "split_acorns", "dash_refund", "orbit_feast":
+		"pinball", "scurry_bomb", "snack_orbit", "split_acorns", "dash_refund", "orbit_feast", "light_trail":
 			var requires := {"split_acorns": "pinball", "dash_refund": "scurry_bomb", "orbit_feast": "snack_orbit"}
 			return level < 1 and (not requires.has(kind) or upgrade_levels.get(requires[kind], 0) > 0)
 		"quick_whiskers":

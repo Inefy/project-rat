@@ -42,7 +42,7 @@ func _run() -> void:
 	rat.yaw = PI
 	rat._update_aim(Vector2.ZERO)
 	rat._update_dash(Vector2.ZERO, true)
-	check(rat.dash_direction == Vector2.DOWN, "stationary dash uses this frame's aiming direction")
+	check(rat.dash_direction.is_equal_approx(Vector2.DOWN), "stationary dash uses this frame's aiming direction")
 
 	rat.apply_upgrade("snack_orbit")
 	check(rat.orbit_until > rat.game_time_ms(), "wizard starts with a working orbit before finding a treat")

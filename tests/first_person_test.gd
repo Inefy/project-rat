@@ -44,6 +44,9 @@ func run() -> void:
 	rat._update_dash(rat._get_move_input(), true)
 	check(rat.dash_direction.is_equal_approx(rat.aim_direction), "stationary dash follows view")
 
+	# The direct strafe probe above intentionally advances CharacterBody2D; restore
+	# the known test position before checking projectile alignment.
+	rat.position = Vector2(-150, 30)
 	game._spawn_enemy("cat")
 	var enemy = get_nodes_in_group("enemies").back()
 	enemy.position = Vector2(250, 30)

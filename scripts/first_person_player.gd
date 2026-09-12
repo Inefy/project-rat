@@ -27,7 +27,8 @@ func _get_move_input() -> Vector2:
 func _update_aim(directional_aim: Vector2, delta: float = 0.0) -> void:
 	yaw = wrapf(yaw + directional_aim.x * delta * 2.3, -PI, PI)
 	pitch = clampf(pitch - directional_aim.y * delta * 1.6, -1.1, 1.1)
-	super._update_aim(Vector2(sin(yaw), -cos(yaw)))
+	aim_direction = Vector2(sin(yaw), -cos(yaw))
+	super._update_aim(aim_direction)
 
 func _configure_bullet(bullet: Area2D) -> void:
 	bullet.uses_height = true

@@ -198,14 +198,14 @@ func take_player_damage(amount: float, knockback: Vector2 = Vector2.ZERO, source
 		invulnerable_until = game_time_ms() + 650
 		hit_flash_until = invulnerable_until
 		knockback_velocity += knockback * 0.45
-		pickup_collected.emit("TIN LID BLOCK", Color("8fa7b3"))
+		pickup_collected.emit("BLOCKED", Color("8fa7b3"))
 		damage_feedback.emit(global_position, true)
 		queue_redraw()
 		return
 	last_damage_source = source
 	health = max(0.0, health - amount)
 	invulnerable_until = game_time_ms() + 720
-	hit_flash_until = game_time_ms() + 180
+	hit_flash_until = game_time_ms() + 300
 	knockback_velocity += knockback
 	health_changed.emit(health, max_health)
 	damage_feedback.emit(global_position, false)
@@ -289,31 +289,31 @@ func apply_powerup(kind: String) -> void:
 		orbit_until = _extend_buff(orbit_until, 4000, 8000)
 	if (kind == "cheese" and health >= max_health) or (kind == "shield" and shield_charges >= 2):
 		power_until = _extend_buff(power_until, 2000, 9000)
-		pickup_collected.emit("SPARE SNACK: +2s POWER (9s MAX)", Color("f2c14e"))
+		pickup_collected.emit("POWER +2s", Color("f2c14e"))
 		return
 	match kind:
 		"cheese":
 			health = min(max_health, health + 24.0)
 			health_changed.emit(health, max_health)
-			pickup_collected.emit("MYSTERY CHEESE +24 HP", Color("f2c14e"))
+			pickup_collected.emit("+24 HP", Color("f2c14e"))
 		"rapid":
 			rapid_until = _extend_buff(rapid_until, 6000, 9000)
-			pickup_collected.emit("CAFFEINATED CLAWS", Color("ef6f6c"))
+			pickup_collected.emit("RAPID FIRE", Color("ef6f6c"))
 		"triple":
 			triple_until = _extend_buff(triple_until, 7000, 10000)
-			pickup_collected.emit("THREE PEAS, ONE PLAN", Color("8d79ad"))
+			pickup_collected.emit("+2 SHOTS", Color("8d79ad"))
 		"power":
 			power_until = _extend_buff(power_until, 6000, 9000)
-			pickup_collected.emit("ABSURD ACORN", Color("e89b4f"))
+			pickup_collected.emit("DAMAGE +35%", Color("e89b4f"))
 		"haste":
 			haste_until = _extend_buff(haste_until, 6000, 9000)
-			pickup_collected.emit("SUGAR-POWERED LEGS", Color("79a85b"))
+			pickup_collected.emit("SPEED +38%", Color("79a85b"))
 		"shield":
 			shield_charges = mini(2, shield_charges + 1)
-			pickup_collected.emit("BIN LID OF DESTINY", Color("8fa7b3"))
+			pickup_collected.emit("+1 SHIELD", Color("8fa7b3"))
 		"pierce":
 			pierce_until = _extend_buff(pierce_until, 6000, 9000)
-			pickup_collected.emit("DENTIST'S NIGHTMARE", Color("f4d7a1"))
+			pickup_collected.emit("PIERCE +2", Color("f4d7a1"))
 	queue_redraw()
 
 func _extend_buff(expires_at: int, duration_ms: int, reserve_ms: int) -> int:

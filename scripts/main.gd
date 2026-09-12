@@ -526,8 +526,9 @@ func _spawn_powerup(kind: String, at: Vector2) -> void:
 	pickup.collected.connect(_on_powerup_collected)
 
 func _on_powerup_collected(_kind: String, at: Vector2, color: Color) -> void:
-	_spawn_impact(at, color, 58.0)
-	audio.play("pickup", 0.04)
+	_spawn_feedback(at, color, "pickup")
+	hud.feedback_overlay.pulse(color, false)
+	audio.play("pickup", 0.04, 4.0)
 	score += 75
 
 func _on_shot_fired(at: Vector2, powered: bool) -> void:
@@ -539,8 +540,8 @@ func _on_shot_fired(at: Vector2, powered: bool) -> void:
 	audio.play("power_shoot" if powered else "shoot", 0.055)
 
 func _on_player_pickup_message(title: String, color: Color) -> void:
-	hud.show_toast(title, color)
-	if title == "TIN LID BLOCK":
+	hud.show_toast(title, color, 1.3)
+	if title == "BLOCKED":
 		audio.play("shield", 0.04)
 
 func _on_autofire_changed(enabled: bool) -> void:
@@ -567,9 +568,17 @@ func _on_player_dash(at: Vector2) -> void:
 
 func _on_player_damage_feedback(at: Vector2, blocked: bool) -> void:
 	if not blocked:
-		audio.play("player_hit", 0.045)
-	_spawn_impact(at, Color("8fa7b3") if blocked else Color("d95863"), 65.0)
-	_add_shake(5.0 if blocked else 14.0)
+		audio.play("player_hit", 0.045, 3.0)
+	_spawn_feedback(at, Color("9bdded") if blocked else Color("fa4f69"), "blocked" if blocked else "damage")
+	hud.feedback_overlay.pulse(Color("9bdded") if blocked else Color("ed294f"), not blocked)
+	_add_shake(8.0 if blocked else 20.0)
+
+func _spawn_feedback(at: Vector2, color: Color, kind: String) -> void:
+	var effect := preload("res://scripts/feedback_burst.gd").new()
+	effect.position = at
+	effect.tint = color
+	effect.kind = kind
+	add_child(effect)
 
 func _on_ui_sound_requested(event_name: String) -> void:
 	audio.play(event_name, 0.025)

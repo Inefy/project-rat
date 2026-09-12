@@ -52,17 +52,15 @@ func _run() -> void:
 			found_snake = true
 		if spawned_enemy.enemy_kind == "raccoon":
 			found_raccoon = true
-			var health_before_armour: float = spawned_enemy.health
-			var armour_before: float = spawned_enemy.armour
+			var health_before_hit: float = spawned_enemy.health
 			spawned_enemy.take_damage(10.0)
-			check(spawned_enemy.health == health_before_armour, "armour absorbs damage before health")
-			check(spawned_enemy.armour < armour_before, "armour loses durability when hit")
+			check(is_equal_approx(spawned_enemy.health, health_before_hit - 10.0), "raccoon takes full damage directly to health")
 	check(found_snake, "snake archetype is active")
-	check(found_raccoon, "armoured raccoon archetype is active")
+	check(found_raccoon, "charging raccoon archetype is active")
 	check(game.get_regular_enemy_count(22) > game.get_regular_enemy_count(10), "late waves contain more enemies")
 	check(game.get_spawn_interval(22) < game.get_spawn_interval(10), "late waves spawn enemies faster")
 	check(game.get_boss_kind(5) == "alpha_cat", "wave 5 uses the Alpha Cat boss")
-	check(game.get_boss_kind(10) == "junkyard_dog", "wave 10 introduces the armoured dog boss")
+	check(game.get_boss_kind(10) == "junkyard_dog", "wave 10 introduces the dog boss")
 	check(game.get_boss_kind(15) == "barn_owl", "wave 15 introduces the ranged owl boss")
 
 	game.player.apply_powerup("shield")
@@ -111,7 +109,7 @@ func _run() -> void:
 	if game.current_upgrade_ids.size() == 3:
 		var first_upgrade_card := game.hud.upgrade_cards.get_child(0) as Button
 		check(not first_upgrade_card.text.is_empty(), "mutation cards contain their copy")
-		check(first_upgrade_card.get_theme_color("font_color") == game.hud.dark, "mutation card copy contrasts with its pale background")
+		check(first_upgrade_card.get_theme_color("font_color") == game.hud.pale, "mutation card copy contrasts with its dark background")
 	if not game.current_upgrade_ids.is_empty():
 		game._on_upgrade_selected(game.current_upgrade_ids[0])
 	check(game.game_state == "playing" and not paused, "choosing a mutation resumes play")

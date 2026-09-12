@@ -61,7 +61,7 @@ func _run() -> void:
 	game._open_upgrade_draft()
 	check(game.current_upgrade_ids.size() == 3 and "pinball" in game.current_upgrade_ids and "scurry_bomb" in game.current_upgrade_ids and "snack_orbit" in game.current_upgrade_ids, "first draft defines a build")
 	check(game.hud.upgrade_cards.get_child(0).has_focus(), "first card gets keyboard and controller focus")
-	check(game.hud.upgrade_cards.get_child(0).get_theme_color("font_focus_color") == game.hud.dark, "focused card remains readable")
+	check(game.hud.upgrade_cards.get_child(0).get_theme_color("font_focus_color") == game.hud.pale, "focused card remains readable")
 	game._on_upgrade_selected("pinball")
 	check(game.player.can_take_upgrade("split_acorns") and not game.player.can_take_upgrade("orbit_feast"), "synergy prerequisites")
 	game.player.apply_upgrade("split_acorns")
@@ -110,7 +110,8 @@ func _run() -> void:
 	game.player.fire()
 	check(get_nodes_in_group("player_bullets").size() == before + 6, "triple pickup adds seeds to max multishot")
 	game.player.using_directional_aim = true
-	game.player.aim_direction = Vector2.UP
+	game.player.yaw = 0
+	game.player._update_aim(Vector2.ZERO)
 	game.player.aim_assist = false
 	game.player._physics_process(0)
 	check(game.player.aim_direction == Vector2.UP, "released aiming stick retains direction")

@@ -3,20 +3,20 @@ extends CharacterBody2D
 signal died(enemy: Node, death_position: Vector2, points: int, color: Color)
 signal projectile_requested(origin: Vector2, direction: Vector2, speed: float, damage: float, kind: String)
 signal hit(position: Vector2)
-signal enraged(kind: String)
+signal phase_changed(kind: String, phase: int)
 
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 const INK := Color("40354f")
 const CREAM := Color("fff4d6")
-const ARMOUR_COLOR := Color("8fa7b3")
+const BossPatternsScript = preload("res://scripts/boss_patterns.gd")
 
 var enemy_kind := "bird"
 var target: Node2D
 var wave := 1
 var max_health := 20.0
 var health := 20.0
-var max_armour := 0.0
-var armour := 0.0
+var boss_phase := 0
+var boss_patterns: RefCounted
 var move_speed := 180.0
 var contact_damage := 9.0
 var score_value := 100
@@ -26,7 +26,6 @@ var age := 0.0
 var contact_cooldown := 0.0
 var attack_cooldown := 2.0
 var hit_flash := 0.0
-var armour_flash := 0.0
 var knockback_velocity := Vector2.ZERO
 var dying := false
 var state := "stalk"
@@ -82,7 +81,6 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			attack_cooldown = 1.1 + randf() * 0.8
 		"raccoon":
 			max_health = 112.0 * health_scale
-			max_armour = (58.0 + wave * 3.0) * (1.0 + float(wave - 1) * 0.045)
 			move_speed = minf(190.0, 88.0 + wave * 2.2)
 			contact_damage = 22.0 * damage_scale
 			score_value = 320 + wave * 12
@@ -98,7 +96,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			tint = Color("ef7825")
 			state_clock = 0.8 + randf() * 0.7
 		"alpha_cat":
-			max_health = (3200.0 + wave * 180.0) * health_scale
+			max_health = 1800.0 * get_boss_health_scale(wave)
 			move_speed = minf(210.0, 112.0 + wave * 1.6)
 			contact_damage = 28.0 * damage_scale
 			score_value = 1800 + wave * 90
@@ -107,8 +105,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			state_clock = 1.1
 			scale = Vector2.ONE * 1.22
 		"junkyard_dog":
-			max_health = (3900.0 + wave * 200.0) * health_scale
-			max_armour = max_health * 0.38
+			max_health = 2800.0 * get_boss_health_scale(wave)
 			move_speed = minf(180.0, 94.0 + wave * 1.6)
 			contact_damage = 34.0 * damage_scale
 			score_value = 2600 + wave * 115
@@ -117,7 +114,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			state_clock = 1.25
 			scale = Vector2.ONE * 1.18
 		"barn_owl":
-			max_health = (4600.0 + wave * 240.0) * health_scale
+			max_health = 4000.0 * get_boss_health_scale(wave)
 			move_speed = minf(205.0, 105.0 + wave * 1.8)
 			contact_damage = 26.0 * damage_scale
 			score_value = 2850 + wave * 120
@@ -126,25 +123,29 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			attack_cooldown = 1.15
 			scale = Vector2.ONE * 1.16
 	if elite and enemy_kind not in ["alpha_cat", "junkyard_dog", "barn_owl"]:
-		max_health *= 2.15
-		max_armour += max_health * 0.24
+		max_health *= 1.5
 		contact_damage *= 1.4
 		score_value *= 3
 		move_speed *= 1.1
 		scale *= 1.15
 	health = max_health
-	armour = max_armour
+	if is_boss():
+		boss_phase = 1
+		boss_patterns = BossPatternsScript.new(self)
 
 func get_health_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
-	return 1.0 + ramp * 0.11 + ramp * ramp * 0.0035
+	return minf(2.5, 1.0 + ramp * 0.035)
 
-func is_enraged() -> bool:
-	return enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] and health <= max_health * 0.5
+func is_boss() -> bool:
+	return enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"]
+
+func get_boss_health_scale(for_wave: int) -> float:
+	return minf(2.0, 1.0 + maxi(0, for_wave - 15) * 0.025)
 
 func get_damage_scale(for_wave: int) -> float:
 	var ramp := float(maxi(0, for_wave - 1))
-	return 1.0 + ramp * 0.055 + ramp * ramp * 0.0018
+	return minf(2.25, 1.0 + ramp * 0.045)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -168,7 +169,6 @@ func _physics_process(delta: float) -> void:
 	spawn_scale = move_toward(spawn_scale, 1.0, delta * 4.5)
 	contact_cooldown = maxf(0.0, contact_cooldown - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
-	armour_flash = maxf(0.0, armour_flash - delta)
 	var to_target := target.global_position - global_position
 	var distance := to_target.length()
 	var direction := to_target.normalized() if distance > 0.1 else Vector2.RIGHT
@@ -176,9 +176,9 @@ func _physics_process(delta: float) -> void:
 	match enemy_kind:
 		"bird":
 			_update_bird(delta, direction)
-		"cat", "alpha_cat":
+		"cat":
 			_update_cat(delta, direction)
-		"owl", "barn_owl":
+		"owl":
 			_update_owl(delta, direction, distance)
 		"snake":
 			_update_snake(delta, direction, distance)
@@ -186,15 +186,15 @@ func _physics_process(delta: float) -> void:
 			_update_raccoon(delta, direction)
 		"fox":
 			_update_fox(delta, direction, distance)
-		"junkyard_dog":
-			_update_dog(delta, direction)
+		"alpha_cat", "junkyard_dog", "barn_owl":
+			boss_patterns.update(delta, direction, distance)
 
 	velocity += knockback_velocity
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 720.0 * delta)
 	move_and_slide()
 	rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 8.0)) if velocity.length() > 5.0 else rotation
 
-	if enemy_kind in ["cat", "alpha_cat", "raccoon", "fox", "junkyard_dog"] and state in ["pounce", "charge", "dart"]:
+	if state in ["pounce", "charge", "dart"]:
 		_bounce_inside_arena()
 	else:
 		global_position.x = clampf(global_position.x, ARENA.position.x + radius, ARENA.end.x - radius)
@@ -219,51 +219,42 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 			if state_clock <= 0.0:
 				state = "telegraph"
 				pounce_direction = direction
-				state_clock = 0.52 if enemy_kind == "cat" else 0.66
+				state_clock = 0.52
 		"telegraph":
 			velocity = velocity.move_toward(Vector2.ZERO, 700.0 * delta)
 			if state_clock > 0.22:
 				pounce_direction = direction
 			if state_clock <= 0.0:
 				state = "pounce"
-				state_clock = 0.72 if enemy_kind == "cat" else 0.92
-				velocity = pounce_direction * (555.0 if enemy_kind == "cat" else 625.0)
+				state_clock = 0.72
+				velocity = pounce_direction * 555.0
 		"pounce":
-			velocity = velocity.move_toward(pounce_direction * (450.0 if enemy_kind == "cat" else 510.0), 80.0 * delta)
+			velocity = velocity.move_toward(pounce_direction * 450.0, 80.0 * delta)
 			if state_clock <= 0.0:
-				if enemy_kind == "alpha_cat":
-					for i in range(10):
-						projectile_requested.emit(global_position, Vector2.from_angle(TAU * i / 10.0), 245.0 + wave * 2.0, contact_damage * 0.4, "sonic")
 				state = "recover"
 				state_clock = 0.55
 		"recover":
 			velocity = velocity.move_toward(Vector2.ZERO, 950.0 * delta)
 			if state_clock <= 0.0:
 				state = "stalk"
-				state_clock = (0.95 + randf() * 0.8) if enemy_kind == "cat" else (0.45 if is_enraged() else 0.85)
+				state_clock = 0.95 + randf() * 0.8
 
 func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
-	var is_boss := enemy_kind == "barn_owl"
 	var desired := Vector2.ZERO
-	var far_distance := 250.0 if cleanup else (440.0 if is_boss else 380.0)
-	var near_distance := 160.0 if cleanup else (280.0 if is_boss else 240.0)
+	var far_distance := 250.0 if cleanup else 380.0
+	var near_distance := 160.0 if cleanup else 240.0
 	if distance > far_distance:
 		desired = direction * maxf(move_speed, 220.0) if cleanup else direction * move_speed
 	elif distance < near_distance:
 		desired = -direction * move_speed
 	else:
-		desired = direction.rotated(PI * 0.5) * move_speed * (0.85 if is_boss else 0.7)
+		desired = direction.rotated(PI * 0.5) * move_speed * 0.7
 	velocity = velocity.move_toward(desired, 280.0 * delta)
 	if _ranged_ready(delta, direction, distance, 740.0):
 		direction = ranged_direction
-		if is_boss:
-			for spread in [-0.36, -0.24, -0.12, 0.0, 0.12, 0.24, 0.36]:
-				projectile_requested.emit(global_position + direction * 28.0, direction.rotated(spread), 345.0 + wave * 2.8, contact_damage * 0.48, "feather")
-			attack_cooldown = maxf(0.65, 1.35 - wave * 0.018) * (0.7 if is_enraged() else 1.0)
-		else:
-			for spread in [-0.15, 0.0, 0.15]:
-				projectile_requested.emit(global_position + direction * 18.0, direction.rotated(spread), 335.0 + wave * 2.5, contact_damage * 0.62, "feather")
-			attack_cooldown = maxf(0.92, 2.2 - wave * 0.032)
+		for spread in [-0.15, 0.0, 0.15]:
+			projectile_requested.emit(global_position + direction * 18.0, direction.rotated(spread), 335.0 + wave * 2.5, contact_damage * 0.62, "feather")
+		attack_cooldown = maxf(0.92, 2.2 - wave * 0.032)
 
 func _update_snake(delta: float, direction: Vector2, distance: float) -> void:
 	var slither := sin(age * 6.5 + float(get_instance_id() % 11)) * 0.72
@@ -357,36 +348,6 @@ func _update_fox(delta: float, direction: Vector2, distance: float) -> void:
 				state = "stalk"
 				state_clock = 0.75 + randf() * 0.6
 
-func _update_dog(delta: float, direction: Vector2) -> void:
-	state_clock -= delta
-	match state:
-		"stalk":
-			velocity = velocity.move_toward(direction * move_speed, 300.0 * delta)
-			if state_clock <= 0.0:
-				state = "brace"
-				pounce_direction = direction
-				state_clock = 0.82
-		"brace":
-			velocity = velocity.move_toward(Vector2.ZERO, 780.0 * delta)
-			if state_clock > 0.22:
-				pounce_direction = direction
-			if state_clock <= 0.0:
-				state = "charge"
-				state_clock = 0.9
-				velocity = pounce_direction * 570.0
-		"charge":
-			velocity = velocity.move_toward(pounce_direction * 465.0, 65.0 * delta)
-			if state_clock <= 0.0:
-				for i in range(12):
-					projectile_requested.emit(global_position, Vector2.from_angle(TAU * i / 12.0), 260.0 + wave * 2.0, contact_damage * 0.38, "bone")
-				state = "recover"
-				state_clock = 0.65
-		"recover":
-			velocity = velocity.move_toward(Vector2.ZERO, 850.0 * delta)
-			if state_clock <= 0.0:
-				state = "stalk"
-				state_clock = 0.5 if is_enraged() else 0.95
-
 func _bounce_inside_arena() -> void:
 	var bounced := false
 	if global_position.x < ARENA.position.x + radius or global_position.x > ARENA.end.x - radius:
@@ -399,28 +360,23 @@ func _bounce_inside_arena() -> void:
 		bounced = true
 	global_position.x = clampf(global_position.x, ARENA.position.x + radius, ARENA.end.x - radius)
 	global_position.y = clampf(global_position.y, ARENA.position.y + radius, ARENA.end.y - radius)
-	if bounced:
+	if bounced and not is_boss():
 		state_clock += 0.16
 
 func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	if dying:
 		return
-	var was_enraged := is_enraged()
 	if state == "recover":
 		amount *= 1.25
-	var health_damage := amount
-	if armour > 0.0:
-		var absorbed := minf(armour, amount)
-		armour -= absorbed
-		health_damage = maxf(0.0, amount - absorbed) * 0.5
-		armour_flash = 0.14
-		if armour <= 0.0:
-			knockback_velocity += knockback * 0.65
-	health -= health_damage
-	if health > 0.0 and not was_enraged and is_enraged():
-		enraged.emit(enemy_kind)
+	health -= amount
+	if health > 0.0 and is_boss():
+		var next_phase := 3 if health <= max_health / 3.0 else (2 if health <= max_health * 2.0 / 3.0 else 1)
+		if next_phase > boss_phase:
+			boss_phase = next_phase
+			boss_patterns.change_phase()
+			phase_changed.emit(enemy_kind, boss_phase)
 	hit.emit(global_position)
-	hit_flash = 0.11 if health_damage > 0.0 else 0.04
+	hit_flash = 0.11
 	knockback_velocity += knockback * (0.18 if enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] else 1.0)
 	if health <= 0.0:
 		dying = true
@@ -430,7 +386,9 @@ func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	if is_winding_up():
+	if boss_patterns:
+		boss_patterns.draw_warnings(self)
+	elif is_winding_up():
 		var aim := ranged_direction if ranged_windup else pounce_direction
 		var local_aim := aim.rotated(-rotation)
 		var locked := ranged_clock <= 0.22 if ranged_windup else state_clock <= 0.22
@@ -450,9 +408,7 @@ func _draw() -> void:
 			var badge_at := Vector2.from_angle(badge_angle) * (radius + 10.0)
 			draw_circle(badge_at, 5.0, INK)
 			draw_circle(badge_at, 3.0, Color("f2c14e"))
-	if max_armour > 0.0 and armour > 0.0:
-		_draw_armour_plates()
-	if (health < max_health or max_armour > 0.0) and not dying:
+	if (health < max_health or is_boss()) and not dying:
 		# Counter the character's facing so combat bars stay easy to read on screen.
 		draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE * visual_scale)
 		_draw_health_bars()
@@ -463,18 +419,10 @@ func _draw_health_bars() -> void:
 	draw_rect(Rect2(-width * 0.5 - 1.5, bar_y - 1.5, width + 3.0, 7.0), INK, true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width, 4.0), Color("eadfbe"), true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width * clampf(health / max_health, 0.0, 1.0), 4.0), Color("d95863"), true)
-	if max_armour > 0.0:
-		var armour_y := bar_y - 7.0
-		draw_rect(Rect2(-width * 0.5 - 1.5, armour_y - 1.5, width + 3.0, 6.0), INK, true)
-		draw_rect(Rect2(-width * 0.5, armour_y, width * clampf(armour / max_armour, 0.0, 1.0), 3.0), Color.WHITE if armour_flash > 0.0 else ARMOUR_COLOR, true)
-
-func _draw_armour_plates() -> void:
-	var armour_tint := Color.WHITE if armour_flash > 0.0 else ARMOUR_COLOR
-	for side in [-1.0, 1.0]:
-		var plate := PackedVector2Array([Vector2(-8, side * (radius - 2.0)), Vector2(4, side * (radius + 5.0)), Vector2(14, side * (radius - 1.0)), Vector2(9, side * (radius - 10.0))])
-		draw_colored_polygon(plate, INK)
-		var inset := PackedVector2Array([Vector2(-5, side * (radius - 1.0)), Vector2(4, side * (radius + 1.5)), Vector2(10, side * (radius - 2.0)), Vector2(7, side * (radius - 7.0))])
-		draw_colored_polygon(inset, armour_tint)
+	if is_boss():
+		for fraction in [1.0 / 3.0, 2.0 / 3.0]:
+			var x: float = width * (fraction - 0.5)
+			draw_line(Vector2(x, bar_y), Vector2(x, bar_y + 4), INK, 2.0)
 
 func _outlined_circle(at: Vector2, size: float, fill: Color, outline_width: float = 3.0) -> void:
 	draw_circle(at, size + outline_width, INK)
@@ -566,7 +514,7 @@ func _draw_snake() -> void:
 func _draw_raccoon() -> void:
 	var bob := sin(age * 5.5) * 1.5
 	if state == "brace":
-		draw_arc(Vector2.ZERO, radius + 9.0, 0.0, TAU, 28, ARMOUR_COLOR, 5.0, true)
+		draw_arc(Vector2.ZERO, radius + 9.0, 0.0, TAU, 28, Color("f6c53f"), 5.0, true)
 	_outlined_circle(Vector2(-7, bob), 24.0, Color("6e777c"))
 	draw_arc(Vector2(-25, 5 + bob), 22.0, 1.5, 4.8, 18, INK, 10.0, true)
 	draw_arc(Vector2(-25, 5 + bob), 22.0, 1.7, 2.3, 8, Color("d5c9ae"), 5.0, true)
@@ -581,7 +529,7 @@ func _draw_raccoon() -> void:
 	draw_line(Vector2(15, -12 + bob), Vector2(23, -15 + bob), INK, 2.8, true)
 	_outlined_circle(Vector2(28, 1 + bob), 4.0, Color("513d46"), 1.2)
 	draw_circle(Vector2(-2, 15 + bob), 15.0, INK)
-	draw_circle(Vector2(-2, 15 + bob), 11.5, ARMOUR_COLOR if armour > 0.0 else Color("b9a787"))
+	draw_circle(Vector2(-2, 15 + bob), 11.5, Color("b9a787"))
 	draw_circle(Vector2(-2, 15 + bob), 3.0, INK)
 
 func _draw_fox() -> void:

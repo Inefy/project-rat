@@ -237,6 +237,8 @@ func _physics_process(delta: float) -> void:
 			_finish_wave()
 
 	hud.update_stats(score, current_wave, kills, player.health, player.max_health, _wave_progress(), player.get_active_buffs(), player.get_dash_charge())
+	if is_instance_valid(active_boss) and not active_boss.dying:
+		hud.set_boss_status(active_boss.enemy_kind.replace("_", " ").to_upper(), active_boss.boss_phase, active_boss.health / active_boss.max_health)
 	hud.update_combo(combo, clampf(float(combo_expires - int(run_clock * 1000.0)) / COMBO_WINDOW_MS, 0.0, 1.0))
 	if wave_active and wave_queue.is_empty() and _living_enemy_count() <= 3:
 		hud.set_encounter("LAST %d - FOLLOW THE GOLD ARROWS" % _living_enemy_count())
@@ -270,7 +272,7 @@ func _begin_next_wave() -> void:
 	wave_total = wave_queue.size()
 	spawn_cooldown = 0.15
 	hud.show_wave_banner(current_wave, boss_kind)
-	hud.set_encounter("BOSS PICNIC" if boss_wave else encounter)
+	hud.set_encounter("BOSS" if boss_wave else encounter)
 	if boss_wave:
 		audio.play("shield", 0.03, -1.0)
 		_add_shake(8.0)
@@ -282,6 +284,13 @@ func get_regular_enemy_count(for_wave: int) -> int:
 func get_enemy_cap(for_wave: int) -> int:
 	var cap := mini(42, 10 + for_wave * 2)
 	return roundi(cap * 0.7) if settings.cozy else cap
+
+func get_spawn_limit() -> int:
+	# Keep boss patterns readable while reinforcements keep arriving.
+	var cap := get_enemy_cap(current_wave)
+	if is_instance_valid(active_boss) and not active_boss.dying:
+		cap = mini(cap, 18 + active_boss.boss_phase * 6)
+	return cap
 
 func get_spawn_interval(for_wave: int) -> float:
 	return maxf(0.14, 0.48 - for_wave * 0.016 - floorf(float(for_wave) / 10.0) * 0.02) * (1.25 if settings.cozy else 1.0)
@@ -413,8 +422,10 @@ func _spawn_enemy(kind: String) -> void:
 	add_child(enemy)
 	enemy.died.connect(_on_enemy_died)
 	enemy.hit.connect(_on_enemy_hit)
-	enemy.enraged.connect(func(boss_kind: String): hud.show_toast("%s ENRAGED! Watch the next attack!" % boss_kind.replace("_", " ").to_upper(), TOMATO))
+	enemy.phase_changed.connect(func(_boss_kind: String, phase: int): hud.show_toast("PHASE %d" % phase, TOMATO))
 	enemy.projectile_requested.connect(_on_enemy_projectile_requested)
+	if is_boss:
+		active_boss = enemy
 
 func _random_spawn_position() -> Vector2:
 	var candidate := Vector2.ZERO
@@ -460,7 +471,7 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 		pending_treats.append("power")
 		pending_treats.append("shield")
 		_clear_enemy_projectiles()
-		hud.show_toast("BOSS LOOT BANKED! Bonus mutation at wave clear", Color("f6c53f"))
+		hud.show_toast("BOSS DOWN • BONUS UPGRADE", Color("f6c53f"))
 
 	var drop_chance: float = minf(0.18, 0.055 + player.drop_luck)
 	kills_without_treat += 1
@@ -703,6 +714,7 @@ func _wave_progress() -> float:
 	return 1.0 - float(remaining) / float(wave_total)
 
 func _clear_run_nodes() -> void:
+	active_boss = null
 	for node in get_tree().get_nodes_in_group("run_entities"):
 		if is_instance_valid(node):
 			node.queue_free()

@@ -59,6 +59,10 @@ jobs:
         run: godot --headless --path . --script tests/model_art_test.gd
         timeout-minutes: 2
 
+      - name: Check reference fox model and ambusher integration
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/fox_model_test.gd
+
       - name: Run difficulty balance regression test
         timeout-minutes: 2
         run: godot --headless --path . --script tests/balance_test.gd

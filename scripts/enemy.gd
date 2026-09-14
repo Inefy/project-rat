@@ -94,7 +94,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 20.0 * damage_scale
 			score_value = 300 + wave * 12
 			radius = 24.0
-			tint = Color("ef7825")
+			tint = Color("ff7705")
 			state_clock = 0.8 + randf() * 0.7
 		"alpha_cat":
 			max_health = 1800.0 * get_boss_health_scale(wave)
@@ -415,13 +415,13 @@ func _draw() -> void:
 		_draw_health_bars()
 
 func _sprite_size() -> float:
-	# The long legs and blade tail need more room than the old squat cat.
-	return radius * (3.65 if enemy_kind == "cat" else 3.1)
+	# The reference creatures need room for their tall ears and long tails.
+	return radius * (3.65 if enemy_kind in ["cat", "fox"] else 3.1)
 
 func _draw_health_bars() -> void:
 	var width := radius * 2.25
 	var bar_y := -radius - 17.0
-	if enemy_kind == "cat":
+	if enemy_kind in ["cat", "fox"]:
 		bar_y = -_sprite_size() * 0.56 - 8.0
 	draw_rect(Rect2(-width * 0.5 - 1.5, bar_y - 1.5, width + 3.0, 7.0), INK, true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width, 4.0), Color("eadfbe"), true)

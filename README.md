@@ -25,6 +25,8 @@ Enemies, pickups, projectiles, and props use lightweight sprites rendered from t
 
 The regular cat uses the reference-based black creature with green ring eyes, human-like hands, bloodied fangs, and a curved blade tail. Its eight 192px directional sprites total 221 KiB. The editable Blender source is `art/cat/reference-cat.blend`; the 407 KiB GLB is retained for editing and reuse and excluded from the top-down browser download.
 
+The fox uses the supplied orange creature with human ears, sleepy eyes, white muzzle and chest markings, a pink tongue, and a curled white-tipped tail. Its eight Blender-rendered 192px directions total 176 KiB. The editable source is `art/fox/reference-fox.blend`; the 518 KiB GLB is retained for reuse. The replacement keeps the fox's wave-ten arrival, warning, ambush dash, and recovery window. Preview and in-game captures are in `art/fox/`.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
@@ -128,9 +130,11 @@ godot --headless --path . --script tests/playability_test.gd
 godot --headless --path . --script tests/keyboard_aim_test.gd
 godot --headless --path . --script tests/top_down_test.gd
 godot --headless --path . --script tests/balance_test.gd
+godot --headless --path . --script tests/fox_model_test.gd
 ```
 
 Run `godot --path . --script tests/capture_cat_gameplay.gd` to save a top-down gameplay capture to `art/cat/in-game.png`.
+Run `godot --path . --script tests/capture_fox_gameplay.gd` to capture the replacement fox in the wave-ten arena at `art/fox/in-game.png`.
 
 Create the browser build after installing Godot's export templates:
 

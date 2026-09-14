@@ -12,7 +12,7 @@ IDENTITIES = {
     'owl': 'Round chestnut barrel, huge cream eye disks and heavy brow tufts',
     'snake': 'Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue',
     'raccoon': 'Hunched slate bandit, black mask, striped tail and oversized bin lid',
-    'fox': 'Tall orange rake, long muzzle, black stockings and huge cream-tipped tail',
+    'fox': 'Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail',
     'alpha_cat': 'Magenta monarch, triangular burgundy cape and crooked gold crown',
     'junkyard_dog': 'Wide square bulldog, heavy jowls, underbite and red spiked collar',
     'barn_owl': 'Ivory heart face, swept dark wings, teal academic gown and mortarboard',
@@ -169,23 +169,8 @@ def build_character(k, ball, box, cone, rod, ring):
         box('Lid handle', (.70,-.72,.90), (.15,.06,.08), 'ink')
 
     elif k == 'fox':
-        for s in [-1,1]:
-            rod('Long black stocking', (s*.20,.05,.82), (s*.27,-.02,.20), .115,'ink')
-            ball('Long narrow foot', (s*.27,-.21,.14), (.17,.34,.12),'ink')
-        ball('Lanky torso', (0,.07,1.26), (.34,.29,.65),'fox')
-        ball('Cream shirt', (0,-.20,1.37), (.22,.07,.40),'cream')
-        for s in [-1,1]:
-            rod('Thin arm', (s*.31,0,1.63), (s*.53,-.08,1.08), .12,'fox')
-            ball('Black glove', (s*.54,-.12,1.02), (.13,.13,.18),'ink')
-        ball('Narrow fox skull', (0,-.05,2.02), (.40,.32,.38),'fox')
-        ears(2.45,.31,.20,.48,'fox','cream')
-        pair(-.36,2.13,.22,.16,.18,.9)
-        snout=cone('Long tapered muzzle', (0,-.68,1.89), (.26,.20,.43),'cream'); snout.rotation_euler.x=math.pi/2
-        ball('Fox nose', (0,-1.08,1.89), (.12,.08,.085),'ink')
-        rod('Smug grin', (-.18,-.70,1.78), (.18,-.70,1.78), .024,'ink')
-        tail([(.20,.31,.65),(.50,.49,.91),(.79,.55,1.24),(.99,.55,1.61),(1.06,.49,1.92),(1.04,.39,2.16)],
-             [.22,.32,.40,.38,.30,.17], ['fox','fox','fox','fox','cream','cream'])
-        cone('Tail tip', (1.02,.36,2.35), (.16,.15,.24),'cream')
+        from fox_model import build_fox
+        return build_fox()
 
     elif k == 'alpha_cat':
         cone('Royal cape silhouette', (0,.21,1.04), (1.10,.61,1.00),'wine')

@@ -111,7 +111,7 @@ def render():
         root=bpy.data.objects[k+'_root']; cam=scene.camera
         cam.data.ortho_scale=3.6 if k in CAST else 1.9
         target=Vector((0,0,1.25 if k in CAST else .65)); cam.location=(0,-6,4.5 if k in CAST else 3.9); cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
-        if k=='cat':
+        if k in ['cat', 'fox']:
             target=Vector((0,.55,2.45)); cam.location=(0,-9,7)
             cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         if k in CAST:

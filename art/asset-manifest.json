@@ -41,8 +41,11 @@
   "fox": {
     "directions": 8,
     "collection": "fox",
-    "triangles": 4620,
-    "visual_identity": "Tall orange rake, long muzzle, black stockings and huge cream-tipped tail"
+    "triangles": 21766,
+    "visual_identity": "Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail",
+    "source": "art/fox/reference-fox.blend",
+    "glb_bytes": 530576,
+    "materials": 3
   },
   "alpha_cat": {
     "directions": 8,

@@ -12,7 +12,7 @@ IDENTITIES = {
     'owl': 'Round chestnut barrel, huge cream eye disks and heavy brow tufts',
     'snake': 'Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue',
     'raccoon': 'Hunched slate bandit, black mask, striped tail and oversized bin lid',
-    'fox': 'Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail',
+    'fox': 'MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue',
     'alpha_cat': 'Magenta monarch, triangular burgundy cape and crooked gold crown',
     'junkyard_dog': 'Wide square bulldog, heavy jowls, underbite and red spiked collar',
     'barn_owl': 'Ivory heart face, swept dark wings, teal academic gown and mortarboard',

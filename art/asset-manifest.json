@@ -41,10 +41,10 @@
   "fox": {
     "directions": 8,
     "collection": "fox",
-    "triangles": 21766,
-    "visual_identity": "Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail",
+    "triangles": 12698,
+    "visual_identity": "MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue",
     "source": "art/fox/reference-fox.blend",
-    "glb_bytes": 530576,
+    "glb_bytes": 313748,
     "materials": 3
   },
   "alpha_cat": {

@@ -13,7 +13,7 @@ func check(condition: bool, message: String) -> void:
 
 func run() -> void:
 	check(FileAccess.get_sha256("res://assets/models/fox.glb") == FileAccess.get_sha256("res://art/models/fox.glb"), "runtime GLB matches the Blender export")
-	check(FileAccess.get_file_as_bytes("res://assets/models/fox.glb").size() < 640 * 1024, "GLB stays below 640 KiB")
+	check(FileAccess.get_file_as_bytes("res://assets/models/fox.glb").size() < 320 * 1024, "GLB stays below 320 KiB")
 	var source: Node3D = load("res://assets/models/fox.glb").instantiate()
 	var parts := source.find_children("*", "MeshInstance3D", true, false)
 	check(parts.size() == 1, "the exported fox uses one mesh")
@@ -22,11 +22,14 @@ func run() -> void:
 		quit(1)
 		return
 	var mesh: ArrayMesh = parts[0].mesh
-	check(mesh.get_surface_count() == 3, "fur, skin and eyes share three materials")
+	check(mesh.get_surface_count() == 3, "paint, skin and eyes share three materials")
 	var triangles := 0
 	var orange := false
 	var white := false
 	var pink := false
+	var unlit_paint := false
+	var lit_skin := false
+	var lit_eyes := false
 	for i in range(mesh.get_surface_count()):
 		var arrays := mesh.surface_get_arrays(i)
 		triangles += arrays[Mesh.ARRAY_INDEX].size() / 3
@@ -35,12 +38,19 @@ func run() -> void:
 		var material: BaseMaterial3D = mesh.surface_get_material(i)
 		check(material.vertex_color_use_as_albedo, "imported materials display vertex colors")
 		check(material.albedo_texture == null, "model needs no texture download")
+		if material.resource_name == "FOX_Paint":
+			unlit_paint = material.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED and material.albedo_color == Color.WHITE
+		elif material.resource_name == "FOX_Skin":
+			lit_skin = material.shading_mode == BaseMaterial3D.SHADING_MODE_PER_PIXEL
+		elif material.resource_name == "FOX_Eyes":
+			lit_eyes = material.shading_mode == BaseMaterial3D.SHADING_MODE_PER_PIXEL
 		for color in colors:
 			orange = orange or (color.r > 0.8 and color.g > 0.1 and color.g < 0.6 and color.b < 0.05)
 			white = white or (color.r > 0.8 and color.g > 0.8 and color.b > 0.8)
 			pink = pink or (color.r > 0.6 and color.g < 0.06 and color.b > 0.15)
 	check(orange and white and pink, "orange body, white markings and magenta tongue survive import")
-	check(triangles > 1000 and triangles <= 24000, "sculpt stays inside its triangle budget")
+	check(unlit_paint and lit_skin and lit_eyes, "flat MS Paint fill and realistic human shading survive GLB export")
+	check(triangles > 1000 and triangles <= 13000, "simplified sculpt stays inside its triangle budget")
 	check(RenderingServer.mesh_get_surface(mesh.get_rid(), 0).get("lods", []).size() > 0, "Godot generates distance LODs")
 	var bounds := mesh.get_aabb()
 	check(bounds.size.y > 4.5 and bounds.size.y < 5.1, "human ears retain the authored upright model height")
@@ -56,7 +66,14 @@ func run() -> void:
 		var hash := FileAccess.get_sha256(path)
 		check(not hashes.has(hash), "each facing has a distinct render")
 		hashes.append(hash)
-	check(sprite_bytes < 256 * 1024, "eight directions total under 256 KiB")
+	check(sprite_bytes < 64 * 1024, "eight directions total under 64 KiB")
+	var front: Image = frames[2].get_image()
+	var flat_pixels := 0
+	for y in range(front.get_height()):
+		for x in range(front.get_width()):
+			if front.get_pixel(x, y).is_equal_approx(Color("ff7700")):
+				flat_pixels += 1
+	check(flat_pixels > 1000, "body retains solid MS Paint orange without lighting gradients or dither noise")
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	await process_frame

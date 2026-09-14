@@ -28,13 +28,16 @@ def build():
     scene.render.engine='CYCLES'
     scene.cycles.samples=32
     scene.cycles.use_denoising=True
+    scene.cycles.diffuse_bounces=0
     scene.render.resolution_x=1000
     scene.render.resolution_y=1120
     scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG'
     scene.render.image_settings.color_mode='RGBA'
-    scene.view_settings.view_transform='AgX'
-    scene.view_settings.look='AgX - Medium High Contrast'
+    scene.render.image_settings.compression=100
+    scene.render.dither_intensity=0
+    scene.view_settings.view_transform='Standard'
+    scene.view_settings.look='None'
     world=bpy.data.worlds.new('Fox neutral studio')
     world.use_nodes=True
     world.node_tree.nodes['Background'].inputs['Color'].default_value=(.12,.13,.15,1)
@@ -126,7 +129,9 @@ def export_model(coll,root):
 def render():
     scene=bpy.data.scenes['Reference Fox Studio'];bpy.context.window.scene=scene
     root=bpy.data.objects['fox_root'];cam=scene.camera
-    scene.render.engine='CYCLES';scene.cycles.samples=24
+    scene.render.engine='CYCLES';scene.cycles.samples=64
+    # Dithering/denoising would add noise to the intentionally solid paint fill.
+    scene.cycles.use_denoising=False
     scene.render.film_transparent=True
     bpy.data.objects['Studio floor - excluded from export'].hide_render=True
     scene.render.resolution_x=192;scene.render.resolution_y=192
@@ -148,6 +153,11 @@ def render():
         root.rotation_euler.z=math.pi/2-i*math.tau/8
         scene.render.filepath=os.path.join(ROOT,'assets','sprites',f'fox_{i}.png')
         bpy.ops.render.render(write_still=True)
+    stats_path=os.path.join(OUT,'fox-stats.json')
+    with open(stats_path) as f:stats=json.load(f)
+    stats['sprite_bytes']=sum(os.path.getsize(os.path.join(ROOT,'assets','sprites',f'fox_{i}.png')) for i in range(8))
+    stats['paint_material']='KHR_materials_unlit'
+    with open(stats_path,'w') as f:json.dump(stats,f,indent=2);f.write('\n')
     print('FOX_SPRITES_COMPLETE',flush=True)
 
 

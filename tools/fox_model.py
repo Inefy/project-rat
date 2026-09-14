@@ -8,7 +8,7 @@ import math
 import bpy
 from mathutils import Vector
 
-IDENTITY = 'Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail'
+IDENTITY = 'MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue'
 PARTS = []
 
 
@@ -17,13 +17,13 @@ def linear(hex_color):
     return tuple(v / 12.92 if v <= .04045 else ((v + .055) / 1.055) ** 2.4 for v in values) + (1,)
 
 
-ORANGE = linear('ff7705')
-WHITE = linear('fffaf5')
+ORANGE = linear('ff7700')
+WHITE = linear('ffffff')
 SKIN = linear('d88a73')
 RIM = linear('edaa8a')
 CREASE = linear('9e493c')
 BAG = linear('99564b')
-INK = linear('080705')
+INK = linear('000000')
 PINK = linear('ed168c')
 
 
@@ -35,18 +35,44 @@ def material(kind):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
-    shader = nodes.get('Principled BSDF')
-    shader.inputs['Roughness'].default_value = {'Fur': .86, 'Skin': .48, 'Eyes and nose': .28}[kind]
-    shader.inputs['Specular IOR Level'].default_value = .32 if kind != 'Fur' else .16
-    if kind == 'Skin':
-        shader.inputs['Subsurface Weight'].default_value = .065
     color = nodes.new('ShaderNodeVertexColor')
     color.layer_name = 'Color'
-    mat.node_tree.links.new(color.outputs['Color'], shader.inputs['Base Color'])
+    if kind == 'Paint':
+        # KHR_materials_unlit keeps exact bucket-fill colors in the game.
+        nodes.remove(nodes.get('Principled BSDF'))
+        shader = nodes.new('ShaderNodeEmission')
+        shader.inputs['Strength'].default_value = 1
+        mat.node_tree.links.new(color.outputs['Color'], shader.inputs['Color'])
+        # The Blender glTF exporter recognizes this camera-ray arrangement as
+        # unlit. It also prevents the orange fill from lighting the human skin.
+        rays = nodes.new('ShaderNodeLightPath')
+        shadow = nodes.new('ShaderNodeBsdfDiffuse')
+        shadow.inputs['Color'].default_value = (0,0,0,1)
+        mix = nodes.new('ShaderNodeMixShader')
+        mat.node_tree.links.new(rays.outputs['Is Camera Ray'], mix.inputs[0])
+        mat.node_tree.links.new(shadow.outputs[0], mix.inputs[1])
+        mat.node_tree.links.new(shader.outputs[0], mix.inputs[2])
+        mat.node_tree.links.new(mix.outputs[0], nodes.get('Material Output').inputs['Surface'])
+    else:
+        shader = nodes.get('Principled BSDF')
+        shader.inputs['Roughness'].default_value = .46 if kind == 'Skin' else .25
+        shader.inputs['Specular IOR Level'].default_value = .32
+        mat.node_tree.links.new(color.outputs['Color'], shader.inputs['Base Color'])
+        if kind == 'Skin':
+            shader.inputs['Subsurface Weight'].default_value = .065
+            # Pores are baked by the sprite render; no texture is shipped.
+            noise = nodes.new('ShaderNodeTexNoise')
+            noise.inputs['Scale'].default_value = 95
+            noise.inputs['Detail'].default_value = 3
+            bump = nodes.new('ShaderNodeBump')
+            bump.inputs['Strength'].default_value = .12
+            bump.inputs['Distance'].default_value = .008
+            mat.node_tree.links.new(noise.outputs['Fac'], bump.inputs['Height'])
+            mat.node_tree.links.new(bump.outputs['Normal'], shader.inputs['Normal'])
     return mat
 
 
-def finish(obj, name, color, kind='Fur', colors=None):
+def finish(obj, name, color, kind='Paint', colors=None):
     obj.name = name
     obj.data.materials.clear()
     obj.data.materials.append(material(kind))
@@ -58,7 +84,7 @@ def finish(obj, name, color, kind='Fur', colors=None):
         p = obj.data.vertices[loop.vertex_index].co
         c = colors[loop.vertex_index] if colors else color
         # Restrained skin mottling, baked into vertex colors rather than textures.
-        variation = 1 + .025 * math.sin(p.x * 81 + p.z * 97) if kind == 'Skin' else 1
+        variation = 1 + .065 * math.sin(p.x * 81 + p.z * 97) if kind == 'Skin' else 1
         attr.data[loop.index].color = tuple(min(1, max(0, v * variation)) for v in c[:3]) + (1,)
     for face in obj.data.polygons:
         face.use_smooth = True
@@ -66,7 +92,7 @@ def finish(obj, name, color, kind='Fur', colors=None):
     return obj
 
 
-def mesh(name, verts, faces, color, kind='Fur', colors=None):
+def mesh(name, verts, faces, color, kind='Paint', colors=None):
     data = bpy.data.meshes.new(name + ' mesh')
     data.from_pydata(verts, [], faces)
     data.update()
@@ -75,7 +101,7 @@ def mesh(name, verts, faces, color, kind='Fur', colors=None):
     return finish(obj, name, color, kind, colors)
 
 
-def ball(name, at, scale, color, kind='Fur', segments=24, rings=14):
+def ball(name, at, scale, color, kind='Paint', segments=20, rings=12):
     bpy.ops.mesh.primitive_uv_sphere_add(segments=segments, ring_count=rings, location=at)
     obj = bpy.context.object
     obj.scale = scale
@@ -95,7 +121,7 @@ def sample(points, steps=4):
     return result
 
 
-def tube(name, points, radii, color, kind='Fur', sides=12, steps=4, flatten=1):
+def tube(name, points, radii, color, kind='Paint', sides=10, steps=4, flatten=1):
     centers = sample(points, steps)
     verts, faces = [], []
     prior = None
@@ -179,7 +205,7 @@ def ear(side):
     mesh(label + ' human ear shell', verts, faces, SKIN, 'Skin', colors)
     helix = [point(p.x*.90, -.102, p.y*.90) for p in boundary]
     helix.append(helix[0])
-    tube(label + ' rolled helix', helix, [.032,.040,.033], RIM, 'Skin', sides=10, steps=1)
+    tube(label + ' rolled helix', helix, [.032,.040,.033], RIM, 'Skin', sides=8, steps=1)
     fold = [point(u, d, z) for u, d, z in [(0,-.075,-.24),(.067,-.082,-.12),(.06,-.060,.025),(-.055,-.05,.145),(-.057,-.065,.27)]]
     tube(label + ' antihelix', fold, [.025,.039,.028,.018,.008], SKIN, 'Skin')
     tube(label + ' upper ear fork', [fold[2], point(.055,-.06,.16), point(.095,-.065,.27)], [.027,.026,.008], RIM, 'Skin')
@@ -222,11 +248,11 @@ def eye(side):
             if i and j:
                 a = (i-1)*(rows+1)+j-1
                 faces.append((a, a+rows+1, a+rows+2, a+1))
-    mesh(label + ' half-lidded eye with iris', verts, faces, WHITE, 'Eyes and nose', colors)
-    tube(label + ' lower wet eyelid', lower, [.008,.027,.030,.024,.008], linear('c7796e'), 'Skin', sides=10, steps=1)
-    tube(label + ' heavy upper eyelid', upper, [.012,.030,.033,.028,.008], linear('9e6247'), 'Skin', sides=10, steps=1)
+    mesh(label + ' half-lidded eye with iris', verts, faces, WHITE, 'Eyes', colors)
+    tube(label + ' lower wet eyelid', lower[::2], [.008,.027,.030,.024,.008], linear('c7796e'), 'Skin', sides=8, steps=1)
+    tube(label + ' heavy upper eyelid', upper[::2], [.012,.030,.033,.028,.008], linear('9e6247'), 'Skin', sides=8, steps=1)
     crease = [(a, b+.035, c-.067*math.sin(i/columns*math.pi)) for i,(a,b,c) in enumerate(lower)]
-    tube(label + ' under-eye crease', crease, [.006,.011,.009,.006], CREASE, 'Skin', sides=8, steps=1)
+    tube(label + ' under-eye crease', crease[::2], [.006,.011,.009,.006], CREASE, 'Skin', sides=6, steps=1)
 
 
 def body_shape():
@@ -240,7 +266,10 @@ def body_shape():
         cy = .06 - .055 * max(0, min(1, z-2.8))
         for k in range(sides):
             angle = k * math.tau/sides
-            verts.append((width*math.cos(angle), cy+depth*math.sin(angle), z))
+            # Deliberately wobbling, slightly lopsided hand-drawn outline.
+            wobble = .016 * math.sin(z*15+angle*3) + .009 * math.sin(z*31-angle*2)
+            lean = .025 * math.sin(z*2.6)
+            verts.append((lean+(width+wobble)*math.cos(angle), cy+(depth+wobble*.5)*math.sin(angle), z))
         if i:
             for k in range(sides):
                 a,b = (i-1)*sides+k, (i-1)*sides+(k+1)%sides
@@ -257,27 +286,28 @@ def build_fox():
     ]
     for side in [-1, 1]:
         body.append(ball('Subtle orange foot', (side*.265,-.09,.12), (.23,.32,.10), ORANGE))
-    union(body, 'Continuous orange body and long snout', ORANGE, 5600)
+    union(body, 'Flat orange paint silhouette', ORANGE, 2200)
     # White lower muzzle follows the irregular broad painted marking.
     lip = [ball('White lower jaw', (0,-.685,3.275), (.34,.43,.103), WHITE)]
     for side in [-1,1]:
         lip.append(ball('White cheek corner', (side*.245,-.535,3.285), (.13,.22,.105), WHITE))
-    union(lip, 'White muzzle marking', WHITE, 850, .024)
-    ball('Small black button nose', (0,-1.219,3.45), (.104,.040,.090), INK, 'Eyes and nose')
-    tongue = ball('Hanging magenta tongue', (-.10,-.846,3.17), (.080,.056,.123), PINK, 'Skin')
+    union(lip, 'White muzzle brush stroke', WHITE, 350, .024)
+    ball('Black nose dot', (0,-1.219,3.45), (.104,.040,.090), INK, segments=16, rings=10)
+    tongue = ball('Magenta tongue dab', (-.10,-.846,3.17), (.080,.056,.123), PINK, segments=16, rings=10)
     tongue.rotation_euler.y = -.24
     # A continuous white bib laid just over the torso surface.
-    bib = tube('Long white chest marking', [(0,-.267,2.60),(.025,-.288,2.34),(.018,-.305,2.03),
-         (-.008,-.316,1.72),(.012,-.322,1.45)], [.095,.133,.148,.13,.09], WHITE, sides=20, steps=6, flatten=.45)
-    end = ball('Rounded bib end', (.012,-.322,1.45), (.09,.044,.115), WHITE)
-    union([bib,end], 'Continuous white chest marking', WHITE, 700, .018)
+    bib = tube('Wobbly white chest brush stroke', [(-.075,-.277,2.60),(-.032,-.305,2.37),(.065,-.324,2.13),
+         (.021,-.330,1.91),(.095,-.346,1.71),(.052,-.336,1.45)], [.072,.10,.086,.092,.105,.085], WHITE, sides=14, steps=4, flatten=.45)
+    end = ball('Rounded brush tip', (.052,-.336,1.45), (.085,.044,.115), WHITE)
+    union([bib,end], 'White chest scribble', WHITE, 280, .018)
     # Tail sweeps back and down like the supplied drawing, with a chunky tip.
     tail_points = [(0,.30,.86),(-.10,.70,.91),(-.28,1.13,.76),(-.40,1.48,.47),
         (-.44,1.66,.33),(-.45,1.81,.27),(-.43,1.96,.24),(-.34,2.08,.25),(-.31,2.11,.27)]
-    tail = tube('Curled tail with white tip', tail_points, [.22,.30,.34,.31,.26,.22,.16,.10,.018], ORANGE, sides=20, steps=5)
-    for loop in tail.data.loops:
-        p = tail.data.vertices[loop.vertex_index].co
-        tail.data.color_attributes['Color'].data[loop.index].color = WHITE if p.y > 1.63 else ORANGE
+    tail = tube('Painted tail with white tip', tail_points, [.22,.30,.34,.31,.26,.22,.16,.10,.018], ORANGE, sides=14, steps=3)
+    for face in tail.data.polygons:
+        color = WHITE if face.center.y > 1.63 else ORANGE
+        for index in face.loop_indices:
+            tail.data.color_attributes['Color'].data[index].color = color
     for side in [-1, 1]:
         ear(side)
         eye(side)

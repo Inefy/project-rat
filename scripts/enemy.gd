@@ -94,7 +94,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 20.0 * damage_scale
 			score_value = 300 + wave * 12
 			radius = 24.0
-			tint = Color("ff7705")
+			tint = Color("ff7700")
 			state_clock = 0.8 + randf() * 0.7
 		"alpha_cat":
 			max_health = 1800.0 * get_boss_health_scale(wave)

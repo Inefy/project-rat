@@ -108,6 +108,10 @@ def render():
     scene=bpy.data.scenes['RAT Asset Studio']; bpy.context.window.scene=scene
     for k in CAST+PROPS:
         coll=bpy.data.collections[k]; coll.hide_render=False
+        # Preserve the mixed MS Paint / human appearance on a full cast render.
+        scene.view_settings.view_transform='Standard' if k=='fox' else 'AgX'
+        scene.view_settings.look='None' if k=='fox' else 'AgX - Medium High Contrast'
+        scene.render.dither_intensity=0 if k=='fox' else 1
         root=bpy.data.objects[k+'_root']; cam=scene.camera
         cam.data.ortho_scale=3.6 if k in CAST else 1.9
         target=Vector((0,0,1.25 if k in CAST else .65)); cam.location=(0,-6,4.5 if k in CAST else 3.9); cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()

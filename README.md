@@ -25,7 +25,7 @@ Enemies, pickups, projectiles, and props use lightweight sprites rendered from t
 
 The regular cat uses the reference-based black creature with green ring eyes, human-like hands, bloodied fangs, and a curved blade tail. Its eight 192px directional sprites total 221 KiB. The editable Blender source is `art/cat/reference-cat.blend`; the 407 KiB GLB is retained for editing and reuse and excluded from the top-down browser download.
 
-The fox uses the supplied orange creature with human ears, sleepy eyes, white muzzle and chest markings, a pink tongue, and a curled white-tipped tail. Its eight Blender-rendered 192px directions total 176 KiB. The editable source is `art/fox/reference-fox.blend`; the 518 KiB GLB is retained for reuse. The replacement keeps the fox's wave-ten arrival, warning, ambush dash, and recovery window. Preview and in-game captures are in `art/fox/`.
+The fox mixes an MS Paint body with shaded human ears and sleepy eyes: flat orange fill, uneven white brush strokes, a black-dot nose and pink tongue. Its eight Blender-rendered 192px directions total just 43 KiB, 76% smaller than the first shaded version. The editable source is `art/fox/reference-fox.blend`; the 306 KiB GLB is retained for reuse and excluded from the browser download. The replacement keeps the fox's wave-ten arrival, warning, ambush dash, and recovery window. Preview and in-game captures are in `art/fox/`.
 
 ## Controls
 

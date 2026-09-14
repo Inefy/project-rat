@@ -1,8 +1,8 @@
 {
-  "triangles": 21766,
-  "vertices": 11021,
+  "triangles": 12698,
+  "vertices": 6487,
   "materials": 3,
-  "glb_bytes": 530576,
+  "glb_bytes": 313748,
   "textures": 0,
   "rigged": false,
   "facings": 8,
@@ -10,5 +10,7 @@
     192,
     192
   ],
-  "visual_identity": "Orange upright fox, human ears, sleepy eyes with red bags, white muzzle and chest, pink tongue and curled white-tipped tail"
+  "visual_identity": "MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue",
+  "sprite_bytes": 43777,
+  "paint_material": "KHR_materials_unlit"
 }

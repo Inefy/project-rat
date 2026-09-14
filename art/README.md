@@ -23,7 +23,7 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | Owl | Round chestnut barrel, huge cream face disks, heavy brow tufts and tucked wings. |
 | Snake | Broad coil, S-shaped neck, lime belly, hood, flat muzzle and forked tongue. |
 | Raccoon | Hunched slate shoulders, black mask, round ears, striped tail and enormous bin lid. |
-| Fox | Orange upright body, fleshy human ears, half-closed eyes with red bags, white muzzle and chest, magenta tongue and curled white-tipped tail. |
+| Fox | MS Paint orange silhouette and uneven white brush strokes, with shaded human ears and tired eyes; black-dot nose and flat magenta tongue. |
 | Alpha Cat | Magenta monarch, wide burgundy cape, ermine trim and tall crooked crown. |
 | Junkyard Dog | Square torso, massive forepaws, drooping jowls, underbite and spiked red collar. |
 | Barn Owl | Ivory heart-shaped face, swept dark wings, teal academic gown and mortarboard. |
@@ -55,11 +55,11 @@ Pickups: cheese, rapid (chili), triple (peas), power (acorn), haste (sugar), shi
 
 ## Reference fox
 
-The supplied image is preserved in `references/fox-design.png` and packed into `fox/reference-fox.blend`. Named editable parts include the continuous orange body, long snout, white markings, hanging tongue, curled tail, and human ear shells, helixes, antihelixes, tragi and lobules. Half-closed eyes have colored irises, heavy lids and red under-eye bags. The back and depth are inferred from the single reference view. The model is static; the game supplies its procedural bounce, squash and ambush movement.
+The supplied image is preserved in `references/fox-design.png` and packed into `fox/reference-fox.blend`. Named editable parts include the uneven orange silhouette, long snout, white brush strokes, pink tongue dab, curled tail, and human ear shells, helixes, antihelixes, tragi and lobules. Half-closed eyes have colored irises, heavy lids and red under-eye bags. The back and depth are inferred from the single reference view. The model is static; the game supplies its procedural bounce, squash and ambush movement.
 
 `tools/fox_model.py` defines the geometry. `tools/build_reference_fox.py` builds the standalone studio, exports a single mesh, and renders eight 192px RGBA production directions. `tools/sync_reference_fox.py` installs the editable fox into the existing cast studio and gallery. The shared cast recipe also uses this geometry.
 
-Measured export: **21,766 triangles**, **11,021 Blender vertices**, **three materials**, **zero textures**, **530,576 GLB bytes**. Both `models/fox.glb` and `../assets/models/fox.glb` contain the same export. `tools/import_fox_model.gd` preserves vertex colors, and Godot generates distance LODs. The top-down game loads only the eight sprite images, totaling **180,495 bytes**; GLBs and Blender sources remain excluded from the browser package. Fox sprites retain their authored colors, use additional space for ears and tail, and place health bars above the ears. Collision size and combat timings are preserved.
+Measured export: **12,698 triangles**, **6,487 Blender vertices**, **three materials**, **zero textures**, **313,748 GLB bytes**. Both `models/fox.glb` and `../assets/models/fox.glb` contain the same export. `tools/import_fox_model.gd` preserves vertex colors, and Godot generates distance LODs. The top-down game loads only the eight sprite images, totaling **43,777 bytes**; GLBs and Blender sources remain excluded from the browser package. The `FOX_Paint` material exports as `KHR_materials_unlit`; skin and eyes remain lit. Standard color management, disabled dithering, and lossless PNG compression preserve exact flat fill and reduce the eight sprites by 76% from the initial shaded version. Procedural skin pores are baked into these sprites without shipping textures. Fox sprites retain their authored colors, use additional space for ears and tail, and place health bars above the ears. Collision size and combat timings are preserved.
 
 Rebuild only the reference fox:
 
@@ -72,7 +72,7 @@ godot --headless --path . --script tests/model_art_test.gd
 godot --path . --script tests/capture_fox_gameplay.gd
 ```
 
-`fox/fox-preview.png` shows the Blender studio render; `fox/directions.png` shows the eight shipped facings; `fox/in-game.png` captures the production sprites in the arena. `tests/fox_model_test.gd` checks the imported geometry, colors, LODs, resource budgets, directional completeness, wave-ten spawning, and warning/dash/recovery sequence. CI runs it before publishing.
+`fox/fox-preview.png` shows the Blender studio render; `fox/directions.png` shows the eight shipped facings; `fox/in-game.png` captures the production sprites in the arena. `tests/fox_model_test.gd` checks the imported geometry, unlit paint versus lit skin/eyes, exact orange sprite fill, LODs, a 320 KiB model budget, a 64 KiB total sprite budget, directional completeness, wave-ten spawning, and warning/dash/recovery sequence. CI runs it before publishing.
 
 Projectiles and props: seed, feather, venom, bone, sonic, crumb, fizzy.
 

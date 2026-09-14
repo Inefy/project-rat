@@ -23,8 +23,11 @@
   "owl": {
     "directions": 8,
     "collection": "owl",
-    "triangles": 3372,
-    "visual_identity": "Round chestnut barrel, huge cream eye disks and heavy brow tufts"
+    "triangles": 17708,
+    "visual_identity": "MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel",
+    "source": "art/owl/reference-owl.blend",
+    "glb_bytes": 489152,
+    "materials": 2
   },
   "snake": {
     "directions": 8,

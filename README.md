@@ -27,6 +27,8 @@ The regular cat uses the reference-based black creature with green ring eyes, hu
 
 The fox mixes an MS Paint body with shaded human ears and sleepy eyes: flat orange fill, uneven white brush strokes, a black-dot nose and pink tongue. Its eight Blender-rendered 192px directions total just 43 KiB, 76% smaller than the first shaded version. The editable source is `art/fox/reference-fox.blend`; the 306 KiB GLB is retained for reuse and excluded from the browser download. The replacement keeps the fox's wave-ten arrival, warning, ambush dash, and recovery window. Preview and in-game captures are in `art/fox/`.
 
+The regular owl uses the supplied four-wing design in the same MS Paint + human style: outlined ochre feathers, blank white eyes, a blue beak, forked stick legs, and a shaded human belly button. Its eight 192px directions total 94 KiB. The wings extend in depth to remain readable from the side. Source, preview, and gameplay capture are in `art/owl/`; the GLB stays outside the browser download. The owl retains its wave-three introduction and three-feather attack. Barn Owl keeps its separate boss design.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
@@ -131,10 +133,12 @@ godot --headless --path . --script tests/keyboard_aim_test.gd
 godot --headless --path . --script tests/top_down_test.gd
 godot --headless --path . --script tests/balance_test.gd
 godot --headless --path . --script tests/fox_model_test.gd
+godot --headless --path . --script tests/owl_model_test.gd
 ```
 
 Run `godot --path . --script tests/capture_cat_gameplay.gd` to save a top-down gameplay capture to `art/cat/in-game.png`.
 Run `godot --path . --script tests/capture_fox_gameplay.gd` to capture the replacement fox in the wave-ten arena at `art/fox/in-game.png`.
+Run `godot --path . --script tests/capture_owl_gameplay.gd` to capture the four-wing owl and its attack warning at `art/owl/in-game.png`.
 
 Create the browser build after installing Godot's export templates:
 

@@ -1,0 +1,16 @@
+{
+  "triangles": 17708,
+  "vertices": 10574,
+  "materials": 2,
+  "glb_bytes": 489152,
+  "textures": 0,
+  "rigged": false,
+  "facings": 8,
+  "sprite_size": [
+    192,
+    192
+  ],
+  "visual_identity": "MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel",
+  "sprite_bytes": 95780,
+  "paint_material": "KHR_materials_unlit"
+}

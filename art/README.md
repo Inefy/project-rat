@@ -20,7 +20,7 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | Rat | Huge pink ears, lean blue waistcoat, red scarf, buck teeth and seed blaster. |
 | Bird | Compact blue egg, wide wings, swept yellow quiff and a large wedge beak. |
 | Cat | Reference-matched black quadruped, tall ears, charcoal face and chest, green ring eyes, bloodied fangs, human hands and a curved blade tail. |
-| Owl | Round chestnut barrel, huge cream face disks, heavy brow tufts and tucked wings. |
+| Owl | Four outlined ochre feather fans, blank white eyes, slate-blue beak, stick legs, and a shaded human belly button on a flat MS Paint body. |
 | Snake | Broad coil, S-shaped neck, lime belly, hood, flat muzzle and forked tongue. |
 | Raccoon | Hunched slate shoulders, black mask, round ears, striped tail and enormous bin lid. |
 | Fox | MS Paint orange silhouette and uneven white brush strokes, with shaded human ears and tired eyes; black-dot nose and flat magenta tongue. |
@@ -75,6 +75,27 @@ godot --path . --script tests/capture_fox_gameplay.gd
 `fox/fox-preview.png` shows the Blender studio render; `fox/directions.png` shows the eight shipped facings; `fox/in-game.png` captures the production sprites in the arena. `tests/fox_model_test.gd` checks the imported geometry, unlit paint versus lit skin/eyes, exact orange sprite fill, LODs, a 320 KiB model budget, a 64 KiB total sprite budget, directional completeness, wave-ten spawning, and warning/dash/recovery sequence. CI runs it before publishing.
 
 Projectiles and props: seed, feather, venom, bone, sonic, crumb, fizzy.
+
+## Reference four-wing owl
+
+`references/owl-design.png` preserves the supplied drawing and is packed into `owl/reference-owl.blend`. `tools/owl_model.py` authors its four feather fans, rounded feather tips, ink quills/barbs, uneven ochre silhouette, two blank white eyes, slate-blue beak, black mouth dot, and forked stick-leg motif. The human navel uses a shaded cavity with puckered folds, vertex colors, and procedural pores baked into the sprites. Front is -Y and ground is Z=0; depth and back anatomy are inferred from the single view. Upper wings sweep back and lower wings forward so the owl remains recognizable in side views.
+
+The GLB has **17,708 triangles**, **10,574 source vertices**, **one mesh**, **two materials**, **zero textures**, and **489,152 bytes**. `OWL_Paint` exports as `KHR_materials_unlit`; `OWL_Skin` keeps per-pixel shading. Both `models/owl.glb` and `../assets/models/owl.glb` contain the same export. Godot generates LODs, and `tools/import_owl_model.gd` preserves the painted and skin vertex colors.
+
+The actual browser game uses eight **192 x 192 RGBA** sprites totaling **95,780 bytes**. Flat fill, disabled dithering, lossless PNG compression, and removal of Blender's render metadata keep the download small; pixel data and PNG color information are retained. Sources, reference images and GLBs are excluded from the web package. The renderer preserves the owl's authored colors, gives its four wings more space, and draws health bars above the wings. Its 23-unit collision radius, wave-three introduction, attack warning and three-feather volley are preserved. The Barn Owl boss retains its own model. The owl is static, with the game's existing procedural bounce and movement.
+
+Rebuild and validate only this owl:
+
+```sh
+blender --background --factory-startup --python-exit-code 1 --python tools/build_reference_owl.py -- --all
+blender --background art/picnic-cast.blend --python-exit-code 1 --python tools/sync_reference_owl.py
+godot --headless --path . --import
+godot --headless --path . --script tests/owl_model_test.gd
+godot --headless --path . --script tests/model_art_test.gd
+godot --path . --script tests/capture_owl_gameplay.gd
+```
+
+`owl/owl-preview.png` is the Blender studio render; `owl/directions.png` shows the eight shipped directions, and `owl/in-game.png` shows the production enemy in the arena. CI checks materials, geometry, colors, side-view width, the 512 KiB GLB budget, the 96 KiB sprite budget, and the actual ranged attack. The cast builder and gallery also use this geometry.
 
 The top-down game draws the Blender-rendered sprites. Direction 0 faces right and directions advance clockwise in 45-degree steps. Sprite drawing counters the entity rotation, keeping the camera perspective upright. The models do not contain skeletal rigs or baked walk/attack clips; the game applies procedural movement. Elite badges, armour plates/bars, attack warnings, dash trails and shield effects remain live gameplay overlays.
 

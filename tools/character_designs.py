@@ -9,7 +9,7 @@ IDENTITIES = {
     'rat': 'Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster',
     'bird': 'Compact blue dart, outstretched wings, swept yellow quiff and giant beak',
     'cat': 'Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail',
-    'owl': 'Round chestnut barrel, huge cream eye disks and heavy brow tufts',
+    'owl': 'MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel',
     'snake': 'Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue',
     'raccoon': 'Hunched slate bandit, black mask, striped tail and oversized bin lid',
     'fox': 'MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue',
@@ -106,21 +106,8 @@ def build_character(k, ball, box, cone, rod, ring):
         return build_cat()
 
     elif k == 'owl':
-        ball('Round feather barrel', (0, .08, 1.05), (.77, .51, .88), 'owl')
-        ball('Chest feathers', (0, -.36, .81), (.52, .14, .49), 'ochre')
-        for s in [-1, 1]:
-            ball('Broad face disk', (s*.32, -.41, 1.61), (.39, .13, .44), 'cream')
-            eye(s*.32, -.55, 1.66, .23, .26, -s*.65)
-            tuft=cone('Heavy horn tuft', (s*.60, .06, 2.04), (.20, .22, .41), 'brown')
-            tuft.rotation_euler.y=s*.45
-            ball('Tucked wing', (s*.67, .04, .99), (.23, .36, .53), 'brown')
-            for z in [.72, .95, 1.18]:
-                rod('Wing feather bar', (s*.79, -.17, z), (s*.80, .18, z+.09), .035, 'ochre')
-            ball('Talons', (s*.32, -.20, .17), (.23, .28, .12), 'gold')
-        for x,z in [(-.23,.90),(.23,.90),(0,.64)]:
-            cone('Chest chevron', (x,-.50,z), (.085,.025,.13), 'brown')
-        beak=cone('Hooked beak', (0, -.67, 1.30), (.15,.14,.25), 'gold')
-        beak.rotation_euler.x=math.pi*.80
+        from owl_model import build_owl
+        return build_owl()
 
     elif k == 'snake':
         for i in range(15):

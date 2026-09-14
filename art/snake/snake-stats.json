@@ -1,0 +1,16 @@
+{
+  "triangles": 16788,
+  "vertices": 9976,
+  "materials": 3,
+  "glb_bytes": 483200,
+  "textures": 0,
+  "rigged": false,
+  "facings": 8,
+  "sprite_size": [
+    192,
+    192
+  ],
+  "visual_identity": "MS Paint green looped snake with black zigzag bands, worn white cross patches, realistic human eyes and glossy red forked tongue",
+  "sprite_bytes": 90399,
+  "paint_material": "KHR_materials_unlit"
+}

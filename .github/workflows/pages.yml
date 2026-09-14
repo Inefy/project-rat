@@ -71,6 +71,10 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/owl_model_test.gd
 
+      - name: Check reference snake model and venom attack integration
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/snake_model_test.gd
+
       - name: Export web build
         run: godot --headless --path . --export-release Web build/web/index.html
 

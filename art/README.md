@@ -21,7 +21,7 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | Bird | Compact blue egg, wide wings, swept yellow quiff and a large wedge beak. |
 | Cat | Reference-matched black quadruped, tall ears, charcoal face and chest, green ring eyes, bloodied fangs, human hands and a curved blade tail. |
 | Owl | Four outlined ochre feather fans, blank white eyes, slate-blue beak, stick legs, and a shaded human belly button on a flat MS Paint body. |
-| Snake | Broad coil, S-shaped neck, lime belly, hood, flat muzzle and forked tongue. |
+| Snake | Tall green loop with uneven black brush bands, worn cream patches and red crosses, realistic human eyes and a glossy forked tongue. |
 | Raccoon | Hunched slate shoulders, black mask, round ears, striped tail and enormous bin lid. |
 | Fox | MS Paint orange silhouette and uneven white brush strokes, with shaded human ears and tired eyes; black-dot nose and flat magenta tongue. |
 | Alpha Cat | Magenta monarch, wide burgundy cape, ermine trim and tall crooked crown. |
@@ -96,6 +96,27 @@ godot --path . --script tests/capture_owl_gameplay.gd
 ```
 
 `owl/owl-preview.png` is the Blender studio render; `owl/directions.png` shows the eight shipped directions, and `owl/in-game.png` shows the production enemy in the arena. CI checks materials, geometry, colors, side-view width, the 512 KiB GLB budget, the 96 KiB sprite budget, and the actual ranged attack. The cast builder and gallery also use this geometry.
+
+## Reference snake
+
+`references/snake-design.png` preserves the supplied drawing and is packed into `snake/reference-snake.blend`. The editable model has a tall green neck, upright looped coil, continuous crooked black brush strokes, six worn cream/red cross patches per side, a blunt profile head, shaded human eyes with lids/lashes/irises, and a red fleshy forked tongue with ridges and droplets. Body and markings use flat paint; the eyes and tongue retain lighting. The unseen eye, patches and coil depth are inferred from the single reference. Front is -Y and ground is Z=0.
+
+`tools/snake_model.py` defines the geometry, `tools/build_reference_snake.py` builds the dedicated studio and production exports, and `tools/sync_reference_snake.py` updates the existing cast library and gallery. The shared cast recipe uses the same geometry. The source retains named editable parts; the GLB joins them into **one mesh**, **16,788 triangles**, **9,976 source vertices**, **three materials**, and **zero textures**, totaling **483,200 bytes**. Both GLB copies match. `SNAKE_Paint` exports as `KHR_materials_unlit`; flesh and eyes remain lit. Godot generates LODs and `tools/import_snake_model.gd` preserves vertex colors.
+
+The browser uses eight **192 x 192 RGBA** sprite images totaling **90,399 bytes** (88.3 KiB), down 63% from the previous 243,002-byte set. Standard color management, no dithering, lossless PNG compression and removal of render metadata preserve solid green fills. Blender sources, references and GLBs are excluded from the browser package. The renderer preserves authored colors and gives the tall silhouette more room; health bars sit above it. Collision radius stays 20 units, and wave-four introduction, slither, retreat, venom warning and projectile timings are unchanged. This static model uses the game's procedural movement, bounce and squash.
+
+Rebuild and validate only the snake:
+
+```sh
+blender --background --factory-startup --python-exit-code 1 --python tools/build_reference_snake.py -- --all
+blender --background art/picnic-cast.blend --python-exit-code 1 --python tools/sync_reference_snake.py
+godot --headless --path . --import
+godot --headless --path . --script tests/snake_model_test.gd
+godot --headless --path . --script tests/model_art_test.gd
+godot --path . --script tests/capture_snake_gameplay.gd
+```
+
+`snake/snake-preview.png` shows the Blender render, `snake/directions.png` shows all eight shipped facings, and `snake/in-game.png` captures the production enemy with an attack warning and health bar. `tests/snake_model_test.gd` checks vertex colors, distinct material shading, LODs, mesh and sprite budgets, exact green fill, wave-four spawning, venom warning/shot/cooldown, and retreat behavior. CI runs it before export and deployment.
 
 The top-down game draws the Blender-rendered sprites. Direction 0 faces right and directions advance clockwise in 45-degree steps. Sprite drawing counters the entity rotation, keeping the camera perspective upright. The models do not contain skeletal rigs or baked walk/attack clips; the game applies procedural movement. Elite badges, armour plates/bars, attack warnings, dash trails and shield effects remain live gameplay overlays.
 

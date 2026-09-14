@@ -29,6 +29,8 @@ The fox mixes an MS Paint body with shaded human ears and sleepy eyes: flat oran
 
 The regular owl uses the supplied four-wing design in the same MS Paint + human style: outlined ochre feathers, blank white eyes, a blue beak, forked stick legs, and a shaded human belly button. Its eight 192px directions total 94 KiB. The wings extend in depth to remain readable from the side. Source, preview, and gameplay capture are in `art/owl/`; the GLB stays outside the browser download. The owl retains its wave-three introduction and three-feather attack. Barn Owl keeps its separate boss design.
 
+The snake follows the supplied curled green design with uneven black brush bands, cream patches and red crosses, a shaded human eye, and a glossy forked tongue. Its eight 192px directions total 88 KiB, 63% smaller than the previous snake sprites. Source, preview, and gameplay capture are in `art/snake/`. The 472 KiB GLB stays outside the browser download. Wave-four spawning, slithering, retreat movement, and telegraphed venom attacks remain intact.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
@@ -134,11 +136,13 @@ godot --headless --path . --script tests/top_down_test.gd
 godot --headless --path . --script tests/balance_test.gd
 godot --headless --path . --script tests/fox_model_test.gd
 godot --headless --path . --script tests/owl_model_test.gd
+godot --headless --path . --script tests/snake_model_test.gd
 ```
 
 Run `godot --path . --script tests/capture_cat_gameplay.gd` to save a top-down gameplay capture to `art/cat/in-game.png`.
 Run `godot --path . --script tests/capture_fox_gameplay.gd` to capture the replacement fox in the wave-ten arena at `art/fox/in-game.png`.
 Run `godot --path . --script tests/capture_owl_gameplay.gd` to capture the four-wing owl and its attack warning at `art/owl/in-game.png`.
+Run `godot --path . --script tests/capture_snake_gameplay.gd` to capture the reference snake and its venom warning at `art/snake/in-game.png`.
 
 Create the browser build after installing Godot's export templates:
 

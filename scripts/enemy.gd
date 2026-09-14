@@ -78,7 +78,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 12.0 * damage_scale
 			score_value = 165 + wave * 8
 			radius = 20.0
-			tint = Color("64a83f")
+			tint = Color("197c36")
 			attack_cooldown = 1.1 + randf() * 0.8
 		"raccoon":
 			max_health = 112.0 * health_scale
@@ -415,8 +415,8 @@ func _draw() -> void:
 		_draw_health_bars()
 
 func _sprite_size() -> float:
-	# Four wings need room without changing the owl's collision radius.
-	if enemy_kind == "owl":
+	# Wings and the snake's raised coil need room around their collision shapes.
+	if enemy_kind in ["owl", "snake"]:
 		return radius * 4.2
 	# The reference creatures need room for their tall ears and long tails.
 	return radius * (3.65 if enemy_kind in ["cat", "fox"] else 3.1)
@@ -424,7 +424,7 @@ func _sprite_size() -> float:
 func _draw_health_bars() -> void:
 	var width := radius * 2.25
 	var bar_y := -radius - 17.0
-	if enemy_kind in ["cat", "fox", "owl"]:
+	if enemy_kind in ["cat", "fox", "owl", "snake"]:
 		bar_y = -_sprite_size() * 0.56 - 8.0
 	draw_rect(Rect2(-width * 0.5 - 1.5, bar_y - 1.5, width + 3.0, 7.0), INK, true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width, 4.0), Color("eadfbe"), true)

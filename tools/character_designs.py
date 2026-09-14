@@ -10,7 +10,7 @@ IDENTITIES = {
     'bird': 'Compact blue dart, outstretched wings, swept yellow quiff and giant beak',
     'cat': 'Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail',
     'owl': 'MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel',
-    'snake': 'Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue',
+    'snake': 'MS Paint green looped snake with black zigzag bands, worn white cross patches, realistic human eyes and glossy red forked tongue',
     'raccoon': 'Hunched slate bandit, black mask, striped tail and oversized bin lid',
     'fox': 'MS Paint orange fox with uneven flat-color body, realistic human ears and tired eyes, white scribble markings and pink tongue',
     'alpha_cat': 'Magenta monarch, triangular burgundy cape and crooked gold crown',
@@ -110,27 +110,8 @@ def build_character(k, ball, box, cone, rod, ring):
         return build_owl()
 
     elif k == 'snake':
-        for i in range(15):
-            a=i*math.tau/14
-            ball('Heavy coil', (math.cos(a)*.67, math.sin(a)*.46, .28+i*.013), (.28,.29,.25), 'snake')
-        for i in range(10):
-            t=i/9
-            x=math.sin(t*math.pi*1.4)*.29
-            ball('S neck', (x,.09-t*.22,.55+t*1.13), (.25,.24,.24), 'snake')
-            ball('Yellow belly scute', (x,-.12-t*.22,.55+t*1.13), (.18,.055,.12), 'lime')
-        ball('Cobra hood', (-.03,.10,1.46), (.58,.14,.55), 'snake')
-        for s in [-1,1]:
-            ball('Hood marking', (s*.36,-.015,1.50), (.14,.025,.31), 'lime')
-        ball('Flat snake skull', (-.22,-.26,1.94), (.49,.41,.25), 'snake')
-        ball('Wide blunt snout', (-.22,-.61,1.81), (.45,.34,.17), 'lime')
-        for s in [-1,1]:
-            eye(-.22+s*.27,-.53,2.09,.17,.19,s*.5)
-            ball('Nostril', (-.22+s*.17,-.89,1.90), (.037,.025,.025), 'ink')
-        rod('Snake grin', (-.59,-.77,1.74), (.15,-.77,1.74), .028, 'ink')
-        rod('Tongue', (-.22,-.85,1.72), (-.22,-1.16,1.68), .032, 'red')
-        for s in [-1,1]:
-            rod('Tongue fork', (-.22,-1.16,1.68), (-.22+s*.13,-1.29,1.70), .025, 'red')
-        tail([(.60,.32,.39),(.91,.28,.28),(1.15,.13,.20)], [.16,.12,.045], ['snake'])
+        from snake_model import build_snake
+        return build_snake()
 
     elif k == 'raccoon':
         ball('Hunched shoulders', (0,.18,1.05), (.68,.46,.65), 'raccoon')

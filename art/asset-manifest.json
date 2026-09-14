@@ -32,8 +32,11 @@
   "snake": {
     "directions": 8,
     "collection": "snake",
-    "triangles": 10368,
-    "visual_identity": "Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue"
+    "triangles": 16788,
+    "visual_identity": "MS Paint green looped snake with black zigzag bands, worn white cross patches, realistic human eyes and glossy red forked tongue",
+    "source": "art/snake/reference-snake.blend",
+    "glb_bytes": 483200,
+    "materials": 3
   },
   "raccoon": {
     "directions": 8,

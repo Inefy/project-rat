@@ -47,7 +47,6 @@ func _ready() -> void:
 	scroll.add_child(options)
 	_slider(options, "Volume", volume, func(value): volume = value; _save())
 	_slider(options, "Camera shake", shake, func(value): shake = value; _save())
-	_slider(options, "Mouse sensitivity", mouse_sensitivity / 2.0, func(value): mouse_sensitivity = maxf(0.1, value * 2.0); _save())
 	_toggle(options, "Aim assist", aim_assist, func(value): aim_assist = value; _save())
 	_toggle(options, "Easy mode", cozy, func(value): cozy = value; _save())
 	_toggle(options, "Large text", large_text, func(value): large_text = value; _save())
@@ -159,7 +158,7 @@ func _apply_keys() -> void:
 
 func _refresh_keys() -> void:
 	for action in key_buttons:
-		var label: String = "Auto-fire" if action == "toggle_autofire" else action.replace("aim_", "look_").replace("_", " ").capitalize()
+		var label: String = "Auto-fire" if action == "toggle_autofire" else action.replace("_", " ").capitalize()
 		key_buttons[action].text = "%s: %s" % [label, OS.get_keycode_string(keys[action])]
 
 func _load() -> void:

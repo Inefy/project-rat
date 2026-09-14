@@ -1,0 +1,14 @@
+{
+  "triangles": 16381,
+  "vertices": 8703,
+  "materials": 3,
+  "glb_bytes": 416440,
+  "textures": 0,
+  "rigged": false,
+  "facings": 8,
+  "sprite_size": [
+    192,
+    192
+  ],
+  "visual_identity": "Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail"
+}

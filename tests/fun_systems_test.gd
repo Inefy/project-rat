@@ -110,8 +110,7 @@ func _run() -> void:
 	game.player.fire()
 	check(get_nodes_in_group("player_bullets").size() == before + 6, "triple pickup adds seeds to max multishot")
 	game.player.using_directional_aim = true
-	game.player.yaw = 0
-	game.player._update_aim(Vector2.ZERO)
+	game.player._update_aim(Vector2.UP)
 	game.player.aim_assist = false
 	game.player._physics_process(0)
 	check(game.player.aim_direction == Vector2.UP, "released aiming stick retains direction")

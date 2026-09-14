@@ -321,7 +321,7 @@ func _build_menu() -> void:
 	var title := _label("PROJECT R.A.T.", 72, pale)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	var spacer := _label("FIRST PERSON", 19, cyan)
+	var spacer := _label("TOP-DOWN", 19, cyan)
 	spacer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	spacer.custom_minimum_size.y = 24
 	box.add_child(spacer)
@@ -334,7 +334,7 @@ func _build_menu() -> void:
 	options.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	options.pressed.connect(func(): settings_requested.emit())
 	box.add_child(options)
-	var help := _label("Move: WASD  •  Look: mouse / Arrows  •  Dash: Shift", 13, pale)
+	var help := _label("Move: WASD  •  Aim: mouse / Arrows  •  Dash: Shift", 13, pale)
 	menu_help = help
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(help)
@@ -602,7 +602,7 @@ func set_control_labels(keys: Dictionary) -> void:
 	var movement := "%s/%s/%s/%s" % [OS.get_keycode_string(keys["move_up"]), OS.get_keycode_string(keys["move_left"]), OS.get_keycode_string(keys["move_down"]), OS.get_keycode_string(keys["move_right"])]
 	aim_keys = "Arrows" if keys["aim_up"] == KEY_UP and keys["aim_left"] == KEY_LEFT and keys["aim_down"] == KEY_DOWN and keys["aim_right"] == KEY_RIGHT else "%s/%s/%s/%s" % [OS.get_keycode_string(keys["aim_up"]), OS.get_keycode_string(keys["aim_left"]), OS.get_keycode_string(keys["aim_down"]), OS.get_keycode_string(keys["aim_right"])]
 	control_hint.text = "%s / ESC: PAUSE" % OS.get_keycode_string(keys["pause"])
-	menu_help.text = "Move: %s  •  Look: mouse / %s  •  Dash: %s" % [movement, aim_keys, dash_key]
+	menu_help.text = "Move: %s  •  Aim: mouse / %s  •  Dash: %s" % [movement, aim_keys, dash_key]
 
 func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	if not enabled or wave > 3:
@@ -612,7 +612,7 @@ func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	elif player.dash_count == 0:
 		tip_label.text = "%s / RB: dash through attacks." % dash_key
 	elif wave <= 1:
-		tip_label.text = "Mouse / %s: look. Space / click: fire." % aim_keys
+		tip_label.text = "Mouse / %s: aim. Space / click: fire." % aim_keys
 	else:
 		tip_label.text = "Red attack line: dodge."
 

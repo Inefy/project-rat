@@ -18,7 +18,9 @@ for i,k in enumerate(keys):
         c=o.copy(); gallery.collection.objects.link(c); copies[o]=c
     for o,c in copies.items():
         c.parent=copies.get(o.parent)
-        if o.parent is None: c.location+=shift; c.rotation_euler.z=-.35
+        if o.parent is None:
+            c.location+=shift; c.rotation_euler.z=-.35
+            if k=='cat': c.scale=(.54,.54,.54)
     bpy.ops.object.text_add(location=shift+Vector((0,-.95,.03)),rotation=(math.pi/2,0,0))
     label=bpy.context.object; label.data.body=k.replace('_',' ').upper(); label.data.align_x='CENTER'; label.data.size=.23; label.data.extrude=.003
     label.data.materials.append(bpy.data.materials['RAT_cream'])

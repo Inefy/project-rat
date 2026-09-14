@@ -12,6 +12,8 @@ The remaining Kenney scenery and UI visuals are used as downloaded. Menu portrai
 
 The original 24-model picnic cast is authored with Blender Python and rendered into 94 transparent PNGs under `assets/sprites`. The concept sheet was generated with the built-in image-generation tool, drawing on late-N64 cartoon styling; it contains original cast designs rather than extracted commercial game assets. See `art/README.md` for the asset inventory and production workflow. The backyard, particles, and UI also use GDScript drawing. The sound effects below are redistributed under Creative Commons Zero 1.0 (CC0).
 
+The regular cat was subsequently remodeled in Blender from the user-supplied drawing preserved as `art/references/cat-design.png`. Its geometry and vertex colors are authored in `tools/cat_model.py`; no third-party mesh or texture library is used.
+
 ## Kenney audio
 
 | Source pack | Files used in this repository | License |
@@ -26,4 +28,4 @@ The files are stored in `assets/audio/` under descriptive names. Credit is not r
 
 `assets/audio/night_drone.wav` is an original, mathematically synthesized 12-second ambient loop, built from low sine tones with slow amplitude modulation. It contains no third-party samples and is covered by the repository license. The eclipse, watchers, drifting fog, pickup bursts, and damage overlay are drawn directly in GDScript.
 
-The first-person branch uses runtime copies of the original `art/models/*.glb` models in `assets/models/`; the garden, weapon, crosshair, and radar use native Godot geometry.
+The top-down game uses the Blender-rendered sprites in `assets/sprites/`. Original GLB models remain in `art/models/` and `assets/models/` for reuse; they are excluded from the web package.

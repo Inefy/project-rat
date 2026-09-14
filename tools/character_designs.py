@@ -8,7 +8,7 @@ import math
 IDENTITIES = {
     'rat': 'Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster',
     'bird': 'Compact blue dart, outstretched wings, swept yellow quiff and giant beak',
-    'cat': 'Squat purple pear, enormous cheeks, tiny feet and a curled tail',
+    'cat': 'Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail',
     'owl': 'Round chestnut barrel, huge cream eye disks and heavy brow tufts',
     'snake': 'Lime S-neck above a broad coil, flat snout, cobra hood and forked tongue',
     'raccoon': 'Hunched slate bandit, black mask, striped tail and oversized bin lid',
@@ -102,22 +102,8 @@ def build_character(k, ball, box, cone, rod, ring):
             rod('Tail feather', (s*.12, .45, .98), (s*.24, .88, 1.18), .095, 'navy')
 
     elif k == 'cat':
-        ball('Squat pear body', (0, .10, .74), (.85, .57, .67), 'cat')
-        ball('Lavender belly', (0, -.41, .70), (.59, .13, .44), 'lavender')
-        ball('Wide cheeky head', (0, -.08, 1.53), (.75, .47, .48), 'cat')
-        ears(1.96, .52, .22, .29, 'cat')
-        pair(-.51, 1.64, .32, .23, .19, -.6)
-        for s in [-1, 1]:
-            ball('Pillow cheek', (s*.32, -.49, 1.30), (.35, .22, .21), 'lavender')
-            ball('Tiny foot', (s*.48, -.27, .13), (.22, .26, .12), 'cat')
-            ball('Folded paw', (s*.65, -.26, .72), (.22, .22, .26), 'cat')
-            rod('Cheek whisker', (s*.47, -.61, 1.33), (s*.95, -.57, 1.39), .022, 'ink')
-        ball('Pink nose', (0, -.73, 1.40), (.14, .09, .09), 'pink')
-        rod('Lopsided smile', (-.24, -.64, 1.21), (.34, -.64, 1.26), .038, 'ink')
-        fang=cone('Single fang', (.25, -.69, 1.16), (.065, .05, .13), 'cream')
-        fang.rotation_euler.x=math.pi
-        tail([(.57, .42, .44), (.84, .51, .63), (1.02, .43, .90), (1.06, .33, 1.17), (.91, .24, 1.35), (.76, .18, 1.24)],
-             [.16, .17, .17, .17, .17, .15], ['cat'])
+        from cat_model import build_cat
+        return build_cat()
 
     elif k == 'owl':
         ball('Round feather barrel', (0, .08, 1.05), (.77, .51, .88), 'owl')

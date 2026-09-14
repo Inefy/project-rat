@@ -1,6 +1,6 @@
 extends Node2D
 
-const PlayerScript = preload("res://scripts/first_person_player.gd")
+const PlayerScript = preload("res://scripts/player.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const EnemyProjectileScript = preload("res://scripts/enemy_projectile.gd")
 const PowerUpScript = preload("res://scripts/power_up.gd")
@@ -82,12 +82,9 @@ var previous_best_wave := 0
 var kills_without_treat := 0
 var streak_rewarded := false
 var active_boss: CharacterBody2D
-var first_person: Node3D
-var mouse_was_captured := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	hide() # CanvasLayer menus remain visible above the 3D world.
 	rng.randomize()
 	high_score = _load_high_score()
 	audio = AudioManagerScript.new()
@@ -175,8 +172,6 @@ func start_game() -> void:
 	player.damage_feedback.connect(_on_player_damage_feedback)
 	player.aim_assist = settings.aim_assist
 	add_child(ThreatOverlayScript.new())
-	first_person = preload("res://scripts/first_person_view.gd").new()
-	add_child(first_person)
 	audio.start_ambience()
 	for at in [Vector2(-650, 190), Vector2(650, -190)]:
 		var can := FizzyCanScript.new()
@@ -189,7 +184,7 @@ func start_game() -> void:
 	reticle.z_index = 80
 	reticle.add_to_group("run_entities")
 	add_child(reticle)
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	hud.begin_game()
 	hud.set_autofire(true)
 	var empty_buffs: Array[String] = []
@@ -212,7 +207,7 @@ func _toggle_pause() -> void:
 	hud.set_paused(paused)
 	if paused:
 		hud.set_build_text(player.get_build_description())
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED)
+	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_HIDDEN)
 
 func _physics_process(delta: float) -> void:
 	if game_state != "playing" or get_tree().paused or not is_instance_valid(player):
@@ -252,13 +247,14 @@ func _physics_process(delta: float) -> void:
 	hud.update_tip(player, current_wave, settings.tips)
 
 func _process(delta: float) -> void:
-	if not get_tree().paused:
+	if not is_instance_valid(player) or not player.has_node("ArenaCamera"):
+		return
+	var camera: Camera2D = player.get_node("ArenaCamera")
+	if shake_strength > 0.05 and not get_tree().paused:
+		camera.offset = Vector2(rng.randf_range(-shake_strength, shake_strength), rng.randf_range(-shake_strength, shake_strength)) * settings.shake
 		shake_strength = maxf(0.0, shake_strength - delta * 34.0)
-	# Browsers release pointer lock themselves on Escape.
-	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-	if OS.has_feature("web") and mouse_was_captured and not captured and game_state == "playing" and not get_tree().paused:
-		_toggle_pause()
-	mouse_was_captured = captured
+	else:
+		camera.offset = camera.offset.lerp(Vector2.ZERO, minf(1.0, delta * 14.0))
 
 func _begin_next_wave() -> void:
 	current_wave += 1
@@ -628,7 +624,7 @@ func _open_upgrade_draft() -> void:
 		player.heal(24.0)
 		score += 1000
 		boss_reward_pending = false
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 		hud.show_toast("+24 HP • +1000 SCORE", Color("f6c53f"))
 		return
 	game_state = "upgrade"
@@ -645,7 +641,7 @@ func _on_upgrade_selected(id: String) -> void:
 	get_tree().paused = false
 	game_state = "playing"
 	intermission = 0.65
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	hud.show_toast(String(data["title"]), data["color"])
 	audio.play("pickup", 0.025, 1.5)
 	current_upgrade_ids.clear()
@@ -686,7 +682,7 @@ func _continue_overtime() -> void:
 	hud.hide_victory()
 	get_tree().paused = false
 	game_state = "playing"
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 	_open_upgrade_draft()
 
 func _record_run() -> void:

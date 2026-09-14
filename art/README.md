@@ -19,7 +19,7 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | --- | --- |
 | Rat | Huge pink ears, lean blue waistcoat, red scarf, buck teeth and seed blaster. |
 | Bird | Compact blue egg, wide wings, swept yellow quiff and a large wedge beak. |
-| Cat | Squat purple pear, pillow cheeks, tiny paws, single fang and curled tail. |
+| Cat | Reference-matched black quadruped, tall ears, charcoal face and chest, green ring eyes, bloodied fangs, human hands and a curved blade tail. |
 | Owl | Round chestnut barrel, huge cream face disks, heavy brow tufts and tucked wings. |
 | Snake | Broad coil, S-shaped neck, lime belly, hood, flat muzzle and forked tongue. |
 | Raccoon | Hunched slate shoulders, black mask, round ears, striped tail and enormous bin lid. |
@@ -28,13 +28,34 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | Junkyard Dog | Square torso, massive forepaws, drooping jowls, underbite and spiked red collar. |
 | Barn Owl | Ivory heart-shaped face, swept dark wings, teal academic gown and mortarboard. |
 
-`tools/character_designs.py` is the editable model recipe; `tools/build_picnic_assets.py` supplies geometry, materials, and rendering. Character framing is fitted across all eight directions so tails, wings, ears, and crowns retain transparent margins. The art regression test checks these margins.
+`tools/character_designs.py` is the editable cast recipe; `tools/build_picnic_assets.py` supplies geometry, materials, and rendering. The replacement cat's detailed geometry is in `tools/cat_model.py`, with its dedicated build and lighting in `tools/build_reference_cat.py`. Character framing is fitted across all eight directions so tails, wings, ears, and crowns retain transparent margins. The art regression test checks these margins.
+
+## Reference cat
+
+The supplied drawing is preserved in `references/cat-design.png` and packed into `cat/reference-cat.blend`. The standalone Blender studio retains named, editable parts and a presentation camera. The same cat is installed in `picnic-cast.blend` and replaces `models/cat.glb` and the eight production `cat_*.png` sprites. Alpha Cat retains its separate boss design.
+
+The GLB contains **16,381 triangles**, **one mesh**, **three materials**, and **no texture images**; its uncompressed download is **416,440 bytes**. Fine surface detail uses vertex colors and simplified geometry. See `cat/cat-stats.json` for measured output. The top-down browser game uses eight 192 x 192 directional sprites, totaling 225,979 bytes. GLB files are excluded from the web package. An identical GLB in `assets/models/cat.glb` remains available for reuse.
+
+`tools/import_cat_model.gd` preserves vertex-color materials during Godot import for GLB reuse. The iris has constant green emission for correct glTF export, and Godot generates LODs at import. `tests/cat_model_test.gd` validates the model budget, materials and production sprite sizes; `tests/top_down_test.gd` checks the camera, movement, aiming, projectile collision and pause flow. `tests/capture_cat_gameplay.gd` captures the cat in the top-down arena.
+
+The model preserves the reference's major features; hand skin detail is simplified for the mesh budget, and the rear anatomy is inferred from the single supplied view. It is a static model without an armature or animation clips; the existing game supplies procedural bounce and squash.
+
+To rebuild just this cat, without regenerating the other characters:
+
+```
+blender --background --factory-startup --python-exit-code 1 --python tools/build_reference_cat.py
+blender --background art/cat/reference-cat.blend --python-exit-code 1 --python tools/build_reference_cat.py -- --render
+blender --background art/picnic-cast.blend --python-exit-code 1 --python tools/sync_reference_cat.py
+godot --headless --path . --import
+godot --headless --path . --script tests/model_art_test.gd
+godot --headless --path . --script tests/cat_model_test.gd
+```
 
 Pickups: cheese, rapid (chili), triple (peas), power (acorn), haste (sugar), shield (lid), pierce (tooth).
 
 Projectiles and props: seed, feather, venom, bone, sonic, crumb, fizzy.
 
-The 2D game consumes rendered sprites, not live 3D scenes. Direction 0 faces right; directions advance clockwise in 45-degree steps. Sprite drawing counters the entity rotation, keeping the camera perspective upright. Movement has procedural bounce/squash; the models do not contain skeletal rigs or baked walk/attack clips. Elite badges, armour plates/bars, attack warnings, dash trails and shield effects remain live gameplay overlays.
+The top-down game draws the Blender-rendered sprites. Direction 0 faces right and directions advance clockwise in 45-degree steps. Sprite drawing counters the entity rotation, keeping the camera perspective upright. The models do not contain skeletal rigs or baked walk/attack clips; the game applies procedural movement. Elite badges, armour plates/bars, attack warnings, dash trails and shield effects remain live gameplay overlays.
 
 Art and tools have `.gdignore` files so the browser package does not import Blender sources or the large concept sheet. All sprite paths use explicit preloads for reliable exports. Existing scenery is retained.
 

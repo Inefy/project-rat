@@ -47,9 +47,13 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/keyboard_aim_test.gd
 
-      - name: Run first-person regression test
+      - name: Run top-down regression test
         timeout-minutes: 2
-        run: godot --headless --path . --script tests/first_person_test.gd
+        run: godot --headless --path . --script tests/top_down_test.gd
+
+      - name: Check cat model integration and rendering budget
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/cat_model_test.gd
 
       - name: Check sprite completeness and framing
         run: godot --headless --path . --script tests/model_art_test.gd

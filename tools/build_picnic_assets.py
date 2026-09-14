@@ -33,7 +33,9 @@ def rod(name,a,b,r,color):
 def ring(name,at,r,thick,color):
     bpy.ops.mesh.primitive_torus_add(major_segments=16,minor_segments=6,location=at,major_radius=r,minor_radius=thick); return finish(name,color,(1,1,1))
 def character(k):
-    build_character(k, ball, box, cone, rod, ring)
+    extra_parts = build_character(k, ball, box, cone, rod, ring)
+    if extra_parts:
+        parts.extend(extra_parts)
 
 def prop(k):
     if k=='cheese':
@@ -109,6 +111,9 @@ def render():
         root=bpy.data.objects[k+'_root']; cam=scene.camera
         cam.data.ortho_scale=3.6 if k in CAST else 1.9
         target=Vector((0,0,1.25 if k in CAST else .65)); cam.location=(0,-6,4.5 if k in CAST else 3.9); cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+        if k=='cat':
+            target=Vector((0,.55,2.45)); cam.location=(0,-9,7)
+            cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         if k in CAST:
             # One stable frame per character, fitted over every facing. Crowns,
             # quiffs and tails must never hit the sprite border during a turn.

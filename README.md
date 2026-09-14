@@ -2,7 +2,7 @@
 
 [![Test and deploy web game](https://github.com/Inefy/project-rat/actions/workflows/pages.yml/badge.svg)](https://github.com/Inefy/project-rat/actions/workflows/pages.yml)
 
-**First-person branch: `codex/first-person`.** Play from the rat’s eye level in a 3D nightmare garden, with mouse look, a seed blaster, and a threat radar.
+**Top-down browser game.** Aim around the rat in the nightmare garden, with independent movement and an overhead view of incoming attacks.
 
 **Run. Aim. Snack.** Project R.A.T. is an open-source cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid. Save the picnic across 15 waves, then choose whether to keep going in endless overtime.
 
@@ -21,23 +21,25 @@ To play locally:
 3. Press **F6** or **F5**.
 
 
-This branch renders enemies, pickups, projectiles, and explosive props from the original Blender models in `assets/models/`. Mesh parts are merged by material for the arena renderer. The existing 2D simulation still handles movement, collisions, waves, and upgrades; seed projectiles also track height so shots follow vertical aim. Editable models, GLB exports, and the concept sheet are in `art/`; the production guide is `art/README.md`. Combat effects remain procedural. Bundled CC0 Kenney art decorates the backyard; credits are in `ASSETS.md`. No external plug-ins are required to play.
+Enemies, pickups, projectiles, and props use lightweight sprites rendered from the original Blender models. Movement, collisions, waves, and upgrades run in 2D. Editable models, GLB exports, and the concept sheet are in `art/`; the production guide is `art/README.md`. Combat effects remain procedural. Bundled CC0 Kenney art decorates the backyard; credits are in `ASSETS.md`. No external plug-ins are required to play.
+
+The regular cat uses the reference-based black creature with green ring eyes, human-like hands, bloodied fangs, and a curved blade tail. Its eight 192px directional sprites total 221 KiB. The editable Blender source is `art/cat/reference-cat.blend`; the 407 KiB GLB is retained for editing and reuse and excluded from the top-down browser download.
 
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
 | --- | --- | --- |
-| Move / strafe | `WASD`, relative to your facing | Left stick |
-| Look | Mouse or arrow keys | Right stick |
+| Move | `WASD`, in screen directions | Left stick |
+| Aim | Mouse or arrow keys | Right stick |
 | Fire | Automatic by default; hold arrow keys, left click or `Space` when disabled | Right stick |
 | Dash | `Shift` | Right shoulder |
 | Toggle auto-fire | `F` | Right stick click |
 | Choose mutation | `1`, `2`, or `3` | Click / tap a card |
 | Pause | `P` or `Esc` | Start |
 
-Move with **WASD** and look around with the **mouse**. For keyboard-only play, the **arrow keys** turn left/right and look up/down; holding them also fires. Releasing look input preserves your heading. **Esc** pauses and releases the mouse; Resume captures it again. Drafts, game over, and the title screen release the mouse for UI navigation. The radar shows nearby raiders, incoming attack wind-ups, and pickups, including those behind you. Look and movement keys can be remapped.
+Move with **WASD** and aim at the **mouse cursor**. For keyboard-only play, the **arrow keys** aim in eight directions; holding them also fires. Releasing aim input preserves your direction. **Esc** pauses, showing the menu cursor. Resume restores the aiming reticle. Offscreen indicators reveal incoming attack wind-ups and final stragglers. Aim and movement keys can be remapped.
 
-Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, mouse sensitivity, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button.
+Open **Comfort & Controls** from the title or pause menu for saved keyboard remapping, volume, shake intensity, larger text, gentle aim assist, Cozy difficulty, and optional gameplay hints. Controller users can navigate menus and mutation cards with the directional controls and confirm with the standard accept button.
 
 ## Build your rat
 
@@ -49,7 +51,7 @@ The first wave-clear draft offers three ways to play:
 
 Later drafts mix stat upgrades with eligible build synergies. Cards show upgrade levels and stat changes; pause to inspect the complete build. Bosses guarantee banked Power and Shield treats plus a bonus mutation draft at wave clear. Leftover treats are banked until the next wave. Full health/shield pickups convert into temporary power, and Triple Seed adds two seeds even to an upgraded weapon.
 
-Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. The threat radar reveals raiders behind you and final stragglers. Shoot the marked fizzy cans to knock nearby enemies away.
+Encounter recipes alternate bird swarms, cat pincers, ranged sieges, and elite hunts, with short recovery gaps and crowd limits. Yellow attack lines indicate a wind-up; red lines indicate a committed direction. Offscreen indicators reveal attack wind-ups and final stragglers. Shoot the marked fizzy cans to knock nearby enemies away.
 
 The opening birds fall to one accurate seed. Waves grow from 14 enemies to 76 at wave 10 and 110 at wave 15, with up to 42 enemies active in overtime. Fast clears bring the next enemy sooner; brief recovery gaps occur only when the arena is crowded. Raccoons and foxes remain in later encounter recipes. Ranged stragglers approach faster. Dash presses up to 140ms before recharge are buffered, with a recharge meter on the HUD. Once a treat enters pickup range it follows you through a dash. Snack Wizard starts charged, and twelve kills without a treat guarantee a drop (eight in Cozy).
 
@@ -101,9 +103,9 @@ Story boss health is 1,800 / 2,800 / 4,000. Phases begin at two-thirds and one-t
 scenes/main.tscn        Entry scene
 scripts/main.gd         Run, wave, spawning, score, and persistence systems
 scripts/player.gd       Shared movement, weapon, health, and mutations
-scripts/first_person_player.gd Mouse look and movement relative to facing
-scripts/first_person_view.gd   3D arena, models, weapon, and attack warnings
-scripts/first_person_overlay.gd Crosshair and threat radar
+
+
+
 scripts/enemy.gd        Enemy movement, damage, and phase transitions
 scripts/boss_patterns.gd Boss attack sequences and warnings
 scripts/hud.gd          Title screen, HUD, pause, and game-over UI
@@ -124,11 +126,11 @@ godot --headless --path . --script tests/fun_systems_test.gd
 
 godot --headless --path . --script tests/playability_test.gd
 godot --headless --path . --script tests/keyboard_aim_test.gd
-godot --headless --path . --script tests/first_person_test.gd
+godot --headless --path . --script tests/top_down_test.gd
 godot --headless --path . --script tests/balance_test.gd
 ```
 
-Run `godot --path . --script tests/first_person_test.gd` to check real mouse capture and save `build/first-person.png`. Headless Godot cannot capture a physical pointer.
+Run `godot --path . --script tests/capture_cat_gameplay.gd` to save a top-down gameplay capture to `art/cat/in-game.png`.
 
 Create the browser build after installing Godot's export templates:
 

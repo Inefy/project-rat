@@ -61,7 +61,8 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			contact_damage = 18.0 * damage_scale
 			score_value = 220 + wave * 9
 			radius = 27.0
-			tint = Color("914fba")
+			# Match impact/death effects to the reference cat's green eyes.
+			tint = Color("18bc35")
 			state_clock = 0.9 + randf() * 0.7
 		"owl":
 			max_health = 52.0 * health_scale
@@ -400,7 +401,7 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if hit_flash > 0.0:
 		draw_circle(Vector2.ZERO, radius + 10.0, Color(1.0, 0.95, 0.75, hit_flash * 2.8))
-	preload("res://scripts/model_sprites.gd").paint(self, enemy_kind, rotation, radius * 3.1, age, 1.2 if velocity.length() > 20.0 else 0.35, visual_scale, hit_flash > 0.0)
+	preload("res://scripts/model_sprites.gd").paint(self, enemy_kind, rotation, _sprite_size(), age, 1.2 if velocity.length() > 20.0 else 0.35, visual_scale, hit_flash > 0.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if elite:
 		for badge in range(3):
@@ -413,9 +414,15 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE * visual_scale)
 		_draw_health_bars()
 
+func _sprite_size() -> float:
+	# The long legs and blade tail need more room than the old squat cat.
+	return radius * (3.65 if enemy_kind == "cat" else 3.1)
+
 func _draw_health_bars() -> void:
 	var width := radius * 2.25
 	var bar_y := -radius - 17.0
+	if enemy_kind == "cat":
+		bar_y = -_sprite_size() * 0.56 - 8.0
 	draw_rect(Rect2(-width * 0.5 - 1.5, bar_y - 1.5, width + 3.0, 7.0), INK, true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width, 4.0), Color("eadfbe"), true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width * clampf(health / max_health, 0.0, 1.0), 4.0), Color("d95863"), true)

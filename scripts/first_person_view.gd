@@ -49,13 +49,16 @@ func _load_models() -> void:
 	# Merge named model parts by material once, keeping horde draw calls bounded.
 	for kind in MODEL_KINDS:
 		var source: Node3D = load("res://assets/models/%s.glb" % kind).instantiate()
+		var parts := source.find_children("*", "MeshInstance3D", true, false)
+		# The reference cat is already one mesh with three material surfaces.
+		# Reuse imported meshes when possible: merging again discards their LODs.
+		if parts.size() == 1 and _part_transform(parts[0], source).is_equal_approx(Transform3D.IDENTITY):
+			models[kind] = parts[0].mesh
+			source.free()
+			continue
 		var surfaces := {}
-		for part in source.find_children("*", "MeshInstance3D", true, false):
-			var transform: Transform3D = part.transform
-			var ancestor: Node = part.get_parent()
-			while ancestor != source:
-				transform = ancestor.transform * transform
-				ancestor = ancestor.get_parent()
+		for part in parts:
+			var transform := _part_transform(part, source)
 			for index in range(part.mesh.get_surface_count()):
 				var material: Material = part.get_active_material(index)
 				if not surfaces.has(material):
@@ -69,6 +72,14 @@ func _load_models() -> void:
 			surface.commit(mesh)
 		models[kind] = mesh
 		source.free()
+
+func _part_transform(part: Node3D, source: Node3D) -> Transform3D:
+	var transform := part.transform
+	var ancestor := part.get_parent()
+	while ancestor != source:
+		transform = ancestor.transform * transform
+		ancestor = ancestor.get_parent()
+	return transform
 
 func _material(color: Color, unshaded: bool = false) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()

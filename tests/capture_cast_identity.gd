@@ -2,7 +2,7 @@ extends SceneTree
 ## Inspect the actual production textures, including tiny silhouettes.
 const Sprites = preload("res://scripts/model_sprites.gd")
 const CAST := ["rat", "bird", "cat", "owl", "snake", "raccoon", "fox", "alpha_cat", "junkyard_dog", "barn_owl"]
-const NOTES := ["EARS / SCARF / BLASTER", "WINGS / QUIFF / BEAK", "BELLY / CHEEKS / CURL", "ROUND / DISKS / TUFTS", "COIL / S-NECK / HOOD", "MASK / STRIPES / LID", "LONG LEGS / HUGE TAIL", "CROWN / CAPE / MAGENTA", "SQUARE / JOWLS / SPIKES", "HEART / WINGS / GOWN"]
+const NOTES := ["EARS / SCARF / BLASTER", "WINGS / QUIFF / BEAK", "GREEN EYES / HANDS / BLADE", "ROUND / DISKS / TUFTS", "COIL / S-NECK / HOOD", "MASK / STRIPES / LID", "LONG LEGS / HUGE TAIL", "CROWN / CAPE / MAGENTA", "SQUARE / JOWLS / SPIKES", "HEART / WINGS / GOWN"]
 
 class Lineup extends Control:
 	func _draw() -> void:

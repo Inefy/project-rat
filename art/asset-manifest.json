@@ -14,8 +14,11 @@
   "cat": {
     "directions": 8,
     "collection": "cat",
-    "triangles": 4938,
-    "visual_identity": "Squat purple pear, enormous cheeks, tiny feet and a curled tail"
+    "triangles": 16381,
+    "visual_identity": "Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail",
+    "source": "art/cat/reference-cat.blend",
+    "glb_bytes": 416440,
+    "materials": 3
   },
   "owl": {
     "directions": 8,

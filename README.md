@@ -31,6 +31,8 @@ The regular owl uses the supplied four-wing design in the same MS Paint + human 
 
 The snake follows the supplied curled green design with uneven black brush bands, cream patches and red crosses, a shaded human eye, and a glossy forked tongue. Its eight 192px directions total 88 KiB, 63% smaller than the previous snake sprites. Source, preview, and gameplay capture are in `art/snake/`. The 472 KiB GLB stays outside the browser download. Wave-four spawning, slithering, retreat movement, and telegraphed venom attacks remain intact.
 
+The opening-wave bird now uses the supplied hollow orange outline, yellow beak, white wings covered in golden eyes, and sculpted human feet. Its eight 192px directions total 93 KiB, 59% smaller than the previous bird sprites. The wings sweep in opposite directions in depth to stay visible when turning. Source, preview, and gameplay capture are in `art/bird/`; the reusable GLB is excluded from the browser package. The bird keeps its weaving movement, collision size and one-seed opening-wave health.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |
@@ -137,12 +139,14 @@ godot --headless --path . --script tests/balance_test.gd
 godot --headless --path . --script tests/fox_model_test.gd
 godot --headless --path . --script tests/owl_model_test.gd
 godot --headless --path . --script tests/snake_model_test.gd
+godot --headless --path . --script tests/bird_model_test.gd
 ```
 
 Run `godot --path . --script tests/capture_cat_gameplay.gd` to save a top-down gameplay capture to `art/cat/in-game.png`.
 Run `godot --path . --script tests/capture_fox_gameplay.gd` to capture the replacement fox in the wave-ten arena at `art/fox/in-game.png`.
 Run `godot --path . --script tests/capture_owl_gameplay.gd` to capture the four-wing owl and its attack warning at `art/owl/in-game.png`.
 Run `godot --path . --script tests/capture_snake_gameplay.gd` to capture the reference snake and its venom warning at `art/snake/in-game.png`.
+Run `godot --path . --script tests/capture_bird_gameplay.gd` to capture the many-eyed bird in the opening-wave arena at `art/bird/in-game.png`.
 
 Create the browser build after installing Godot's export templates:
 

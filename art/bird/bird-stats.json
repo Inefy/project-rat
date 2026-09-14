@@ -1,0 +1,16 @@
+{
+  "triangles": 29677,
+  "vertices": 21493,
+  "materials": 4,
+  "glb_bytes": 955952,
+  "textures": 0,
+  "rigged": false,
+  "facings": 8,
+  "sprite_size": [
+    192,
+    192
+  ],
+  "visual_identity": "Hollow MS Paint orange bird outline, yellow beak, white feather wings covered in golden human eyes, and realistic human feet",
+  "sprite_bytes": 94837,
+  "paint_material": "KHR_materials_unlit"
+}

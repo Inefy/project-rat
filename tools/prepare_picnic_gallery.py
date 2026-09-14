@@ -23,6 +23,7 @@ for i,k in enumerate(keys):
             if k in ['cat', 'fox']: c.scale=(.54,.54,.54)
             elif k=='owl': c.scale=(.43,.43,.43)
             elif k=='snake': c.scale=(.47,.47,.47)
+            elif k=='bird': c.scale=(.42,.42,.42)
     bpy.ops.object.text_add(location=shift+Vector((0,-.95,.03)),rotation=(math.pi/2,0,0))
     label=bpy.context.object; label.data.body=k.replace('_',' ').upper(); label.data.align_x='CENTER'; label.data.size=.23; label.data.extrude=.003
     label.data.materials.append(bpy.data.materials['RAT_cream'])

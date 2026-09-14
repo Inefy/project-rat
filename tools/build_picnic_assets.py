@@ -109,9 +109,9 @@ def render():
     for k in CAST+PROPS:
         coll=bpy.data.collections[k]; coll.hide_render=False
         # Preserve the mixed MS Paint / human appearance on a full cast render.
-        scene.view_settings.view_transform='Standard' if k in ['fox','owl','snake'] else 'AgX'
-        scene.view_settings.look='None' if k in ['fox','owl','snake'] else 'AgX - Medium High Contrast'
-        scene.render.dither_intensity=0 if k in ['fox','owl','snake'] else 1
+        scene.view_settings.view_transform='Standard' if k in ['bird','fox','owl','snake'] else 'AgX'
+        scene.view_settings.look='None' if k in ['bird','fox','owl','snake'] else 'AgX - Medium High Contrast'
+        scene.render.dither_intensity=0 if k in ['bird','fox','owl','snake'] else 1
         root=bpy.data.objects[k+'_root']; cam=scene.camera
         cam.data.ortho_scale=3.6 if k in CAST else 1.9
         target=Vector((0,0,1.25 if k in CAST else .65)); cam.location=(0,-6,4.5 if k in CAST else 3.9); cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
@@ -123,6 +123,9 @@ def render():
             cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         elif k=='snake':
             target=Vector((0,.35,2.75)); cam.location=(0,-10,7.3)
+            cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+        elif k=='bird':
+            target=Vector((0,.15,2.8)); cam.location=(0,-10,7.3)
             cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         if k in CAST:
             # One stable frame per character, fitted over every facing. Crowns,

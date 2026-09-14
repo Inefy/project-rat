@@ -18,7 +18,7 @@ Characters: rat, bird, cat, owl, snake, raccoon, fox, alpha_cat, junkyard_dog, b
 | Character | Shape and identifying features |
 | --- | --- |
 | Rat | Huge pink ears, lean blue waistcoat, red scarf, buck teeth and seed blaster. |
-| Bird | Compact blue egg, wide wings, swept yellow quiff and a large wedge beak. |
+| Bird | Hollow orange MS Paint outline, yellow beak, asymmetric white wings covered in golden human eyes, and sculpted human feet. |
 | Cat | Reference-matched black quadruped, tall ears, charcoal face and chest, green ring eyes, bloodied fangs, human hands and a curved blade tail. |
 | Owl | Four outlined ochre feather fans, blank white eyes, slate-blue beak, stick legs, and a shaded human belly button on a flat MS Paint body. |
 | Snake | Tall green loop with uneven black brush bands, worn cream patches and red crosses, realistic human eyes and a glossy forked tongue. |
@@ -117,6 +117,29 @@ godot --path . --script tests/capture_snake_gameplay.gd
 ```
 
 `snake/snake-preview.png` shows the Blender render, `snake/directions.png` shows all eight shipped facings, and `snake/in-game.png` captures the production enemy with an attack warning and health bar. `tests/snake_model_test.gd` checks vertex colors, distinct material shading, LODs, mesh and sprite budgets, exact green fill, wave-four spawning, venom warning/shot/cooldown, and retreat behavior. CI runs it before export and deployment.
+
+## Reference many-eyed bird
+
+`references/bird-design.png` preserves the supplied drawing and is packed into `bird/reference-bird.blend`. The body and head are hollow orange brush outlines with a black eye dot, yellow beak, and two orange legs. Two asymmetric white wings have layered feathers, quills and barbs, with ten golden human-eye motifs on each face of each wing. Human feet have heels, arches, ankles, five toes, nails, tendons and skin creases. The orange/yellow shapes are unlit; feather layers, eyes and feet retain shading. Wing backs and depth are inferred from the single supplied view. The wings sweep in opposite directions in depth so head-on views remain legible.
+
+`tools/bird_model.py` defines the geometry. `tools/build_reference_bird.py` builds the editable studio, exports the joined model, and renders production directions. Completed PNGs replace the production files atomically, with a short retry for Windows file watchers. `tools/sync_reference_bird.py` updates the existing cast studio/gallery, and the shared cast recipe uses this geometry.
+
+Measured export: **29,677 triangles**, **21,493 source vertices**, **one mesh**, **four materials**, **zero texture images**, and **955,952 bytes**. The two GLB copies match. `BIRD_Paint` exports as `KHR_materials_unlit`; feathers, skin and eyes retain per-pixel shading. `tools/import_bird_model.gd` preserves vertex colors and Godot generates LODs. The model is static; the game provides its movement, bounce and squash.
+
+The browser loads eight **192 x 192 RGBA** sprites totaling **94,837 bytes** (92.6 KiB), 59% smaller than the previous 230,126-byte bird set. The GLBs, Blender sources and reference images stay outside the web download. Sprites keep their authored colors, provide room for the wings/feet, and put health bars above the silhouette. The opening-wave bird retains its 16-unit collision radius, weaving pursuit and one-seed health.
+
+Rebuild and validate only this bird:
+
+```sh
+blender --background --factory-startup --python-exit-code 1 --python tools/build_reference_bird.py -- --all
+blender --background art/picnic-cast.blend --python-exit-code 1 --python tools/sync_reference_bird.py
+godot --headless --path . --import
+godot --headless --path . --script tests/bird_model_test.gd
+godot --headless --path . --script tests/model_art_test.gd
+godot --path . --script tests/capture_bird_gameplay.gd
+```
+
+`bird/bird-preview.png` shows the studio render, `bird/directions.png` shows all eight shipped views, and `bird/in-game.png` captures real production enemies at several facings. `tests/bird_model_test.gd` checks material shading, colors, LODs, the 1 MiB GLB budget, the 128 KiB sprite budget, transparent body interior, directional width, opening-wave spawning, weaving and an actual seed projectile kill. CI runs it before deployment.
 
 The top-down game draws the Blender-rendered sprites. Direction 0 faces right and directions advance clockwise in 45-degree steps. Sprite drawing counters the entity rotation, keeping the camera perspective upright. The models do not contain skeletal rigs or baked walk/attack clips; the game applies procedural movement. Elite badges, armour plates/bars, attack warnings, dash trails and shield effects remain live gameplay overlays.
 

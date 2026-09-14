@@ -7,7 +7,7 @@ import math
 
 IDENTITIES = {
     'rat': 'Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster',
-    'bird': 'Compact blue dart, outstretched wings, swept yellow quiff and giant beak',
+    'bird': 'Hollow MS Paint orange bird outline, yellow beak, white feather wings covered in golden human eyes, and realistic human feet',
     'cat': 'Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail',
     'owl': 'MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel',
     'snake': 'MS Paint green looped snake with black zigzag bands, worn white cross patches, realistic human eyes and glossy red forked tongue',
@@ -81,25 +81,8 @@ def build_character(k, ball, box, cone, rod, ring):
         ball('Barrel bore', (.48, -1.14, .92), (.13, .024, .13), 'ink')
 
     elif k == 'bird':
-        ball('Flying blue egg', (0, .08, 1.19), (.48, .55, .57), 'bird')
-        ball('Golden chest', (0, -.36, 1.04), (.30, .12, .32), 'gold')
-        ball('Forward head', (0, -.25, 1.66), (.46, .41, .40), 'bird')
-        pair(-.59, 1.76, .22, .17, .18, .9)
-        beak=cone('Huge wedge beak', (0, -.92, 1.46), (.27, .19, .42), 'gold')
-        beak.rotation_euler.x=math.pi/2
-        rod('Beak smirk', (-.23, -.85, 1.44), (.23, -.85, 1.40), .024, 'brown')
-        for s in [-1, 1]:
-            rod('Wing leading edge', (s*.30, .05, 1.34), (s*.94, .14, 1.53), .15, 'bird')
-            for i in range(3):
-                feather=ball('Splayed flight feather', (s*(.72+i*.18), .18+i*.07, 1.39-i*.11), (.29, .17, .12), 'navy')
-                feather.rotation_euler.y=s*.35
-            rod('Spindly leg', (s*.20, .02, .77), (s*.27, -.05, .35), .065, 'gold')
-            ball('Comical bird foot', (s*.27, -.21, .29), (.18, .30, .08), 'gold')
-        for i in range(3):
-            quiff=cone('Swept quiff', (-.19+i*.18, .0+i*.12, 2.15+i*.06), (.15, .21, .35), 'gold')
-            quiff.rotation_euler.x=-.65
-        for s in [-1, 0, 1]:
-            rod('Tail feather', (s*.12, .45, .98), (s*.24, .88, 1.18), .095, 'navy')
+        from bird_model import build_bird
+        return build_bird()
 
     elif k == 'cat':
         from cat_model import build_cat

@@ -8,8 +8,11 @@
   "bird": {
     "directions": 8,
     "collection": "bird",
-    "triangles": 3960,
-    "visual_identity": "Compact blue dart, outstretched wings, swept yellow quiff and giant beak"
+    "triangles": 29677,
+    "visual_identity": "Hollow MS Paint orange bird outline, yellow beak, white feather wings covered in golden human eyes, and realistic human feet",
+    "source": "art/bird/reference-bird.blend",
+    "glb_bytes": 955952,
+    "materials": 4
   },
   "cat": {
     "directions": 8,

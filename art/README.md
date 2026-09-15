@@ -125,9 +125,11 @@ godot --path . --script tests/capture_snake_gameplay.gd
 
 `tools/bird_model.py` defines the geometry. `tools/build_reference_bird.py` builds the editable studio, exports the joined model, and renders production directions. Completed PNGs replace the production files atomically, with a short retry for Windows file watchers. `tools/sync_reference_bird.py` updates the existing cast studio/gallery, and the shared cast recipe uses this geometry.
 
+The bird studio uses neutral environment light and six balanced softboxes, including fill below the tilted wings. The presentation floor is hidden because it blocked light on the downward-facing wing. The saved viewport uses the same Cycles lighting as the final render. Feather layers and golden eyes retain detail without the earlier blown-out white wing; the orange paint remains unlit.
+
 Measured export: **30,305 triangles**, **21,813 source vertices**, **one mesh**, **four materials**, **zero texture images**, and **971,224 bytes**. The two GLB copies match. `BIRD_Paint` exports as `KHR_materials_unlit`; feathers, skin and eyes retain per-pixel shading. `tools/import_bird_model.gd` preserves vertex colors and Godot generates LODs. The model is static; the game provides its movement, bounce and squash.
 
-The browser loads eight **192 x 192 RGBA** sprites totaling **90,140 bytes** (88.0 KiB), 61% smaller than the previous 230,126-byte bird set. The GLBs, Blender sources and reference images stay outside the web download. Sprites keep their authored colors, provide room for the wings/feet, and put health bars above the silhouette. The opening-wave bird retains its 16-unit collision radius, weaving pursuit and one-seed health.
+The browser loads eight **192 x 192 RGBA** sprites totaling **86,300 bytes** (84.3 KiB), 62% smaller than the previous 230,126-byte bird set. The GLBs, Blender sources and reference images stay outside the web download. Sprites keep their authored colors, provide room for the wings/feet, and put health bars above the silhouette. The opening-wave bird retains its 16-unit collision radius, weaving pursuit and one-seed health.
 
 Rebuild and validate only this bird:
 

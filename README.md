@@ -31,7 +31,7 @@ The regular owl uses the supplied four-wing design in the same MS Paint + human 
 
 The snake follows the supplied curled green design with uneven black brush bands, cream patches and red crosses, a shaded human eye, and a glossy forked tongue. Its eight 192px directions total 88 KiB, 63% smaller than the previous snake sprites. Source, preview, and gameplay capture are in `art/snake/`. The 472 KiB GLB stays outside the browser download. Wave-four spawning, slithering, retreat movement, and telegraphed venom attacks remain intact.
 
-The opening-wave bird now uses the supplied bird design with a solid orange body and head, yellow beak, white wings covered in golden eyes, and sculpted human feet. Its eight 192px directions total 88 KiB, 61% smaller than the previous bird sprites. The wings sweep in opposite directions in depth to stay visible when turning. Source, preview, and gameplay capture are in `art/bird/`; the reusable GLB is excluded from the browser package. The bird keeps its weaving movement, collision size and one-seed opening-wave health.
+The opening-wave bird now uses the supplied bird design with a solid orange body and head, yellow beak, white wings covered in golden eyes, and sculpted human feet. Its eight 192px directions total 84 KiB, 62% smaller than the previous bird sprites. The wings sweep in opposite directions in depth to stay visible when turning. Source, preview, and gameplay capture are in `art/bird/`; the reusable GLB is excluded from the browser package. The bird keeps its weaving movement, collision size and one-seed opening-wave health.
 
 ## Controls
 

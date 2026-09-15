@@ -24,6 +24,38 @@ def aim(obj, at):
     obj.rotation_euler=(Vector(at)-obj.location).to_track_quat('-Z','Y').to_euler()
 
 
+def configure_lighting(scene):
+    """Broad neutral illumination keeps both white wings below clipping."""
+    for obj in list(scene.objects):
+        if obj.type == 'LIGHT':
+            bpy.data.objects.remove(obj, do_unlink=True)
+    world=scene.world
+    world.use_nodes=True
+    nodes,links=world.node_tree.nodes,world.node_tree.links
+    nodes.clear()
+    illumination=nodes.new('ShaderNodeBackground')
+    illumination.inputs['Color'].default_value=(1,1,1,1)
+    illumination.inputs['Strength'].default_value=.90
+    backdrop=nodes.new('ShaderNodeBackground')
+    backdrop.inputs['Color'].default_value=(.03,.03,.033,1)
+    backdrop.inputs['Strength'].default_value=.40
+    rays=nodes.new('ShaderNodeLightPath')
+    mix=nodes.new('ShaderNodeMixShader')
+    links.new(rays.outputs['Is Camera Ray'],mix.inputs[0])
+    links.new(illumination.outputs[0],mix.inputs[1])
+    links.new(backdrop.outputs[0],mix.inputs[2])
+    output=nodes.new('ShaderNodeOutputWorld')
+    links.new(mix.outputs[0],output.inputs['Surface'])
+    # Balanced above and below as well as around the sides: the two wings
+    # tilt in opposite directions and need the same diffuse illumination.
+    for index,at in enumerate([(-10,0,2.8),(10,0,2.8),(0,-10,2.8),
+                               (0,10,2.8),(0,0,12.8),(0,0,-7.2)]):
+        bpy.ops.object.light_add(type='AREA',location=at)
+        light=bpy.context.object;light.name=f'Balanced neutral softbox {index+1}'
+        light.data.energy=60;light.data.shape='DISK';light.data.size=8
+        light.data.color=(1,1,1);aim(light,(0,.4,2.8))
+
+
 def build():
     os.makedirs(OUT,exist_ok=True)
     scene=bpy.data.scenes.new('Reference Bird Studio')
@@ -31,6 +63,8 @@ def build():
     scene.render.engine='CYCLES'
     scene.cycles.samples=32
     scene.cycles.use_denoising=True
+    scene.cycles.preview_samples=32
+    scene.cycles.use_preview_denoising=True
     scene.cycles.diffuse_bounces=0
     scene.render.resolution_x=1440
     scene.render.resolution_y=1080
@@ -53,19 +87,16 @@ def build():
     for p in parts:
         for c in list(p.users_collection):c.objects.unlink(p)
         coll.objects.link(p);p.parent=root
-    # Soft studio lighting keeps the orange silhouette and sculpted skin readable.
-    for name,at,energy,size,color in [
-        ('Large soft key',(-4,-6,8),950,5,(1,.91,.82)),
-        ('Soft face fill',(4,-5,4.5),430,4,(.83,.90,1)),
-        ('Tail rim',(1,5,7),1150,4,(.91,.96,1)),
-        ('Human foot fill',(-4,1,2.1),180,3,(1,.94,.88))]:
-        bpy.ops.object.light_add(type='AREA',location=at)
-        light=bpy.context.object;light.name=name;light.data.energy=energy*.75;light.data.shape='DISK';light.data.size=size;light.data.color=color;aim(light,(0,.4,2.5))
+    configure_lighting(scene)
     bpy.ops.object.camera_add(location=(-13,-2,6.5))
     cam=bpy.context.object;cam.name='Reference three-quarter camera';cam.data.type='ORTHO';cam.data.ortho_scale=8.0
     aim(cam,(0,.15,2.85));scene.camera=cam
     bpy.ops.mesh.primitive_plane_add(size=200,location=(0,0,.005))
     ground=bpy.context.object;ground.name='Studio floor - excluded from export'
+    # The tilted upright wing faces the lower hemisphere. A large opaque
+    # floor blocks its environment light, so preview and sprites omit it.
+    ground.hide_render=True
+    ground.hide_set(True)
     mat=bpy.data.materials.new('Studio charcoal');mat.use_nodes=True
     mat.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value=(.038,.040,.044,1)
     mat.node_tree.nodes['Principled BSDF'].inputs['Roughness'].default_value=.94
@@ -79,7 +110,7 @@ def build():
     scene['runtime']='Top-down game uses eight 192px directional sprites. GLB retained for reuse with imported LODs. Static model with procedural game movement.'
     bpy.ops.object.select_all(action='DESELECT')
     root.select_set(True);bpy.context.view_layer.objects.active=root
-    for area in bpy.context.screen.areas:
+    for area in bpy.data.screens['Layout'].areas:
         if area.type=='VIEW_3D':
             area.spaces.active.region_3d.view_distance=8.6
             area.spaces.active.region_3d.view_location=(0,.5,2.6)
@@ -87,7 +118,7 @@ def build():
             area.spaces.active.region_3d.view_perspective='CAMERA'
             area.spaces.active.region_3d.view_camera_zoom=0
             area.spaces.active.region_3d.view_camera_offset=(0,0)
-            area.spaces.active.shading.type='MATERIAL'
+            area.spaces.active.shading.type='RENDERED'
             area.spaces.active.shading.use_scene_lights=True
             area.spaces.active.shading.use_scene_world=True
             area.spaces.active.overlay.show_overlays=False

@@ -79,6 +79,10 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/bird_model_test.gd
 
+      - name: Check the complete in-game model roster
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/cast_integration_test.gd
+
       - name: Export web build
         run: godot --headless --path . --export-release Web build/web/index.html
 

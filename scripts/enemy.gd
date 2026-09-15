@@ -415,7 +415,7 @@ func _draw() -> void:
 		_draw_health_bars()
 
 func _sprite_size() -> float:
-	# The hollow bird silhouette needs enough space for its feather eyes and feet.
+	# The bird silhouette needs enough space for its feather eyes and feet.
 	if enemy_kind == "bird":
 		return radius * 4.6
 	# Wings and the snake's raised coil need room around their collision shapes.

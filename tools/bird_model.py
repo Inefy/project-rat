@@ -1,4 +1,4 @@
-"""Reference bird: hollow paint outline, many-eyed feather wings, human feet.
+"""Reference bird: filled MS Paint body, many-eyed feather wings, human feet.
 
 Authored in the drawing's X/Z plane, then turned to face game-forward (-Y).
 The wing backs, second-sided eyes and body depth are inferred from one image.
@@ -10,7 +10,7 @@ from mathutils import Matrix, Vector
 from mathutils.geometry import tessellate_polygon
 from fox_model import linear, sample
 
-IDENTITY = 'Hollow MS Paint orange bird outline, yellow beak, white feather wings covered in golden human eyes, and realistic human feet'
+IDENTITY = 'Solid MS Paint orange bird, yellow beak, white feather wings covered in golden human eyes, and realistic human feet'
 PARTS = []
 ORANGE = linear('a94a00')
 YELLOW = linear('ffb600')
@@ -115,18 +115,40 @@ def tube(name, points, radii, color, kind='Paint', sides=8, steps=3, depth=1):
     return mesh(name,verts,faces,color,kind)
 
 
-def outline():
+def paint_fill(name, points, depth, steps):
+    """Close the brush silhouette with a lightweight, solid orange extrusion."""
+    border = sample(points,steps)[:-1]
+    # The cap follows exactly the same curve as the existing brush stroke.
+    cap = [Vector((p.x,-depth,p.z)) for p in border]
+    verts = cap + [Vector((p.x,depth,p.z)) for p in border]
+    count = len(cap)
+    faces = []
+    for triangle in tessellate_polygon([cap]):
+        a,b,c = triangle
+        if (cap[b]-cap[a]).cross(cap[c]-cap[a]).y > 0:
+            b,c = c,b
+        faces.extend([(a,b,c),(c+count,b+count,a+count)])
+    for i in range(count):
+        j = (i+1)%count
+        faces.append((i,j,j+count,i+count))
+    return mesh(name,verts,faces,ORANGE)
+
+
+def painted_body():
     body = [(-3.00,0,.50),(-2.79,0,.96),(-2.28,0,1.36),(-1.77,0,1.80),
             (-1.03,0,2.28),(-.32,0,2.65),(.45,0,2.76),(1.15,0,2.76),
             (1.29,0,2.34),(1.27,0,1.84),(.80,0,1.57),(.04,0,1.38),
             (-.75,0,1.39),(-1.40,0,1.15),(-1.81,0,.99),(-2.14,0,.87),
             (-2.54,0,.86),(-3.00,0,.50)]
-    tube('Hollow orange body brush outline',body,[.084,.071,.082,.090,.072,.087],ORANGE,sides=10,steps=3,depth=3.0)
+    paint_fill('Solid orange body',body,.18,3)
+    tube('Orange body brush edge',body,[.084,.071,.082,.090,.072,.087],ORANGE,sides=10,steps=3,depth=3.0)
     head = [(1.15,0,2.76),(1.54,0,3.18),(1.94,0,3.57),(2.35,0,3.58),
             (2.66,0,3.36),(2.89,0,3.14),(2.60,0,2.94),(2.26,0,3.03),
             (1.83,0,2.99),(1.15,0,2.76)]
-    tube('Hollow orange head brush outline',head,[.085,.077,.086,.076],ORANGE,sides=10,steps=4,depth=2.7)
-    ball('MS Paint black eye dot',(2.20,0,3.35),(.105,.23,.105),BLACK)
+    paint_fill('Solid orange head',head,.165,4)
+    tube('Orange head brush edge',head,[.085,.077,.086,.076],ORANGE,sides=10,steps=4,depth=2.7)
+    for side in [-1,1]:
+        ball('MS Paint black eye dot',(2.20,side*.178,3.35),(.105,.025,.105),BLACK)
     ball('Uneven yellow beak dab',(2.82,0,3.10),(.28,.27,.13),YELLOW)
     ball('Upper yellow beak dab',(2.73,0,3.20),(.16,.23,.14),YELLOW)
     for x,y in [(-1.65,-.20),(.12,.16)]:
@@ -335,7 +357,7 @@ def foot(at,index):
 
 def build_bird():
     PARTS.clear()
-    outline()
+    painted_body()
     for which in ['swept','upright']:
         wing(which)
     eyes = {

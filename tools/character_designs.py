@@ -7,7 +7,7 @@ import math
 
 IDENTITIES = {
     'rat': 'Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster',
-    'bird': 'Hollow MS Paint orange bird outline, yellow beak, white feather wings covered in golden human eyes, and realistic human feet',
+    'bird': 'Solid MS Paint orange bird, yellow beak, white feather wings covered in golden human eyes, and realistic human feet',
     'cat': 'Black long-legged cat, charcoal face, green ring eyes, human hands, bloodied fangs and S-shaped knife tail',
     'owl': 'MS Paint ochre owl, four outlined feather fans, blank white eyes, blue beak, stick legs and realistic human navel',
     'snake': 'MS Paint green looped snake with black zigzag bands, worn white cross patches, realistic human eyes and glossy red forked tongue',

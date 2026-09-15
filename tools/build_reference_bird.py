@@ -53,7 +53,7 @@ def build():
     for p in parts:
         for c in list(p.users_collection):c.objects.unlink(p)
         coll.objects.link(p);p.parent=root
-    # Soft studio lighting keeps the orange outline and sculpted skin readable.
+    # Soft studio lighting keeps the orange silhouette and sculpted skin readable.
     for name,at,energy,size,color in [
         ('Large soft key',(-4,-6,8),950,5,(1,.91,.82)),
         ('Soft face fill',(4,-5,4.5),430,4,(.83,.90,1)),

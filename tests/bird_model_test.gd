@@ -49,7 +49,7 @@ func run() -> void:
 		for color in colors:
 			gold = gold or (color.r > .4 and color.g > .15 and color.r > color.b * 3.0)
 			ivory = ivory or (color.r > .75 and color.g > .7 and color.b > .6)
-	check(unlit_paint and lit_features == 3, "MS Paint outline and realistic features keep separate shading")
+	check(unlit_paint and lit_features == 3, "MS Paint body and realistic features keep separate shading")
 	check(gold and ivory, "golden eyes and ivory feather colors survive import")
 	check(triangles > 1000 and triangles <= 32000, "many-eyed wings and feet fit the geometry budget")
 	check(RenderingServer.mesh_get_surface(mesh.get_rid(), 0).get("lods", []).size() > 0, "Godot generates distance LODs for reuse")
@@ -70,6 +70,22 @@ func run() -> void:
 		hashes.append(hash)
 	check(sprite_bytes < 128 * 1024, "all eight browser sprites fit below 128 KiB")
 	var profile: Image = frames[0].get_image()
+	# Flood-fill the outside so the intentional spaces between legs and tail
+	# are not mistaken for a transparent hole inside the body or head.
+	var outside := PackedByteArray()
+	outside.resize(profile.get_width() * profile.get_height())
+	var frontier: Array[Vector2i] = [Vector2i.ZERO]
+	outside[0] = 1
+	while not frontier.is_empty():
+		var point: Vector2i = frontier.pop_back()
+		for offset in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var next: Vector2i = point + offset
+			if next.x < 0 or next.y < 0 or next.x >= profile.get_width() or next.y >= profile.get_height():
+				continue
+			var pixel := next.y * profile.get_width() + next.x
+			if outside[pixel] == 0 and profile.get_pixelv(next).a < .01:
+				outside[pixel] = 1
+				frontier.append(next)
 	var paint_pixels := 0
 	var hollow_pixels := 0
 	for y in range(profile.get_height()):
@@ -82,10 +98,10 @@ func run() -> void:
 				last = x
 		if last - first > 20:
 			for x in range(first + 3,last - 3):
-				if profile.get_pixel(x,y).a < .01:
+				if profile.get_pixel(x,y).a < .01 and outside[y * profile.get_width() + x] == 0:
 					hollow_pixels += 1
-	check(paint_pixels > 250, "orange brush outline retains exact undithered color")
-	check(hollow_pixels > 300, "the body remains visibly hollow inside the orange outline")
+	check(paint_pixels > 1400, "body and head retain solid undithered orange fill")
+	check(hollow_pixels < 30, "the orange body and head are filled without transparent gaps")
 	var game = load("res://scenes/main.tscn").instantiate()
 	root.add_child(game)
 	await process_frame
@@ -131,5 +147,5 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	if failures.is_empty():
-		print("BIRD MODEL PASS: hollow MS Paint silhouette, shaded eye wings/feet, asset budgets, opening-wave weaving and seed collision")
+		print("BIRD MODEL PASS: solid MS Paint fill, shaded eye wings/feet, asset budgets, opening-wave weaving and seed collision")
 	quit(0 if failures.is_empty() else 1)

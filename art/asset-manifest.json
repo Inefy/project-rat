@@ -8,10 +8,10 @@
   "bird": {
     "directions": 8,
     "collection": "bird",
-    "triangles": 30305,
+    "triangles": 30145,
     "visual_identity": "Solid MS Paint orange bird, yellow beak, white feather wings covered in golden human eyes, and realistic human feet",
     "source": "art/bird/reference-bird.blend",
-    "glb_bytes": 971224,
+    "glb_bytes": 967312,
     "materials": 4
   },
   "cat": {

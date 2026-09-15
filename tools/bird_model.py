@@ -134,6 +134,35 @@ def paint_fill(name, points, depth, steps):
     return mesh(name,verts,faces,ORANGE)
 
 
+def rounded_bill():
+    """A single closed, rounded yellow bill that stays whole while turning."""
+    # X, height of center, half-width, half-height. The raised base and broad,
+    # gently tapered tip follow the reference's hand-painted yellow dab.
+    profile=[(2.44,3.18,.10,.09),(2.51,3.20,.28,.145),
+             (2.61,3.23,.34,.19),(2.76,3.19,.33,.17),
+             (2.94,3.14,.26,.125),(3.08,3.09,.16,.075),
+             (3.15,3.08,.07,.048)]
+    centers=sample([(x,0,z) for x,z,w,h in profile],2)
+    radii=sample([(x,w,h) for x,z,w,h in profile],2)
+    verts,faces=[],[]
+    sides=16
+    for j,(center,radius) in enumerate(zip(centers,radii)):
+        for i in range(sides):
+            angle=math.tau*i/sides
+            verts.append(center+Vector((0,radius.y*math.cos(angle),radius.z*math.sin(angle))))
+        if j:
+            for i in range(sides):
+                a=(j-1)*sides+i;b=(j-1)*sides+(i+1)%sides
+                faces.append((a,b,b+sides,a+sides))
+    rear=len(verts);verts.append(Vector((2.42,0,3.18)))
+    tip=len(verts);verts.append(Vector((3.19,0,3.08)))
+    last=(len(centers)-1)*sides
+    for i in range(sides):
+        next_i=(i+1)%sides
+        faces.extend([(rear,next_i,i),(tip,last+i,last+next_i)])
+    return mesh('Continuous rounded yellow bill',verts,faces,YELLOW)
+
+
 def painted_body():
     body = [(-3.00,0,.50),(-2.79,0,.96),(-2.28,0,1.36),(-1.77,0,1.80),
             (-1.03,0,2.28),(-.32,0,2.65),(.45,0,2.76),(1.15,0,2.76),
@@ -143,14 +172,16 @@ def painted_body():
     paint_fill('Solid orange body',body,.18,3)
     tube('Orange body brush edge',body,[.084,.071,.082,.090,.072,.087],ORANGE,sides=10,steps=3,depth=3.0)
     head = [(1.15,0,2.76),(1.54,0,3.18),(1.94,0,3.57),(2.35,0,3.58),
-            (2.66,0,3.36),(2.89,0,3.14),(2.60,0,2.94),(2.26,0,3.03),
+            (2.51,0,3.39),(2.54,0,3.19),(2.47,0,3.06),(2.26,0,3.03),
             (1.83,0,2.99),(1.15,0,2.76)]
     paint_fill('Solid orange head',head,.165,4)
     tube('Orange head brush edge',head,[.085,.077,.086,.076],ORANGE,sides=10,steps=4,depth=2.7)
     for side in [-1,1]:
         ball('MS Paint black eye dot',(2.20,side*.178,3.35),(.105,.025,.105),BLACK)
-    ball('Uneven yellow beak dab',(2.82,0,3.10),(.28,.27,.13),YELLOW)
-    ball('Upper yellow beak dab',(2.73,0,3.20),(.16,.23,.14),YELLOW)
+    # One continuous rounded bill covers the orange snout on both sides.
+    # The previous overlapping spheres left a crescent where the head cut
+    # through them. Keep the reference's broad, hand-painted yellow shape.
+    rounded_bill()
     for x,y in [(-1.65,-.20),(.12,.16)]:
         tube('Orange stick leg',[(x+.30,y,1.18 if x<0 else 1.41),(x+.08,y,.98),(x-.23,y,.64)],
              [.070,.067,.080],ORANGE,sides=10,steps=3)

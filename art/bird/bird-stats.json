@@ -1,8 +1,8 @@
 {
-  "triangles": 30305,
-  "vertices": 21813,
+  "triangles": 30145,
+  "vertices": 21731,
   "materials": 4,
-  "glb_bytes": 971224,
+  "glb_bytes": 967312,
   "textures": 0,
   "rigged": false,
   "facings": 8,
@@ -11,6 +11,6 @@
     192
   ],
   "visual_identity": "Solid MS Paint orange bird, yellow beak, white feather wings covered in golden human eyes, and realistic human feet",
-  "sprite_bytes": 86300,
+  "sprite_bytes": 86350,
   "paint_material": "KHR_materials_unlit"
 }

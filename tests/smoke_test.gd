@@ -108,7 +108,9 @@ func _run() -> void:
 	check(game.current_upgrade_ids.size() == 3, "mutation draft offers three choices")
 	if game.current_upgrade_ids.size() == 3:
 		var first_upgrade_card := game.hud.upgrade_cards.get_child(0) as Button
-		check(not first_upgrade_card.text.is_empty(), "mutation cards contain their copy")
+		var card_title := first_upgrade_card.find_child("MutationTitle", true, false) as Label
+		var card_description := first_upgrade_card.find_child("MutationDescription", true, false) as Label
+		check(card_title != null and not card_title.text.is_empty() and card_description != null and not card_description.text.is_empty(), "mutation cards contain a title and description")
 		check(first_upgrade_card.get_theme_color("font_color") == game.hud.pale, "mutation card copy contrasts with its dark background")
 	if not game.current_upgrade_ids.is_empty():
 		game._on_upgrade_selected(game.current_upgrade_ids[0])

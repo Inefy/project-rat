@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const UI = preload("res://scripts/ui_theme.gd")
+
 signal changed
 
 const PATH := "user://settings.cfg"
@@ -24,41 +26,57 @@ func _ready() -> void:
 	_load()
 	_apply_keys()
 	overlay = ColorRect.new()
-	overlay.color = Color("0b0e15")
+	overlay.color = UI.INK
+	overlay.theme = UI.make()
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(overlay)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(center)
 	var column := VBoxContainer.new()
-	column.custom_minimum_size = Vector2(760, 0)
+	column.custom_minimum_size = Vector2(980, 0)
 	column.add_theme_constant_override("separation", 12)
 	center.add_child(column)
 	var title := Label.new()
 	title.text = "SETTINGS"
-	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_font_size_override("font_size", 56)
+	title.add_theme_font_override("font", UI.DISPLAY)
 	column.add_child(title)
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 64)
+	column.add_child(columns)
+	var comfort := VBoxContainer.new()
+	comfort.custom_minimum_size.x = 430
+	comfort.add_theme_constant_override("separation", 14)
+	columns.add_child(comfort)
+	_section(comfort, "COMFORT & SOUND")
+	_slider(comfort, "Volume", volume, func(value): volume = value; _save())
+	_slider(comfort, "Camera shake", shake, func(value): shake = value; _save())
+	_toggle(comfort, "Aim assist", aim_assist, func(value): aim_assist = value; _save())
+	_toggle(comfort, "Easy mode", cozy, func(value): cozy = value; _save())
+	_toggle(comfort, "Large text", large_text, func(value): large_text = value; _save())
+	_toggle(comfort, "Hints", tips, func(value): tips = value; _save())
+	var controls := VBoxContainer.new()
+	controls.custom_minimum_size.x = 486
+	controls.add_theme_constant_override("separation", 14)
+	columns.add_child(controls)
+	_section(controls, "KEYBOARD")
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(760, 470)
-	column.add_child(scroll)
+	scroll.custom_minimum_size = Vector2(486, 384)
+	controls.add_child(scroll)
 	var options := VBoxContainer.new()
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	options.add_theme_constant_override("separation", 10)
+	options.add_theme_constant_override("separation", 4)
 	scroll.add_child(options)
-	_slider(options, "Volume", volume, func(value): volume = value; _save())
-	_slider(options, "Camera shake", shake, func(value): shake = value; _save())
-	_toggle(options, "Aim assist", aim_assist, func(value): aim_assist = value; _save())
-	_toggle(options, "Easy mode", cozy, func(value): cozy = value; _save())
-	_toggle(options, "Large text", large_text, func(value): large_text = value; _save())
-	_toggle(options, "Hints", tips, func(value): tips = value; _save())
 	for action in DEFAULT_KEYS:
 		var button := Button.new()
-		button.custom_minimum_size.y = 38
-		button.add_theme_font_size_override("font_size", 18)
+		button.custom_minimum_size.y = 40
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_font_size_override("font_size", 16)
 		key_buttons[action] = button
 		button.pressed.connect(func():
 			waiting_action = action
-			button.text = "Press a key • Esc: cancel"
+			button.text = "Press a key · Esc to cancel"
 		)
 		options.add_child(button)
 	_refresh_keys()
@@ -73,22 +91,35 @@ func _ready() -> void:
 	)
 	options.add_child(reset)
 	close_button = Button.new()
-	close_button.text = "DONE"
+	close_button.text = "Done"
+	close_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	close_button.custom_minimum_size.x = 220
 	close_button.custom_minimum_size.y = 48
 	close_button.pressed.connect(hide_settings)
 	column.add_child(close_button)
 	overlay.hide()
+
+func _section(parent: Node, text: String) -> void:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_color_override("font_color", UI.MUTED)
+	parent.add_child(label)
+	var rule := ColorRect.new()
+	rule.color = UI.LINE
+	rule.custom_minimum_size.y = 1
+	parent.add_child(rule)
 
 func _slider(parent: Node, title: String, value: float, callback: Callable) -> void:
 	var row := HBoxContainer.new()
 	parent.add_child(row)
 	var label := Label.new()
 	label.text = title
-	label.custom_minimum_size.x = 310
+	label.custom_minimum_size.x = 175
 	label.add_theme_font_size_override("font_size", 20)
 	row.add_child(label)
 	var slider := HSlider.new()
-	slider.custom_minimum_size = Vector2(300, 32)
+	slider.custom_minimum_size = Vector2(240, 32)
 	slider.max_value = 1.0
 	slider.step = 0.05
 	slider.value = value
@@ -99,7 +130,7 @@ func _toggle(parent: Node, title: String, value: bool, callback: Callable) -> vo
 	var button := CheckButton.new()
 	button.text = title
 	button.button_pressed = value
-	button.add_theme_font_size_override("font_size", 20)
+	button.add_theme_font_size_override("font_size", 18)
 	button.toggled.connect(callback)
 	parent.add_child(button)
 

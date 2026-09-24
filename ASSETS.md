@@ -29,3 +29,7 @@ The files are stored in `assets/audio/` under descriptive names. Credit is not r
 `assets/audio/night_drone.wav` is an original, mathematically synthesized 12-second ambient loop, built from low sine tones with slow amplitude modulation. It contains no third-party samples and is covered by the repository license. The eclipse, watchers, drifting fog, pickup bursts, and damage overlay are drawn directly in GDScript.
 
 The top-down game uses the Blender-rendered sprites in `assets/sprites/`. Original GLB models remain in `art/models/` and `assets/models/` for reuse; they are excluded from the web package.
+
+## Interface type
+
+The menu display typeface is Barlow Condensed SemiBold by Jeremy Tribby, distributed under the SIL Open Font License 1.1. The font and license are bundled in `assets/fonts/`. Source: https://github.com/google/fonts/tree/main/ofl/barlowcondensed.

@@ -11,6 +11,7 @@ const AudioManagerScript = preload("res://scripts/audio_manager.gd")
 const CrumbBombScript = preload("res://scripts/crumb_bomb.gd")
 const ThreatOverlayScript = preload("res://scripts/threat_overlay.gd")
 const FizzyCanScript = preload("res://scripts/fizzy_can.gd")
+const MouthTrapScript = preload("res://scripts/mouth_trap.gd")
 const SettingsScript = preload("res://scripts/settings_panel.gd")
 const DemoRules = preload("res://scripts/demo_rules.gd")
 const NightmareMotifs = preload("res://scripts/nightmare_motifs.gd")
@@ -33,6 +34,7 @@ const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste
 const COMBO_WINDOW_MS := 2400
 const REROLLS_PER_RUN := 2
 const MAX_ACTIVE_CANS := 3
+const MAX_ACTIVE_TRAPS := 2
 const UPGRADES := {
 	"light_trail": {"id": "light_trail", "title": "LIGHT TRAIL", "description": "Leave light for 3s.\nDeals 1.5x bullet damage/s.", "color": Color("ffe7a0")},
 	"pinball": {"id": "pinball", "title": "BOUNCE", "description": "Bullets bounce off walls once.", "color": Color("55ad87")},
@@ -89,6 +91,7 @@ var kills_without_treat := 0
 var streak_rewarded := false
 var active_boss: CharacterBody2D
 var can_spawn_timer := 0.0
+var trap_spawn_timer := 0.0
 var is_demo_run := false
 var demo_start_wave := 1
 
@@ -178,6 +181,7 @@ func start_game() -> void:
 	kills_without_treat = 0
 	streak_rewarded = false
 	can_spawn_timer = rng.randf_range(10.0, 16.0)
+	trap_spawn_timer = rng.randf_range(5.0, 8.0)
 	shake_strength = 0.0
 	current_upgrade_ids.clear()
 	wave_queue.clear()
@@ -285,6 +289,11 @@ func _physics_process(delta: float) -> void:
 	if can_spawn_timer <= 0.0:
 		can_spawn_timer = rng.randf_range(13.0, 21.0)
 		_try_spawn_fizzy_can()
+	if wave_active:
+		trap_spawn_timer -= delta
+		if trap_spawn_timer <= 0.0:
+			trap_spawn_timer = rng.randf_range(10.0, 16.0)
+			_try_spawn_mouth_trap()
 
 	if not wave_active:
 		intermission -= delta
@@ -548,6 +557,35 @@ func _try_spawn_fizzy_can() -> void:
 				break
 		if clear:
 			_spawn_fizzy_can(candidate)
+			return
+
+func _spawn_mouth_trap(at: Vector2) -> void:
+	var trap := MouthTrapScript.new()
+	trap.position = at
+	trap.rotation = rng.randf_range(-0.3, 0.3)
+	add_child(trap)
+
+func _try_spawn_mouth_trap() -> void:
+	var active_traps: Array[Node] = []
+	for trap in get_tree().get_nodes_in_group("mouth_traps"):
+		if is_instance_valid(trap) and not trap.is_queued_for_deletion():
+			active_traps.append(trap)
+	if active_traps.size() >= MAX_ACTIVE_TRAPS:
+		return
+	for attempt in range(20):
+		var candidate: Vector2 = player.global_position + Vector2.from_angle(rng.randf_range(0.0, TAU)) * rng.randf_range(290.0, 510.0)
+		candidate = candidate.clamp(ARENA.position + Vector2(130, 110), ARENA.end - Vector2(130, 110))
+		if candidate.distance_to(player.global_position) < 250.0:
+			continue
+		var clear := true
+		for trap in active_traps:
+			if candidate.distance_to(trap.global_position) < 240.0:
+				clear = false
+		for can in get_tree().get_nodes_in_group("explosive_cans"):
+			if candidate.distance_to(can.global_position) < 180.0:
+				clear = false
+		if clear:
+			_spawn_mouth_trap(candidate)
 			return
 
 func _on_enemy_projectile_requested(origin: Vector2, direction: Vector2, speed: float, damage: float, kind: String) -> void:

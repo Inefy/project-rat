@@ -46,3 +46,7 @@ The interface uses Barlow Condensed SemiBold by Jeremy Tribby for headings and D
 ### Remaining nightmare cast
 
 `art/nightmare-cast/mockups.png` was generated with the built-in imagegen tool; the complete prompt is preserved in `art/nightmare-cast/mockup-prompt.txt`. The five replacement characters, seven pickup models, and sixteen mutation icons are original Blender geometry authored in `tools/nightmare_models.py`. Their source is `art/nightmare-cast/nightmare-cast.blend`, and the full cast library is synchronized in `art/picnic-cast.blend`. Materials use vertex colors and procedural shading; no third-party meshes or texture downloads were used.
+
+### Mouth trap
+
+The mouth trap is original Blender geometry authored in `tools/mousetrap_model.py`, guided by the user-supplied reference preserved in `art/mousetrap/reference.png`. Its editable jaw animation is in `art/mousetrap/mouth-trap.blend`; procedural materials require no external textures. Six rendered poses are packed by `tools/pack_mousetrap_sprites.py` into `assets/sprites/hazards/mouth_trap.png`. See `art/mousetrap/README.md` for the workflow and behavior.

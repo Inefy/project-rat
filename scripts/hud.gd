@@ -811,6 +811,7 @@ func show_death_tip(source: String, streak: int, new_wave: bool) -> void:
 		"bone": "Keep moving across bone trails and avoid getting pinned at the fence.",
 		"sonic": "Look for the gap in the ring, or dash through it.",
 		"fizzy can": "Shoot the can from outside its blast radius, or dash clear before it bursts.",
+		"mouth trap": "Step off the mouth when its red outline appears, or dash before the teeth meet.",
 	}
 	death_tip.text = "Caught by %s. %s\nBest streak x%d%s" % [source.replace("_", " "), hints.get(source, "Dash through attacks when your escape route closes."), streak, " • New wave record" if new_wave else ""]
 

@@ -19,6 +19,7 @@ func run() -> void:
 	game.start_game()
 	game.intermission = 999.0
 	game.player.autofire = false
+	game.player.set_physics_process(false)
 
 	var can: StaticBody2D
 	for entity in get_nodes_in_group("run_entities"):
@@ -36,12 +37,21 @@ func run() -> void:
 	enemy.spawn_grace = 0.0
 	game.add_child(enemy)
 	enemy.health = enemy.max_health
+	enemy.set_physics_process(false)
 
 	game.player.global_position = can.global_position + Vector2(-120.0, 0.0)
+	# Register the new bodies and relocated player before firing a real seed.
+	await physics_frame
+	await process_frame
 	game.player.aim_direction = Vector2.RIGHT
 	var rat_health_before: float = game.player.health
 	game.player.fire()
-	await create_timer(0.2, true).timeout
+	# Count simulation ticks: CI can spend the first wall-clock timer on setup.
+	for tick in range(30):
+		await physics_frame
+		await process_frame
+		if not is_instance_valid(can):
+			break
 
 	check(not is_instance_valid(can), "a player seed detonates the can")
 	check(enemy.health < enemy.max_health, "the blast damages a nearby enemy")

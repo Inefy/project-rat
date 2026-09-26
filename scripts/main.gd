@@ -12,6 +12,7 @@ const CrumbBombScript = preload("res://scripts/crumb_bomb.gd")
 const ThreatOverlayScript = preload("res://scripts/threat_overlay.gd")
 const FizzyCanScript = preload("res://scripts/fizzy_can.gd")
 const MouthTrapScript = preload("res://scripts/mouth_trap.gd")
+const EnemySpacingScript = preload("res://scripts/enemy_spacing.gd")
 const SettingsScript = preload("res://scripts/settings_panel.gd")
 const DemoRules = preload("res://scripts/demo_rules.gd")
 const NightmareMotifs = preload("res://scripts/nightmare_motifs.gd")
@@ -97,6 +98,7 @@ var demo_start_wave := 1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(EnemySpacingScript.new())
 	rng.randomize()
 	high_score = _load_high_score()
 	audio = AudioManagerScript.new()
@@ -506,6 +508,7 @@ func _spawn_enemy(kind: String) -> void:
 		candidate = candidate.clamp(ARENA.position + Vector2(45, 45), ARENA.end - Vector2(45, 45))
 		if candidate.distance_to(player.global_position) > 440:
 			enemy.global_position = candidate
+	_space_enemy_spawn(enemy)
 	enemy.add_to_group("run_entities")
 	add_child(enemy)
 	enemy.died.connect(_on_enemy_died)
@@ -514,6 +517,25 @@ func _spawn_enemy(kind: String) -> void:
 	enemy.projectile_requested.connect(_on_enemy_projectile_requested)
 	if is_boss:
 		active_boss = enemy
+
+func _space_enemy_spawn(enemy: Node2D) -> void:
+	var neighbors := get_tree().get_nodes_in_group("enemies")
+	var best := enemy.global_position
+	var best_clearance := -INF
+	for attempt in range(16):
+		var candidate := enemy.global_position if attempt == 0 else _random_spawn_position()
+		var clearance := INF
+		for other in neighbors:
+			if other.dying or other.is_queued_for_deletion():
+				continue
+			var gap := EnemySpacingScript.body_radius(enemy) + EnemySpacingScript.body_radius(other) + EnemySpacingScript.PADDING
+			clearance = minf(clearance, candidate.distance_to(other.global_position) - gap)
+		if clearance > best_clearance:
+			best = candidate
+			best_clearance = clearance
+		if clearance >= 0.0:
+			break
+	enemy.global_position = best
 
 func _random_spawn_position() -> Vector2:
 	var candidate := Vector2.ZERO

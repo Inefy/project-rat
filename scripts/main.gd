@@ -12,6 +12,7 @@ const CrumbBombScript = preload("res://scripts/crumb_bomb.gd")
 const ThreatOverlayScript = preload("res://scripts/threat_overlay.gd")
 const FizzyCanScript = preload("res://scripts/fizzy_can.gd")
 const SettingsScript = preload("res://scripts/settings_panel.gd")
+const DemoRules = preload("res://scripts/demo_rules.gd")
 const NightmareMotifs = preload("res://scripts/nightmare_motifs.gd")
 const KENNEY_TREE_TEXTURE = preload("res://assets/kenney/background/tree.png")
 const KENNEY_SMALL_TREE_TEXTURE = preload("res://assets/kenney/background/treeSmall_green2.png")
@@ -88,6 +89,8 @@ var kills_without_treat := 0
 var streak_rewarded := false
 var active_boss: CharacterBody2D
 var can_spawn_timer := 0.0
+var is_demo_run := false
+var demo_start_wave := 1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -98,7 +101,9 @@ func _ready() -> void:
 	hud = HUDScript.new()
 	add_child(hud)
 	hud.start_requested.connect(start_game)
-	hud.restart_requested.connect(start_game)
+	hud.demo_setup_requested.connect(_show_demo_setup)
+	hud.demo_start_requested.connect(start_demo)
+	hud.restart_requested.connect(_restart_run)
 	hud.quit_to_menu_requested.connect(return_to_menu)
 	hud.upgrade_selected.connect(_on_upgrade_selected)
 	hud.upgrade_reroll_requested.connect(_reroll_upgrades)
@@ -118,7 +123,10 @@ func _ready() -> void:
 	queue_redraw()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if game_state == "upgrade" and event is InputEventKey and event.pressed and not event.echo:
+	if game_state == "demo_setup" and event.is_action_pressed("pause"):
+		return_to_menu()
+		get_viewport().set_input_as_handled()
+	elif game_state == "upgrade" and event is InputEventKey and event.pressed and not event.echo:
 		var choice_index := -1
 		match event.keycode:
 			KEY_R:
@@ -138,8 +146,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		_toggle_pause()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_accept"):
-		if game_state in ["menu", "game_over"]:
+		if game_state == "menu":
 			start_game()
+			get_viewport().set_input_as_handled()
+		elif game_state == "game_over":
+			_restart_run()
 			get_viewport().set_input_as_handled()
 
 func _notification(what: int) -> void:
@@ -148,6 +159,9 @@ func _notification(what: int) -> void:
 
 func start_game() -> void:
 	get_tree().paused = false
+	is_demo_run = false
+	demo_start_wave = 1
+	hud.set_demo_run(false)
 	rerolls_remaining = REROLLS_PER_RUN
 	_clear_run_nodes()
 	current_wave = 0
@@ -203,8 +217,49 @@ func start_game() -> void:
 	hud.update_stats(0, 0, 0, player.health, player.max_health, 0.0, empty_buffs)
 	hud.update_combo(1, 0.0)
 
+func _show_demo_setup() -> void:
+	game_state = "demo_setup"
+	hud.show_demo_setup()
+
+func start_demo(requested_wave: int) -> void:
+	var starting_wave := DemoRules.starting_wave(requested_wave)
+	start_game()
+	is_demo_run = true
+	demo_start_wave = starting_wave
+	overtime = starting_wave > 15
+	# Roll an actual legal draft choice for every skipped clear, including bosses.
+	# This preserves the first playstyle pick, synergy prerequisites and stat caps.
+	for cleared_wave in range(1, starting_wave):
+		current_wave = cleared_wave
+		for reward in range(DemoRules.rewards_for_wave(cleared_wave)):
+			_deal_upgrade_choices()
+			if current_upgrade_ids.is_empty():
+				break
+			player.apply_upgrade(current_upgrade_ids[rng.randi_range(0, current_upgrade_ids.size() - 1)])
+	current_upgrade_ids.clear()
+	player.health = player.max_health
+	var treats: Array[String] = ["rapid", "triple", "power", "haste", "shield", "pierce"]
+	for i in range(DemoRules.starting_treats(starting_wave)):
+		var index := rng.randi_range(0, treats.size() - 1)
+		player.apply_powerup(treats[index])
+		treats.remove_at(index)
+	current_wave = starting_wave - 1
+	intermission = 0.0
+	hud.set_demo_run(true, starting_wave)
+	_begin_next_wave()
+	hud.update_stats(score, current_wave, kills, player.health, player.max_health, 0.0, player.get_active_buffs())
+	hud.show_toast("DEMO / WAVE %d" % starting_wave, CREAM, 2.0)
+
+func _restart_run() -> void:
+	if is_demo_run:
+		start_demo(demo_start_wave)
+	else:
+		start_game()
+
 func return_to_menu() -> void:
 	get_tree().paused = false
+	is_demo_run = false
+	hud.set_demo_run(false)
 	game_state = "menu"
 	wave_active = false
 	_clear_run_nodes()
@@ -814,12 +869,12 @@ func _on_player_died() -> void:
 	audio.play("player_hit", 0.02, 2.0)
 	_add_shake(24.0)
 	var old_best := high_score
-	if score > high_score:
+	if not is_demo_run and score > high_score:
 		high_score = score
 		_save_high_score(high_score)
-	hud.show_game_over(score, current_wave, kills, high_score, score > old_best)
+	hud.show_game_over(score, current_wave, kills, high_score, not is_demo_run and score > old_best)
 	_record_run()
-	hud.show_death_tip(player.last_damage_source, best_combo, current_wave > previous_best_wave)
+	hud.show_death_tip(player.last_damage_source, best_combo, not is_demo_run and current_wave > previous_best_wave)
 
 func _clear_enemy_projectiles() -> void:
 	for projectile in get_tree().get_nodes_in_group("enemy_projectiles"):
@@ -838,6 +893,8 @@ func _continue_overtime() -> void:
 	_open_upgrade_draft()
 
 func _record_run() -> void:
+	if is_demo_run:
+		return
 	if score > high_score:
 		high_score = score
 		_save_high_score(high_score)

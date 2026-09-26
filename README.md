@@ -39,6 +39,12 @@ The opening-wave bird now uses the supplied bird design with a solid orange body
 
 The remaining rat, raccoon, Alpha Cat, Junkyard Dog, and Barn Owl now use the same flat-paint / human-feature style. Their mockups, production sheet, and editable Blender source are in `art/nightmare-cast/`. All seven pickup sprites have been rebuilt, and all sixteen mutation cards have individual Blender-rendered icons. See `art/nightmare-cast/README.md` for rebuilding and validation.
 
+## Demo mode
+
+Choose **Demo mode** on the title screen, enter a starting wave from **1–100** (default **20**), and select **Play wave**. The game rolls a legal upgrade choice for each skipped wave-clear reward, including bonus boss rewards. Wave 20 starts with 22 upgrade picks, full health, and three random temporary treats. Upgrade caps and synergy prerequisites still apply. Pause to inspect the resulting build.
+
+Demo runs continue through the regular encounters and future upgrade drafts. **Retry wave** restarts the same chosen wave with a fresh random build. Practice scores and wave skips do not change personal records.
+
 ## Controls
 
 | Action | Keyboard and mouse | Gamepad |

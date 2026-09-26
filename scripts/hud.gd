@@ -2,11 +2,14 @@ extends CanvasLayer
 
 const UI = preload("res://scripts/ui_theme.gd")
 const UpgradeIcon = preload("res://scripts/upgrade_icon.gd")
+const DemoRules = preload("res://scripts/demo_rules.gd")
 
 signal resume_requested
 signal settings_requested
 signal overtime_requested
 signal start_requested
+signal demo_setup_requested
+signal demo_start_requested(wave: int)
 signal restart_requested
 signal quit_to_menu_requested
 signal upgrade_selected(id: String)
@@ -15,6 +18,12 @@ signal ui_sound_requested(event_name: String)
 
 var root: Control
 var menu_overlay: ColorRect
+var demo_overlay: ColorRect
+var demo_wave: SpinBox
+var demo_summary: Label
+var demo_play: Button
+var demo_run := false
+var demo_start_wave := 1
 var game_over_overlay: ColorRect
 var pause_overlay: ColorRect
 var score_label: Label
@@ -77,6 +86,7 @@ func _ready() -> void:
 	root.add_child(feedback_overlay)
 	feedback_overlay.health_target = health_panel
 	_build_menu()
+	_build_demo_setup()
 	_build_game_over()
 	_build_pause()
 	_build_upgrade_draft()
@@ -291,11 +301,18 @@ func _build_menu() -> void:
 	menu_start.custom_minimum_size = Vector2(320, 54)
 	menu_start.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	column.add_child(menu_start)
+	var secondary := HBoxContainer.new()
+	secondary.add_theme_constant_override("separation", 12)
+	secondary.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(secondary)
+	var demo := _button("Demo mode")
+	demo.custom_minimum_size = Vector2(154, 46)
+	demo.pressed.connect(func(): demo_setup_requested.emit())
+	secondary.add_child(demo)
 	var options := _button("Settings")
 	options.pressed.connect(func(): settings_requested.emit())
-	options.custom_minimum_size = Vector2(320, 46)
-	options.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	column.add_child(options)
+	options.custom_minimum_size = Vector2(154, 46)
+	secondary.add_child(options)
 	menu_records = _label("", 16, UI.MUTED)
 	menu_records.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(menu_records)
@@ -311,6 +328,98 @@ func _build_menu() -> void:
 	menu_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	footer.add_child(menu_help)
+
+func _build_demo_setup() -> void:
+	demo_overlay = _overlay()
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	demo_overlay.add_child(center)
+	var column := VBoxContainer.new()
+	column.custom_minimum_size.x = 620
+	column.add_theme_constant_override("separation", 18)
+	center.add_child(column)
+	var title := _heading("Demo mode", 64)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+	var intro := _label("Jump straight into a wave with a random build.", 20, UI.MUTED)
+	intro.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(intro)
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	row.add_theme_constant_override("separation", 20)
+	column.add_child(row)
+	var wave_caption := _label("Starting wave", 22)
+	wave_caption.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(wave_caption)
+	demo_wave = SpinBox.new()
+	demo_wave.min_value = DemoRules.MIN_WAVE
+	demo_wave.max_value = DemoRules.MAX_WAVE
+	demo_wave.step = 1
+	demo_wave.rounded = true
+	demo_wave.update_on_text_changed = true
+	demo_wave.select_all_on_focus = true
+	demo_wave.value = DemoRules.DEFAULT_WAVE
+	demo_wave.custom_minimum_size = Vector2(150, 52)
+	demo_wave.add_theme_font_size_override("font_size", 24)
+	row.add_child(demo_wave)
+	var edit := demo_wave.get_line_edit()
+	edit.add_theme_font_size_override("font_size", 24)
+	edit.add_theme_color_override("font_color", UI.PAPER)
+	edit.add_theme_stylebox_override("normal", UI.panel(UI.SURFACE, UI.LINE))
+	edit.add_theme_stylebox_override("focus", UI.focus())
+	edit.text_submitted.connect(func(_text: String): _request_demo_start())
+	var presets := HBoxContainer.new()
+	presets.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	presets.add_theme_constant_override("separation", 12)
+	column.add_child(presets)
+	for wave in [5, 10, 20, 30]:
+		var preset := _button(str(wave))
+		preset.custom_minimum_size = Vector2(68, 42)
+		preset.pressed.connect(func(): demo_wave.value = wave)
+		presets.add_child(preset)
+	demo_summary = _label("", 18, UI.MUTED)
+	demo_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	demo_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	demo_summary.custom_minimum_size = Vector2(620, 78)
+	column.add_child(demo_summary)
+	demo_play = _button("", true)
+	demo_play.custom_minimum_size = Vector2(320, 54)
+	demo_play.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	demo_play.pressed.connect(_request_demo_start)
+	column.add_child(demo_play)
+	var back := _button("Back to title")
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	back.pressed.connect(func(): quit_to_menu_requested.emit())
+	column.add_child(back)
+	demo_wave.value_changed.connect(func(_value: float): _update_demo_summary())
+	_update_demo_summary()
+	demo_overlay.hide()
+
+func _update_demo_summary() -> void:
+	var wave := int(demo_wave.value)
+	var treats := DemoRules.starting_treats(wave)
+	demo_summary.text = "Up to %d upgrade picks from earlier waves and bosses.\nFull health%s. Practice scores are not saved." % [DemoRules.upgrade_budget(wave), " + %d random treats" % treats if treats > 0 else ""]
+	demo_play.text = "Play wave %d" % wave
+
+func _request_demo_start() -> void:
+	if not demo_overlay.visible:
+		return
+	# Commit a typed number even when the start button takes focus immediately.
+	var text := demo_wave.get_line_edit().text.strip_edges()
+	if text.is_valid_int():
+		demo_wave.value = DemoRules.starting_wave(int(text))
+	demo_start_requested.emit(int(demo_wave.value))
+
+func show_demo_setup() -> void:
+	menu_overlay.hide()
+	demo_overlay.show()
+	demo_wave.get_line_edit().grab_focus()
+	demo_wave.get_line_edit().select_all()
+
+func set_demo_run(enabled: bool, starting_wave: int = 1) -> void:
+	demo_run = enabled
+	demo_start_wave = starting_wave
+	retry_button.text = "Retry wave %d" % starting_wave if enabled else "Try again"
 
 func _build_game_over() -> void:
 	game_over_overlay = _overlay()
@@ -504,6 +613,7 @@ func set_menu_records(score: int, wave: int) -> void:
 	menu_records.text = "Best score  %s     /     Best wave  %d" % [_format_score(score), wave] if wave > 0 else "Your first run starts here."
 
 func show_menu() -> void:
+	demo_overlay.hide()
 	feedback_overlay.remaining = 0.0
 	feedback_overlay.queue_redraw()
 	victory_overlay.hide()
@@ -515,6 +625,7 @@ func show_menu() -> void:
 	menu_start.grab_focus()
 
 func begin_game() -> void:
+	demo_overlay.hide()
 	feedback_overlay.remaining = 0.0
 	feedback_overlay.queue_redraw()
 	victory_overlay.hide()
@@ -534,7 +645,7 @@ func update_stats(score: int, wave: int, kills: int, health: float, max_health: 
 	health_label.add_theme_font_size_override("font_size", 18 if large_text else 15)
 	dash_label.add_theme_font_size_override("font_size", 18 if large_text else 14)
 	score_label.text = _format_score(score)
-	wave_label.text = "Wave %02d" % wave
+	wave_label.text = ("Demo / Wave %02d" if demo_run else "Wave %02d") % wave
 	kills_label.text = "%d kills" % kills
 	health_label.text = "Health   %d / %d" % [ceil(health), ceil(max_health)]
 	health_bar.max_value = max_health
@@ -600,6 +711,8 @@ func show_game_over(score: int, wave: int, kills: int, best: int, is_new_best: b
 	final_score_label.text = _format_score(score)
 	final_detail_label.text = "Wave %d   /   %d kills" % [wave, kills]
 	best_label.text = "New best  " + _format_score(best) if is_new_best else "Best  " + _format_score(best)
+	if demo_run:
+		best_label.text = "Demo from wave %d / Practice score" % demo_start_wave
 
 func set_paused(paused: bool) -> void:
 	pause_overlay.visible = paused

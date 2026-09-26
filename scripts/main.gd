@@ -30,6 +30,8 @@ const TOMATO := Color("df5144")
 const CHEESE := Color("f6c53f")
 const POWER_TYPES: Array[String] = ["cheese", "rapid", "triple", "power", "haste", "shield", "pierce"]
 const COMBO_WINDOW_MS := 2400
+const REROLLS_PER_RUN := 2
+const MAX_ACTIVE_CANS := 3
 const UPGRADES := {
 	"light_trail": {"id": "light_trail", "title": "LIGHT TRAIL", "description": "Leave light for 3s.\nDeals 1.5x bullet damage/s.", "color": Color("ffe7a0")},
 	"pinball": {"id": "pinball", "title": "BOUNCE", "description": "Bullets bounce off walls once.", "color": Color("55ad87")},
@@ -68,9 +70,12 @@ var combo := 1
 var combo_expires := 0
 var run_started_at := 0
 var current_upgrade_ids: Array[String] = []
+var rerolls_remaining := REROLLS_PER_RUN
 var shake_strength := 0.0
 var settings: CanvasLayer
 var pending_treats: Array[String] = []
+var queued_drops: Dictionary = {}
+var next_drop_id := 0
 var boss_reward_pending := false
 var overtime := false
 var best_combo := 1
@@ -82,6 +87,7 @@ var previous_best_wave := 0
 var kills_without_treat := 0
 var streak_rewarded := false
 var active_boss: CharacterBody2D
+var can_spawn_timer := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -95,6 +101,7 @@ func _ready() -> void:
 	hud.restart_requested.connect(start_game)
 	hud.quit_to_menu_requested.connect(return_to_menu)
 	hud.upgrade_selected.connect(_on_upgrade_selected)
+	hud.upgrade_reroll_requested.connect(_reroll_upgrades)
 	hud.ui_sound_requested.connect(_on_ui_sound_requested)
 	hud.resume_requested.connect(_toggle_pause)
 	hud.overtime_requested.connect(_continue_overtime)
@@ -106,6 +113,7 @@ func _ready() -> void:
 	var records := ConfigFile.new()
 	if records.load("user://records.cfg") == OK:
 		best_wave = int(records.get_value("records", "wave", 0))
+	hud.set_menu_records(high_score, best_wave)
 	hud.show_menu()
 	queue_redraw()
 
@@ -113,6 +121,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if game_state == "upgrade" and event is InputEventKey and event.pressed and not event.echo:
 		var choice_index := -1
 		match event.keycode:
+			KEY_R:
+				_reroll_upgrades()
+				get_viewport().set_input_as_handled()
+				return
 			KEY_1:
 				choice_index = 0
 			KEY_2:
@@ -136,6 +148,7 @@ func _notification(what: int) -> void:
 
 func start_game() -> void:
 	get_tree().paused = false
+	rerolls_remaining = REROLLS_PER_RUN
 	_clear_run_nodes()
 	current_wave = 0
 	score = 0
@@ -150,6 +163,7 @@ func start_game() -> void:
 	pending_treats.clear()
 	kills_without_treat = 0
 	streak_rewarded = false
+	can_spawn_timer = rng.randf_range(10.0, 16.0)
 	shake_strength = 0.0
 	current_upgrade_ids.clear()
 	wave_queue.clear()
@@ -174,9 +188,7 @@ func start_game() -> void:
 	add_child(ThreatOverlayScript.new())
 	audio.start_ambience()
 	for at in [Vector2(-650, 190), Vector2(650, -190)]:
-		var can := FizzyCanScript.new()
-		can.position = at
-		add_child(can)
+		_spawn_fizzy_can(at)
 	_spawn_powerup("triple", Vector2(85, 0))
 
 	reticle = ReticleScript.new()
@@ -214,6 +226,10 @@ func _physics_process(delta: float) -> void:
 		return
 	run_clock += delta
 	_update_combo_decay(delta)
+	can_spawn_timer -= delta
+	if can_spawn_timer <= 0.0:
+		can_spawn_timer = rng.randf_range(13.0, 21.0)
+		_try_spawn_fizzy_can()
 
 	if not wave_active:
 		intermission -= delta
@@ -333,9 +349,11 @@ func _finish_wave() -> void:
 		if pickup.collected_already or pickup.is_queued_for_deletion():
 			continue
 		pickup.collected_already = true
-		pending_treats.append(pickup.kind)
-		score += 75
+		_bank_powerup(pickup.kind)
 		pickup.queue_free()
+	# Settle last-kill rewards before recording or displaying the final score.
+	for drop_id in queued_drops.keys():
+		_release_powerup_drop(drop_id)
 	var clear_bonus := 400 * current_wave
 	score += clear_bonus
 	intermission = max(1.8, 3.0 - current_wave * 0.035)
@@ -413,6 +431,7 @@ func _spawn_enemy(kind: String) -> void:
 	var is_boss := kind in ["alpha_cat", "junkyard_dog", "barn_owl"]
 	var is_elite := not is_boss and current_wave >= 3 and ((encounter == "ELITE HUNT" and spawned_this_wave == 3) or rng.randf() < minf(0.24, 0.03 + current_wave * 0.01))
 	enemy.setup(kind, player, current_wave, is_elite)
+	enemy.spawn_grace = enemy.SPAWN_GRACE_SECONDS
 	if settings.cozy:
 		enemy.contact_damage *= 0.7
 		enemy.move_speed *= 0.88
@@ -440,8 +459,41 @@ func _random_spawn_position() -> Vector2:
 		candidate.x = clamp(candidate.x, ARENA.position.x + 45.0, ARENA.end.x - 45.0)
 		candidate.y = clamp(candidate.y, ARENA.position.y + 45.0, ARENA.end.y - 45.0)
 		if candidate.distance_to(player.global_position) > 440.0:
-			break
-	return candidate
+			return candidate
+	# Clamping random points near a corner can put every attempt too close.
+	# The farthest inset corner always leaves a safe arrival distance.
+	var inset := ARENA.grow(-45.0)
+	var farthest := inset.position
+	for corner in [inset.position, Vector2(inset.end.x, inset.position.y), inset.end, Vector2(inset.position.x, inset.end.y)]:
+		if player.global_position.distance_squared_to(corner) > player.global_position.distance_squared_to(farthest):
+			farthest = corner
+	return farthest
+
+func _spawn_fizzy_can(at: Vector2) -> void:
+	var can := FizzyCanScript.new()
+	can.position = at
+	add_child(can)
+
+func _try_spawn_fizzy_can() -> void:
+	var active_cans: Array[Node] = []
+	for can in get_tree().get_nodes_in_group("explosive_cans"):
+		if is_instance_valid(can) and not can.spent and not can.is_queued_for_deletion():
+			active_cans.append(can)
+	if active_cans.size() >= MAX_ACTIVE_CANS:
+		return
+	for attempt in range(20):
+		var candidate: Vector2 = player.global_position + Vector2.from_angle(rng.randf_range(0.0, TAU)) * rng.randf_range(320.0, 560.0)
+		candidate = candidate.clamp(ARENA.position + Vector2(80.0, 80.0), ARENA.end - Vector2(80.0, 80.0))
+		if candidate.distance_to(player.global_position) < 260.0:
+			continue
+		var clear := true
+		for can in active_cans:
+			if candidate.distance_to(can.global_position) < 260.0:
+				clear = false
+				break
+		if clear:
+			_spawn_fizzy_can(candidate)
+			return
 
 func _on_enemy_projectile_requested(origin: Vector2, direction: Vector2, speed: float, damage: float, kind: String) -> void:
 	if game_state != "playing":
@@ -483,7 +535,7 @@ func _on_enemy_died(enemy: Node, death_position: Vector2, points: int, color: Co
 	if enemy.get("elite") or kills_without_treat >= (8 if settings.cozy else 12) or rng.randf() < drop_chance:
 		kills_without_treat = 0
 		var kind := _choose_powerup()
-		call_deferred("_spawn_powerup", kind, death_position)
+		_queue_powerup_drop(kind, death_position)
 
 func _update_combo_decay(delta: float = 0.0) -> void:
 	if not wave_active:
@@ -514,15 +566,30 @@ func _choose_powerup() -> String:
 		return "shield"
 	return "pierce"
 
+func _queue_powerup_drop(kind: String, at: Vector2) -> void:
+	# Track deferred scene additions so clears and restarts can settle/cancel them.
+	var drop_id := next_drop_id
+	next_drop_id += 1
+	queued_drops[drop_id] = {"kind": kind, "position": at}
+	call_deferred("_release_powerup_drop", drop_id)
+
+func _release_powerup_drop(drop_id: int) -> void:
+	if not queued_drops.has(drop_id):
+		return
+	var drop: Dictionary = queued_drops[drop_id]
+	queued_drops.erase(drop_id)
+	_spawn_powerup(drop["kind"], drop["position"])
+
+func _bank_powerup(kind: String) -> void:
+	pending_treats.append(kind)
+	score += 75
+
 func _spawn_powerup(kind: String, at: Vector2) -> void:
-	if not is_instance_valid(player):
+	if not is_instance_valid(player) or game_state not in ["playing", "upgrade", "victory"]:
 		return
-	# A last-kill drop may arrive after the wave-clear callback has banked loot.
-	if game_state in ["upgrade", "victory"]:
-		pending_treats.append(kind)
-		score += 75
-		return
-	if game_state != "playing":
+	# All between-wave loot waits for combat, including exhausted drafts.
+	if game_state in ["upgrade", "victory"] or (not wave_active and current_wave > 0):
+		_bank_powerup(kind)
 		return
 	var pickup := PowerUpScript.new()
 	pickup.setup(kind, at, player)
@@ -591,46 +658,131 @@ func _on_ui_sound_requested(event_name: String) -> void:
 func _add_shake(amount: float) -> void:
 	shake_strength = minf(24.0, shake_strength + amount)
 
-func _open_upgrade_draft() -> void:
-	if game_state != "playing" or not is_instance_valid(player):
-		return
+func _draft_pool() -> Array[String]:
 	var candidates: Array[String] = []
-	for id in UPGRADES.keys():
-		if player.can_take_upgrade(String(id)):
-			candidates.append(String(id))
-	current_upgrade_ids.clear()
+	if not is_instance_valid(player):
+		return candidates
 	if current_wave == 1 and player.upgrade_levels.is_empty():
 		candidates.assign(["pinball", "scurry_bomb", "snack_orbit"])
-	elif current_wave == 2 and "light_trail" in candidates:
+		return candidates
+	for id in UPGRADES:
+		if player.can_take_upgrade(String(id)):
+			candidates.append(String(id))
+	return candidates
+
+func _deal_upgrade_choices(previous: Array[String] = []) -> void:
+	var candidates := _draft_pool()
+	current_upgrade_ids.clear()
+	# Light Trail remains guaranteed after wave two, including rerolls.
+	if current_wave == 2 and "light_trail" in candidates:
 		current_upgrade_ids.append("light_trail")
 		candidates.erase("light_trail")
-	# Sometimes guarantee one eligible synergy, leaving two unrestricted choices.
-	elif rng.randf() < 0.65:
+	var fresh: Array[String] = []
+	for id in candidates:
+		if id not in previous:
+			fresh.append(id)
+	# Offer a compatible synergy without displacing new reroll choices.
+	if current_upgrade_ids.is_empty() and rng.randf() < 0.65:
+		var synergies: Array[String] = []
 		for id in ["split_acorns", "dash_refund", "orbit_feast"]:
-			if id in candidates:
-				current_upgrade_ids.append(id)
-				candidates.erase(id)
-				break
+			if id in fresh:
+				synergies.append(id)
+		if not synergies.is_empty():
+			var selected: String = synergies[rng.randi_range(0, synergies.size() - 1)]
+			current_upgrade_ids.append(selected)
+			fresh.erase(selected)
+			candidates.erase(selected)
+	while current_upgrade_ids.size() < 3 and not fresh.is_empty():
+		var index := rng.randi_range(0, fresh.size() - 1)
+		var selected: String = fresh[index]
+		current_upgrade_ids.append(selected)
+		fresh.remove_at(index)
+		candidates.erase(selected)
+	# Near an exhausted build, retain old choices only to fill the spare slots.
 	while current_upgrade_ids.size() < 3 and not candidates.is_empty():
-		var selected_index := rng.randi_range(0, candidates.size() - 1)
-		current_upgrade_ids.append(candidates[selected_index])
-		candidates.remove_at(selected_index)
+		var index := rng.randi_range(0, candidates.size() - 1)
+		current_upgrade_ids.append(candidates[index])
+		candidates.remove_at(index)
+
+func _can_reroll() -> bool:
+	if game_state != "upgrade" or rerolls_remaining <= 0:
+		return false
+	for id in _draft_pool():
+		if id not in current_upgrade_ids:
+			return true
+	return false
+
+func _reroll_upgrades() -> void:
+	if not _can_reroll():
+		return
+	var previous: Array[String] = current_upgrade_ids.duplicate()
+	_deal_upgrade_choices(previous)
+	rerolls_remaining -= 1
+	_show_current_draft()
+	audio.play("ui_click", 0.025)
+
+func _upgrade_tag(id: String) -> String:
+	var synergies := {"split_acorns": "Works with Bounce", "dash_refund": "Works with Dash Bomb", "orbit_feast": "Works with Orbit"}
+	if synergies.has(id):
+		return synergies[id]
+	if id == "cheese_magnet" and player.upgrade_levels.get("snack_orbit", 0) > 0:
+		return "Helps recharge Orbit"
+	if id in ["pinball", "scurry_bomb", "snack_orbit", "light_trail"]:
+		return "New playstyle"
+	if id == "thick_fur":
+		return "Health & recovery"
+	return "Permanent upgrade"
+
+func _next_wave_description() -> String:
+	var next_wave := current_wave + 1
+	var label := ""
+	if next_wave % 5 == 0:
+		label = get_boss_kind(next_wave).replace("_", " ").capitalize()
+	else:
+		var introductions := {2: "Cats arrive", 3: "Owls arrive", 4: "Snakes arrive", 6: "Raccoons arrive"}
+		label = introductions.get(next_wave, ["Bird swarm", "Cat pincer", "Ranged siege", "Elite hunt"][(next_wave - 1) % 4])
+	return "Next: Wave %02d / %s" % [next_wave, label]
+
+func _draft_build_description() -> String:
+	var names: Array[String] = []
+	var other_levels := 0
+	for id in player.upgrade_levels:
+		if id in ["pinball", "scurry_bomb", "snack_orbit", "light_trail"]:
+			names.append(String(UPGRADES[id]["title"]).capitalize())
+		else:
+			other_levels += int(player.upgrade_levels[id])
+	if names.is_empty() and other_levels == 0:
+		return "Choose your first playstyle. Your two rerolls are saved for later drafts."
+	var summary := "Your build: " + (" / ".join(names) if not names.is_empty() else "Stat upgrades")
+	if other_levels > 0:
+		summary += " / %d other upgrade levels" % other_levels
+	return summary
+
+func _show_current_draft() -> void:
 	var cards: Array[Dictionary] = []
 	for id in current_upgrade_ids:
 		var card: Dictionary = UPGRADES[id].duplicate()
 		card["description"] = _upgrade_description(id)
+		card["tag"] = _upgrade_tag(id)
 		cards.append(card)
-	if cards.is_empty():
-		player.heal(24.0)
+	hud.show_upgrade_draft(cards)
+	hud.set_draft_context(_next_wave_description(), _draft_build_description(), rerolls_remaining, _can_reroll())
+
+func _open_upgrade_draft() -> void:
+	if game_state != "playing" or not is_instance_valid(player):
+		return
+	_deal_upgrade_choices()
+	if current_upgrade_ids.is_empty():
+		var restored: float = player.heal(24.0)
 		score += 1000
 		boss_reward_pending = false
 		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
-		hud.show_toast("+24 HP • +1000 SCORE", Color("f6c53f"))
+		hud.show_toast("+%s HP • +1000 SCORE" % snappedf(restored, 0.1), Color("f6c53f"))
 		return
 	game_state = "upgrade"
 	get_tree().paused = true
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
-	hud.show_upgrade_draft(cards)
+	_show_current_draft()
 
 func _on_upgrade_selected(id: String) -> void:
 	if game_state != "upgrade" or id not in current_upgrade_ids or not is_instance_valid(player):
@@ -693,6 +845,7 @@ func _record_run() -> void:
 	var records := ConfigFile.new()
 	records.set_value("records", "wave", best_wave)
 	records.save("user://records.cfg")
+	hud.set_menu_records(high_score, best_wave)
 
 func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.0001, settings.volume)))
@@ -720,7 +873,7 @@ func _upgrade_description(id: String) -> String:
 func _living_enemy_count() -> int:
 	var count := 0
 	for enemy in get_tree().get_nodes_in_group("enemies"):
-		if is_instance_valid(enemy) and not enemy.is_queued_for_deletion():
+		if is_instance_valid(enemy) and not enemy.dying and not enemy.is_queued_for_deletion():
 			count += 1
 	return count
 
@@ -732,6 +885,7 @@ func _wave_progress() -> float:
 
 func _clear_run_nodes() -> void:
 	active_boss = null
+	queued_drops.clear()
 	for node in get_tree().get_nodes_in_group("run_entities"):
 		if is_instance_valid(node):
 			node.queue_free()

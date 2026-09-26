@@ -3,6 +3,7 @@ import sys
 from mathutils import Vector, Matrix
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from character_designs import build_character, IDENTITIES
+from nightmare_models import CAST as NIGHTMARE_CAST, PICKUPS, build as build_nightmare
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT,'assets','sprites')
 CAST = ['rat','bird','cat','owl','snake','raccoon','fox','alpha_cat','junkyard_dog','barn_owl']
@@ -38,6 +39,9 @@ def character(k):
         parts.extend(extra_parts)
 
 def prop(k):
+    if k in PICKUPS:
+        parts.extend(build_nightmare(k))
+        return
     if k=='cheese':
         mesh=bpy.data.meshes.new('Cheese wedge mesh')
         verts=[(-.62,y,.18) for y in [-.34,.34]]+[(.62,y,.18) for y in [-.34,.34]]+[(-.62,y,1.05) for y in [-.34,.34]]
@@ -109,9 +113,10 @@ def render():
     for k in CAST+PROPS:
         coll=bpy.data.collections[k]; coll.hide_render=False
         # Preserve the mixed MS Paint / human appearance on a full cast render.
-        scene.view_settings.view_transform='Standard' if k in ['bird','fox','owl','snake'] else 'AgX'
-        scene.view_settings.look='None' if k in ['bird','fox','owl','snake'] else 'AgX - Medium High Contrast'
-        scene.render.dither_intensity=0 if k in ['bird','fox','owl','snake'] else 1
+        painted=k in ['bird','fox','owl','snake']+NIGHTMARE_CAST+PICKUPS
+        scene.view_settings.view_transform='Standard' if painted else 'AgX'
+        scene.view_settings.look='None' if painted else 'AgX - Medium High Contrast'
+        scene.render.dither_intensity=0 if painted else 1
         root=bpy.data.objects[k+'_root']; cam=scene.camera
         cam.data.ortho_scale=3.6 if k in CAST else 1.9
         target=Vector((0,0,1.25 if k in CAST else .65)); cam.location=(0,-6,4.5 if k in CAST else 3.9); cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
@@ -126,6 +131,12 @@ def render():
             cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         elif k=='bird':
             target=Vector((0,.15,2.8)); cam.location=(0,-10,7.3)
+            cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+        elif k in NIGHTMARE_CAST:
+            bpy.context.view_layer.update()
+            heights=[(obj.matrix_world @ Vector(corner)).z for obj in coll.objects if obj.type=='MESH' for corner in obj.bound_box]
+            center=(min(heights)+max(heights))*.5
+            target=Vector((0,0,center)); cam.location=(0,-10,center+5.2)
             cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
         if k in CAST:
             # One stable frame per character, fitted over every facing. Crowns,

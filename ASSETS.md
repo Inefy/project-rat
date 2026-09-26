@@ -8,7 +8,7 @@
 | [Background Elements Remastered](https://kenney.nl/assets/background-elements-remastered) | `assets/kenney/background/tree.png`, `treeSmall_green2.png`, `treeSmall_green3.png`, `bush1.png`, `bushAlt1.png`, `fence.png` | [CC0 1.0](third_party/licenses/kenney-background-elements-remastered.txt) |
 | [UI Pack - Adventure](https://kenney.nl/assets/ui-pack-adventure) | `assets/kenney/ui/button_brown.png`, `button_red.png` | [CC0 1.0](third_party/licenses/kenney-ui-pack-adventure.txt) |
 
-The remaining Kenney scenery and UI visuals are used as downloaded. Menu portraits and gameplay entities now use original Blender renders.
+The remaining Kenney scenery and UI visuals are used as downloaded. Gameplay entities use original Blender renders; menus use plain backgrounds.
 
 The original 24-model picnic cast is authored with Blender Python and rendered into 94 transparent PNGs under `assets/sprites`. The concept sheet was generated with the built-in image-generation tool, drawing on late-N64 cartoon styling; it contains original cast designs rather than extracted commercial game assets. See `art/README.md` for the asset inventory and production workflow. The backyard, particles, and UI also use GDScript drawing. The sound effects below are redistributed under Creative Commons Zero 1.0 (CC0).
 
@@ -32,4 +32,15 @@ The top-down game uses the Blender-rendered sprites in `assets/sprites/`. Origin
 
 ## Interface type
 
-The menu display typeface is Barlow Condensed SemiBold by Jeremy Tribby, distributed under the SIL Open Font License 1.1. The font and license are bundled in `assets/fonts/`. Source: https://github.com/google/fonts/tree/main/ofl/barlowcondensed.
+The interface uses Newsreader for headings and DM Sans for controls and body text. The previous Barlow Condensed SemiBold font by Jeremy Tribby is retained in `assets/fonts/` with its SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/barlowcondensed.
+
+### Nightmare UI redesign
+
+- `assets/ui/nightmare-garden.png`: former menu background, preserved as source art and excluded from the web export. Menus now use solid charcoal backgrounds. Its ImageGen mockups and prompts are preserved in `art/ui-redesign/nightmare-design.md`.
+- Newsreader: Production Type, SIL Open Font License 1.1; `assets/fonts/OFL-Newsreader.txt`. Source: https://github.com/google/fonts/tree/main/ofl/newsreader.
+- DM Sans: Colophon Foundry, SIL Open Font License 1.1; `assets/fonts/OFL-DMSans.txt`. Source: https://github.com/google/fonts/tree/main/ofl/dmsans.
+- Upgrade symbols are original Blender renders in `assets/upgrades/`, displayed by `scripts/upgrade_icon.gd`. Toggles and slider knobs are project-authored SVG controls.
+
+### Remaining nightmare cast
+
+`art/nightmare-cast/mockups.png` was generated with the built-in imagegen tool; the complete prompt is preserved in `art/nightmare-cast/mockup-prompt.txt`. The five replacement characters, seven pickup models, and sixteen mutation icons are original Blender geometry authored in `tools/nightmare_models.py`. Their source is `art/nightmare-cast/nightmare-cast.blend`, and the full cast library is synchronized in `art/picnic-cast.blend`. Materials use vertex colors and procedural shading; no third-party meshes or texture downloads were used.

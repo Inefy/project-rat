@@ -1,0 +1,158 @@
+{
+  "rat": {
+    "triangles": 20984,
+    "materials": 3,
+    "glb_bytes": 522232,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 77766
+  },
+  "raccoon": {
+    "triangles": 19724,
+    "materials": 4,
+    "glb_bytes": 490388,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 96065
+  },
+  "alpha_cat": {
+    "triangles": 11964,
+    "materials": 2,
+    "glb_bytes": 300948,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 95514
+  },
+  "junkyard_dog": {
+    "triangles": 14992,
+    "materials": 3,
+    "glb_bytes": 382044,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 112997
+  },
+  "barn_owl": {
+    "triangles": 17168,
+    "materials": 3,
+    "glb_bytes": 440888,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 107893
+  },
+  "cheese": {
+    "triangles": 1180,
+    "materials": 1,
+    "glb_bytes": 30804,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 13443
+  },
+  "rapid": {
+    "triangles": 644,
+    "materials": 1,
+    "glb_bytes": 18372,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 9258
+  },
+  "triple": {
+    "triangles": 3656,
+    "materials": 1,
+    "glb_bytes": 89800,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 8863
+  },
+  "power": {
+    "triangles": 1156,
+    "materials": 1,
+    "glb_bytes": 29632,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 6398
+  },
+  "haste": {
+    "triangles": 672,
+    "materials": 1,
+    "glb_bytes": 19548,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 11589
+  },
+  "shield": {
+    "triangles": 3436,
+    "materials": 2,
+    "glb_bytes": 85244,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 29070
+  },
+  "pierce": {
+    "triangles": 412,
+    "materials": 1,
+    "glb_bytes": 12376,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 7716
+  }
+}

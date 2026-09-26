@@ -25,6 +25,12 @@ func _run() -> void:
 	game._open_upgrade_draft()
 	await capture("draft")
 	game._on_upgrade_selected("snack_orbit")
+	game.current_wave = 4
+	game._open_upgrade_draft()
+	await capture("reroll")
+	game._reroll_upgrades()
+	await capture("rerolled")
+	game._on_upgrade_selected(game.current_upgrade_ids[0])
 	game.player.apply_powerup("cheese")
 	game.current_wave = 7
 	game.hud.set_encounter("RANGED SIEGE")

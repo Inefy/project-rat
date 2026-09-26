@@ -55,6 +55,7 @@ var orbit_until := 0
 var orbit_hit_cooldown := 0.0
 var aim_assist := false
 var dash_buffer_until := -1
+var movement_animation := preload("res://scripts/character_animation.gd").new()
 
 func game_time_ms() -> int:
 	return int(active_time * 1000.0)
@@ -116,19 +117,32 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = move_input * move_speed * speed_multiplier + knockback_velocity
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 950.0 * delta)
+	var previous_position := global_position
 	move_and_slide()
 	global_position.x = clamp(global_position.x, ARENA.position.x + 30.0, ARENA.end.x - 30.0)
 	global_position.y = clamp(global_position.y, ARENA.position.y + 30.0, ARENA.end.y - 30.0)
 	if move_input.length_squared() > 0.01:
 		distance_walked += velocity.length() * delta
 	rotation = aim_direction.angle()
+	movement_animation.update("rat", delta, (global_position - previous_position) / maxf(delta, 0.001), move_speed, rotation, "dash" if now < dash_until else "move")
 
 	shot_cooldown -= delta
 	var wants_to_fire := autofire or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("ui_accept") or directional_aim.length() > 0.28
-	if wants_to_fire and shot_cooldown <= 0.0:
-		fire()
+	if wants_to_fire:
 		var rapid_multiplier := RAPID_INTERVAL_MULTIPLIER if now < rapid_until else 1.0
-		shot_cooldown = fire_interval * rapid_multiplier
+		var interval := fire_interval * rapid_multiplier
+		var volleys := 0
+		# Carry fractional time forward so upgrades work between physics ticks.
+		# Bound catch-up after a stall instead of releasing a whole backlog at once.
+		while shot_cooldown <= 0.0 and volleys < 3:
+			fire()
+			shot_cooldown += interval
+			volleys += 1
+		if shot_cooldown <= 0.0:
+			shot_cooldown = interval
+	else:
+		# Releasing manual fire never stores up shots for the next press.
+		shot_cooldown = maxf(0.0, shot_cooldown)
 	queue_redraw()
 
 func _update_dash(move_input: Vector2, pressed: bool) -> void:
@@ -248,9 +262,11 @@ func apply_upgrade(kind: String) -> void:
 			magnet_radius = minf(330.0, magnet_radius + 55.0)
 	queue_redraw()
 
-func heal(amount: float) -> void:
+func heal(amount: float) -> float:
+	var before := health
 	health = minf(max_health, health + amount)
 	health_changed.emit(health, max_health)
+	return health - before
 
 func can_take_upgrade(kind: String) -> bool:
 	var level := int(upgrade_levels.get(kind, 0))
@@ -293,9 +309,8 @@ func apply_powerup(kind: String) -> void:
 		return
 	match kind:
 		"cheese":
-			health = min(max_health, health + 24.0)
-			health_changed.emit(health, max_health)
-			pickup_collected.emit("+24 HP", Color("f2c14e"))
+			var restored := heal(24.0)
+			pickup_collected.emit("+%s HP" % snappedf(restored, 0.1), Color("f2c14e"))
 		"rapid":
 			rapid_until = _extend_buff(rapid_until, 6000, 9000)
 			pickup_collected.emit("RAPID FIRE", Color("ef6f6c"))
@@ -385,7 +400,7 @@ func _draw() -> void:
 	var flash := now < hit_flash_until
 
 	# Soft shadow and little dust puffs make the rat feel like a chunky cartoon toy.
-	draw_set_transform(Vector2(0, 18), 0.0, Vector2(1.0, 0.42))
+	draw_set_transform(Vector2(0, 18).rotated(-rotation), -rotation, Vector2(1.0, 0.42) * movement_animation.shadow_scale())
 	draw_circle(Vector2.ZERO, 27.0, Color(0.24, 0.19, 0.24, 0.2))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if now < dash_until:
@@ -397,4 +412,4 @@ func _draw() -> void:
 			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("40354f"), 5.0, true)
 			draw_arc(Vector2.ZERO, 31.0 + ring * 5.0, anim_time + ring, anim_time + ring + 4.7, 30, Color("8fa7b3"), 2.5, true)
 
-	preload("res://scripts/model_sprites.gd").paint(self, "rat", rotation, 92.0, anim_time, 1.8 if velocity.length() > 30.0 else 0.5, 1.0, flash)
+	movement_animation.paint(self, "rat", rotation, 92.0, anim_time, 1.0, flash)

@@ -31,7 +31,7 @@ func _ready() -> void:
 	collision_layer = 4
 	collision_mask = 2
 	monitoring = true
-	monitorable = false
+	monitorable = true
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = radius + 2.0
@@ -72,6 +72,9 @@ func _physics_process(delta: float) -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if spent or not body.has_method("take_damage") or hit_ids.has(body.get_instance_id()):
+		return
+	# Collision changes are deferred: another seed can arrive after the kill.
+	if body.is_queued_for_deletion() or body.get("dying") == true or body.get("spent") == true:
 		return
 	if uses_height:
 		var body_radius = body.get("radius")

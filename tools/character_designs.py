@@ -4,6 +4,7 @@ Shared materials and modelling primitives; deliberately different body plans.
 The front of every model is -Y, with the ground at Z=0.
 """
 import math
+from nightmare_models import CAST as NIGHTMARE_CAST, IDENTITIES as NIGHTMARE_IDENTITIES, build as build_nightmare
 
 IDENTITIES = {
     'rat': 'Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster',
@@ -17,9 +18,13 @@ IDENTITIES = {
     'junkyard_dog': 'Wide square bulldog, heavy jowls, underbite and red spiked collar',
     'barn_owl': 'Ivory heart face, swept dark wings, teal academic gown and mortarboard',
 }
+IDENTITIES.update(NIGHTMARE_IDENTITIES)
 
 
 def build_character(k, ball, box, cone, rod, ring):
+    if k in NIGHTMARE_CAST:
+        return build_nightmare(k)
+
     def eye(x, y, z, width=.19, height=.22, mood=0):
         ball('Eye white', (x, y, z), (width, .10, height), 'cream')
         ball('Pupil', (x+.025, y-.09, z-.025), (width*.34, .035, height*.52), 'ink')

@@ -41,6 +41,9 @@ func run() -> void:
 	# Let the audio backend finish starting before stopping the staged scene.
 	await create_timer(.05, true).timeout
 	game.audio.stop_all()
+	# Stage an active encounter so pickups spawn instead of being banked.
+	game.set_physics_process(false)
+	game.wave_active = true
 	game.player.position = Vector2(0, 155)
 	game.player._update_aim(Vector2.RIGHT)
 	register("rat", game.player)

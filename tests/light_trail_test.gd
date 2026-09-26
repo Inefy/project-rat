@@ -66,9 +66,15 @@ func _run() -> void:
 	check(trail.segments.is_empty(), "standing still cannot build a permanent damage pool")
 	# Exercise real dash movement rather than only moving the test fixture.
 	rat._update_dash(Vector2.RIGHT, true)
-	rat._physics_process(0.05)
-	trail._physics_process(0.05)
-	check(rat.position.x > 30 and trail.segments.size() == 1 and trail.segments[0].to == rat.position, "dashes leave an unbroken trail")
+	# move_and_slide uses the engine's physics step, not a manual method argument.
+	game.intermission = 999
+	paused = false
+	for frame in range(4):
+		await physics_frame
+	paused = true
+	check(rat.position.x > 30 and not trail.segments.is_empty() and trail.segments[0].from == Vector2.ZERO and trail.segments[-1].to == rat.position, "dashes leave an unbroken trail")
+	for index in range(1, trail.segments.size()):
+		check(trail.segments[index - 1].to == trail.segments[index].from, "dash samples connect without gaps")
 	var clock: float = trail.clock
 	var segment_count: int = trail.segments.size()
 	await create_timer(0.06, true).timeout

@@ -39,9 +39,25 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/fun_systems_test.gd
 
+      - name: Check interface layouts and large text
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/ui_layout_test.gd
+
+      - name: Check rerolls, safe enemy arrivals, and death feedback
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/run_improvements_test.gd
+
       - name: Run playability regression test
         timeout-minutes: 2
         run: godot --headless --path . --script tests/playability_test.gd
+
+      - name: Check firing cadence, combat cleanup, and wave rewards
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/combat_cleanup_test.gd
+
+      - name: Check Light Trail damage and real dash movement
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/light_trail_test.gd
 
       - name: Run keyboard aiming regression test
         timeout-minutes: 2
@@ -83,8 +99,31 @@ jobs:
         timeout-minutes: 2
         run: godot --headless --path . --script tests/cast_integration_test.gd
 
+      - name: Check animated movement for the complete cast
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/movement_animation_test.gd
+
+      - name: Check explosive cans, blast damage, and spawn limits
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/fizzy_can_test.gd
+
+      - name: Check nightmare cast and every upgrade texture
+        timeout-minutes: 2
+        run: godot --headless --path . --script tests/nightmare_art_test.gd
+
       - name: Export web build
         run: godot --headless --path . --export-release Web build/web/index.html
+
+      - name: Record published build and asset hashes
+        run: |
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          output = Path('build/web')
+          assets = {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
+                    for p in sorted(output.iterdir()) if p.is_file() and not p.name.startswith('.')}
+          (output / 'build-info.json').write_text(json.dumps({'commit': os.environ['GITHUB_SHA'], 'assets': assets}, indent=2) + '\n')
+          PY
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5.0.0

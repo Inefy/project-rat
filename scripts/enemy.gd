@@ -32,14 +32,19 @@ var state := "stalk"
 var state_clock := 1.0
 var pounce_direction := Vector2.ZERO
 var spawn_scale := 0.0
+const SPAWN_GRACE_SECONDS := 0.65
+var spawn_grace := 0.0
 var elite := false
 var cleanup := false
 var ranged_windup := false
 var ranged_clock := 0.0
 var ranged_direction := Vector2.RIGHT
+var movement_animation := preload("res://scripts/character_animation.gd").new()
 
 func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool = false) -> void:
 	enemy_kind = kind
+	# Independent phases keep a newly spawned flock from flapping in unison.
+	movement_animation.phase = float(get_instance_id() % 101) / 101.0 * TAU
 	target = target_player
 	wave = wave_number
 	elite = is_elite
@@ -170,6 +175,13 @@ func _physics_process(delta: float) -> void:
 	spawn_scale = move_toward(spawn_scale, 1.0, delta * 4.5)
 	contact_cooldown = maxf(0.0, contact_cooldown - delta)
 	hit_flash = maxf(0.0, hit_flash - delta)
+	if spawn_grace > 0.0:
+		spawn_grace = maxf(0.0, spawn_grace - delta)
+		velocity = Vector2.ZERO
+		rotation = global_position.direction_to(target.global_position).angle()
+		movement_animation.update(enemy_kind, delta, Vector2.ZERO, move_speed, rotation, "spawn")
+		queue_redraw()
+		return
 	var to_target := target.global_position - global_position
 	var distance := to_target.length()
 	var direction := to_target.normalized() if distance > 0.1 else Vector2.RIGHT
@@ -192,6 +204,7 @@ func _physics_process(delta: float) -> void:
 
 	velocity += knockback_velocity
 	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 720.0 * delta)
+	var previous_position := global_position
 	move_and_slide()
 	rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 8.0)) if velocity.length() > 5.0 else rotation
 
@@ -200,6 +213,7 @@ func _physics_process(delta: float) -> void:
 	else:
 		global_position.x = clampf(global_position.x, ARENA.position.x + radius, ARENA.end.x - radius)
 		global_position.y = clampf(global_position.y, ARENA.position.y + radius, ARENA.end.y - radius)
+	movement_animation.update(enemy_kind, delta, (global_position - previous_position) / maxf(delta, 0.001), move_speed, rotation, "windup" if ranged_windup else state)
 
 	if distance < radius + 23.0 and contact_cooldown <= 0.0:
 		target.take_player_damage(contact_damage, direction * 250.0, enemy_kind)
@@ -387,6 +401,12 @@ func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	if spawn_grace > 0.0:
+		var progress := 1.0 - spawn_grace / SPAWN_GRACE_SECONDS
+		var ring_radius := radius + lerpf(28.0, 9.0, progress)
+		for arc in range(4):
+			var start := arc * TAU / 4.0 + age
+			draw_arc(Vector2.ZERO, ring_radius, start, start + PI * 0.35, 12, Color("e3bb6a"), 2.5, true)
 	if boss_patterns:
 		boss_patterns.draw_warnings(self)
 	elif is_winding_up():
@@ -396,12 +416,12 @@ func _draw() -> void:
 		draw_line(local_aim * (radius + 8), local_aim * 180, Color("df5144") if locked else Color("f6c53f"), 7.0 if locked else 3.0, true)
 		draw_arc(Vector2.ZERO, radius + 12, 0, TAU, 32, Color("fff0bf"), 3.0, true)
 	var visual_scale: float = maxf(0.05, spawn_scale)
-	draw_set_transform(Vector2(0, radius * 0.72), 0.0, Vector2(1.0, 0.42) * visual_scale)
+	draw_set_transform(Vector2(0, radius * 0.72).rotated(-rotation), -rotation, Vector2(1.0, 0.42) * visual_scale * movement_animation.shadow_scale())
 	draw_circle(Vector2.ZERO, radius * 0.92, Color(0.24, 0.19, 0.24, 0.18))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if hit_flash > 0.0:
 		draw_circle(Vector2.ZERO, radius + 10.0, Color(1.0, 0.95, 0.75, hit_flash * 2.8))
-	preload("res://scripts/model_sprites.gd").paint(self, enemy_kind, rotation, _sprite_size(), age, 1.2 if velocity.length() > 20.0 else 0.35, visual_scale, hit_flash > 0.0)
+	movement_animation.paint(self, enemy_kind, rotation, _sprite_size(), age, visual_scale, hit_flash > 0.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * visual_scale)
 	if elite:
 		for badge in range(3):
@@ -421,14 +441,14 @@ func _sprite_size() -> float:
 	# Wings and the snake's raised coil need room around their collision shapes.
 	if enemy_kind in ["owl", "snake"]:
 		return radius * 4.2
+	if enemy_kind in ["raccoon", "alpha_cat", "barn_owl"]:
+		return radius * 3.85
 	# The reference creatures need room for their tall ears and long tails.
 	return radius * (3.65 if enemy_kind in ["cat", "fox"] else 3.1)
 
 func _draw_health_bars() -> void:
 	var width := radius * 2.25
-	var bar_y := -radius - 17.0
-	if enemy_kind in ["bird", "cat", "fox", "owl", "snake"]:
-		bar_y = -_sprite_size() * 0.56 - 8.0
+	var bar_y := -_sprite_size() * 0.56 - 8.0
 	draw_rect(Rect2(-width * 0.5 - 1.5, bar_y - 1.5, width + 3.0, 7.0), INK, true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width, 4.0), Color("eadfbe"), true)
 	draw_rect(Rect2(-width * 0.5, bar_y, width * clampf(health / max_health, 0.0, 1.0), 4.0), Color("d95863"), true)

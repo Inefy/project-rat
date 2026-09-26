@@ -4,6 +4,7 @@ var tint := Color.WHITE
 var remaining := 0.0
 var duration := 0.55
 var hurt := false
+var health_target: Control
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -33,5 +34,5 @@ func _draw() -> void:
 		var inset := float(i * 5)
 		var color := Color(tint, alpha * (0.20 if hurt else 0.075) * (1.0 - float(i) / 14.0))
 		draw_rect(Rect2(inset, inset, size.x - inset * 2, size.y - inset * 2), color, false, 10)
-	if hurt:
-		draw_rect(Rect2(24, 621, 338, 74), Color(tint, alpha * 0.8), false, 4)
+	if hurt and is_instance_valid(health_target):
+		draw_rect(health_target.get_global_rect().grow(3), Color(tint, alpha * 0.8), false, 2)

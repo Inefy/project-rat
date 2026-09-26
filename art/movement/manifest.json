@@ -1,0 +1,72 @@
+{
+  "rat": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 548169
+  },
+  "bird": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 518942
+  },
+  "cat": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 883796
+  },
+  "owl": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 571645
+  },
+  "snake": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 647199
+  },
+  "raccoon": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 641688
+  },
+  "fox": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 235599
+  },
+  "alpha_cat": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 673898
+  },
+  "junkyard_dog": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 824494
+  },
+  "barn_owl": {
+    "frames": 8,
+    "directions": 8,
+    "cell_size": 160,
+    "rest_row": 8,
+    "bytes": 682802
+  }
+}

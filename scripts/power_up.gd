@@ -81,7 +81,8 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, 28.0 * pulse, Color(tint, warning_alpha))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * pulse)
 	draw_circle(Vector2.ZERO, 22.0, Color("321f2b"))
-	draw_circle(Vector2.ZERO, 17.5, Color("fff0bf"))
+	draw_circle(Vector2.ZERO, 20.0, Color(tint, 0.65))
+	draw_circle(Vector2.ZERO, 17.5, Color("252a30"))
 	preload("res://scripts/model_sprites.gd").paint(self, kind, rotation, 44.0, age, 0.8, pulse)
 
 func _draw_cheese() -> void:

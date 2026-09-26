@@ -1,7 +1,7 @@
 extends CanvasLayer
 
 const UI = preload("res://scripts/ui_theme.gd")
-const SillyMenuBackdropScript = preload("res://scripts/silly_menu_backdrop.gd")
+const UpgradeIcon = preload("res://scripts/upgrade_icon.gd")
 
 signal resume_requested
 signal settings_requested
@@ -10,6 +10,7 @@ signal start_requested
 signal restart_requested
 signal quit_to_menu_requested
 signal upgrade_selected(id: String)
+signal upgrade_reroll_requested
 signal ui_sound_requested(event_name: String)
 
 var root: Control
@@ -55,12 +56,14 @@ var fire_key := "F"
 var dash_key := "Shift"
 var aim_keys := "Arrows"
 var feedback_overlay: Control
+var health_panel: PanelContainer
+var menu_records: Label
+var draft_context: Label
+var draft_build: Label
+var reroll_button: Button
 
 
-var cyan := UI.MUTED
-var pink := UI.ACCENT
 var pale := UI.PAPER
-var dark := UI.INK
 
 func _ready() -> void:
 	layer = 100
@@ -72,42 +75,65 @@ func _ready() -> void:
 	_build_game_hud()
 	feedback_overlay = preload("res://scripts/feedback_overlay.gd").new()
 	root.add_child(feedback_overlay)
+	feedback_overlay.health_target = health_panel
 	_build_menu()
 	_build_game_over()
 	_build_pause()
 	_build_upgrade_draft()
 	_build_victory()
 
-func _label(text: String, font_size: int, color: Color = Color.WHITE) -> Label:
+func _label(text: String, font_size: int, color: Color = UI.PAPER) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
-	if font_size >= 30:
-		label.add_theme_font_override("font", UI.DISPLAY)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
-func _panel_style(color: Color, border: Color, _radius: int = 0) -> StyleBoxFlat:
-	return UI.panel(color, border)
+func _heading(text: String, font_size: int = 48) -> Label:
+	var label := _label(text, font_size, UI.PAPER)
+	label.add_theme_font_override("font", UI.DISPLAY)
+	return label
+
+func _place(node: Control, parent: Node, at: Vector2, dimensions: Vector2 = Vector2.ZERO) -> void:
+	parent.add_child(node)
+	node.position = at
+	if dimensions != Vector2.ZERO:
+		node.size = dimensions
+
+func _overlay() -> ColorRect:
+	var overlay := ColorRect.new()
+	overlay.color = UI.INK
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(overlay)
+	return overlay
+
+func _meter(parent: Node, color: Color, width: float) -> ProgressBar:
+	var bar := ProgressBar.new()
+	bar.show_percentage = false
+	bar.max_value = 1.0
+	bar.add_theme_stylebox_override("background", UI.flat_bar(UI.HUD_LINE))
+	bar.add_theme_stylebox_override("fill", UI.flat_bar(color))
+	bar.custom_minimum_size = Vector2(width, 4)
+	parent.add_child(bar)
+	bar.set_deferred("size", Vector2(width, 4))
+	return bar
 
 func _button(text: String, primary: bool = false) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size = Vector2(310, 56)
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.add_theme_font_size_override("font_size", 20)
+	button.custom_minimum_size = Vector2(252, 52)
+	button.add_theme_font_size_override("font_size", 19)
 	if primary:
 		for state in ["normal", "hover", "pressed"]:
-			button.add_theme_stylebox_override(state, UI.panel(UI.PAPER if state == "normal" else Color("f6f1e4"), UI.PAPER))
+			button.add_theme_stylebox_override(state, UI.panel(UI.ACCENT if state == "normal" else Color("ac504a")))
 		for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-			button.add_theme_color_override(state, UI.INK)
+			button.add_theme_color_override(state, UI.PAPER)
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.mouse_entered.connect(func(): ui_sound_requested.emit("ui_hover"))
 	button.pressed.connect(func(): ui_sound_requested.emit("ui_click"))
 	return button
-
-func _focus_style() -> StyleBoxFlat:
-	return UI.focus()
 
 func _rule(parent: Node) -> void:
 	var line := ColorRect.new()
@@ -117,195 +143,177 @@ func _rule(parent: Node) -> void:
 	parent.add_child(line)
 
 func _build_game_hud() -> void:
-	score_label = _label("SCORE 000000", 25, pale)
-	score_label.position = Vector2(28, 20)
-	root.add_child(score_label)
-	wave_label = _label("WAVE 0", 20, cyan)
-	wave_label.position = Vector2(30, 57)
-	root.add_child(wave_label)
-	kills_label = _label("KILLS 0", 15, pale)
-	kills_label.position = Vector2(30, 87)
-	root.add_child(kills_label)
-
-	var health_panel := PanelContainer.new()
-	health_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	health_panel.position = Vector2(32, -108)
-	health_panel.size = Vector2(290, 70)
-	health_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.063, 0.071, 0.067, 0.85), dark, 14))
-	root.add_child(health_panel)
-	var health_box := VBoxContainer.new()
-	health_panel.add_child(health_box)
-	health_label = _label("HP 100 / 100", 14, pale)
-	health_box.add_child(health_label)
-	health_bar = ProgressBar.new()
-	health_bar.custom_minimum_size = Vector2(250, 6)
-	health_bar.max_value = 100
-	health_bar.value = 100
-	health_bar.show_percentage = false
-	health_bar.add_theme_stylebox_override("background", UI.flat_bar(UI.LINE))
-	health_bar.add_theme_stylebox_override("fill", UI.flat_bar(UI.ACCENT))
-	health_box.add_child(health_bar)
-
-	var wave_panel := PanelContainer.new()
-	wave_panel.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	wave_panel.position = Vector2(-205, 20)
-	wave_panel.size = Vector2(410, 62)
-	wave_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.063, 0.071, 0.067, 0.85), dark, 14))
-	root.add_child(wave_panel)
-	var wave_box := VBoxContainer.new()
-	wave_panel.add_child(wave_box)
-	var incoming := _label("WAVE PROGRESS", 13, UI.MUTED)
-	progress_label = incoming
-	incoming.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	wave_box.add_child(incoming)
-	wave_bar = ProgressBar.new()
-	wave_bar.custom_minimum_size = Vector2(370, 4)
-	wave_bar.max_value = 1.0
-	wave_bar.value = 0.0
-	wave_bar.show_percentage = false
-	wave_bar.add_theme_stylebox_override("background", UI.flat_bar(UI.LINE))
-	var wave_fill := StyleBoxFlat.new()
-	wave_fill.bg_color = cyan
-	wave_fill.set_corner_radius_all(3)
-	wave_bar.add_theme_stylebox_override("fill", wave_fill)
-	wave_box.add_child(wave_bar)
+	# A compact wave group at left and score group at right keep the arena clear.
+	var wave_group := Control.new()
+	_place(wave_group, root, Vector2(32, 24), Vector2(350, 110))
+	wave_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wave_label = _label("Wave 01", 26, UI.PAPER)
+	_place(wave_label, wave_group, Vector2.ZERO)
+	encounter_label = _label("", 15, UI.HUD_MUTED)
+	_place(encounter_label, wave_group, Vector2(0, 37))
+	wave_bar = _meter(wave_group, UI.HUD_MUTED, 260)
+	wave_bar.position = Vector2(0, 68)
+	progress_label = _label("Wave progress", 12, UI.HUD_MUTED)
+	_place(progress_label, wave_group, Vector2(0, 78))
 	for fraction in [1.0 / 3.0, 2.0 / 3.0]:
 		var marker := ColorRect.new()
-		marker.color = dark
+		marker.color = UI.INK
 		marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		wave_bar.add_child(marker)
 		marker.anchor_left = fraction
 		marker.anchor_right = fraction
 		marker.anchor_bottom = 1.0
-		marker.offset_left = -1.5
-		marker.offset_right = 1.5
+		marker.offset_left = -1
+		marker.offset_right = 1
 		marker.hide()
 		phase_markers.append(marker)
-
-	buffs_label = _label("", 15, pale)
+	var score_group := VBoxContainer.new()
+	root.add_child(score_group)
+	score_group.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	score_group.offset_left = -260
+	score_group.offset_top = 22
+	score_group.offset_right = -32
+	score_group.custom_minimum_size.x = 228
+	score_group.add_theme_constant_override("separation", 2)
+	score_label = _label("0", 30, UI.PAPER)
+	score_group.add_child(score_label)
+	var caption := _label("Score", 13, UI.HUD_MUTED)
+	score_group.add_child(caption)
+	kills_label = _label("0 kills", 15, UI.HUD_MUTED)
+	score_group.add_child(kills_label)
+	combo_label = _label("", 15, UI.HUD_MUTED)
+	score_group.add_child(combo_label)
+	for child in score_group.get_children():
+		child.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	combo_bar = _meter(score_group, UI.HUD_MUTED, 100)
+	combo_bar.size_flags_horizontal = Control.SIZE_SHRINK_END
+	buffs_label = _label("", 14, UI.PAPER)
 	buffs_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	buffs_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	buffs_label.position = Vector2(-370, 22)
-	buffs_label.size = Vector2(340, 120)
 	root.add_child(buffs_label)
-	autofire_label = _label("AUTO-FIRE: ON  [F]", 14, cyan)
-	autofire_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	autofire_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	autofire_label.position = Vector2(-322, -30)
-	autofire_label.size = Vector2(290, 24)
+	buffs_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	buffs_label.offset_left = -320
+	buffs_label.offset_top = 163
+	buffs_label.offset_right = -32
+	buffs_label.offset_bottom = 333
+	health_panel = PanelContainer.new()
+	root.add_child(health_panel)
+	health_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	health_panel.offset_left = 28
+	health_panel.offset_top = -134
+	health_panel.offset_right = 358
+	health_panel.offset_bottom = -28
+	health_panel.custom_minimum_size = Vector2(330, 106)
+	health_panel.add_theme_stylebox_override("panel", UI.panel(Color(0.06, 0.055, 0.065, 0.90)))
+	var vitals := VBoxContainer.new()
+	vitals.add_theme_constant_override("separation", 7)
+	health_panel.add_child(vitals)
+	health_label = _label("Health   100 / 100", 15, UI.PAPER)
+	vitals.add_child(health_label)
+	health_bar = _meter(vitals, UI.PAPER, 294)
+	health_bar.max_value = 100
+	health_bar.value = 100
+	dash_label = _label("Dash ready   [Shift]", 14, UI.HUD_MUTED)
+	vitals.add_child(dash_label)
+	dash_bar = _meter(vitals, UI.ACCENT, 294)
+	dash_bar.value = 1
+	autofire_label = _label("", 14, UI.HUD_MUTED)
 	root.add_child(autofire_label)
-	var dash_panel := PanelContainer.new()
-	dash_panel.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	dash_panel.position = Vector2(-322, -108)
-	dash_panel.size = Vector2(290, 70)
-	dash_panel.add_theme_stylebox_override("panel", _panel_style(Color(0.063, 0.071, 0.067, 0.85), dark, 12))
-	root.add_child(dash_panel)
-	var dash_box := VBoxContainer.new()
-	dash_panel.add_child(dash_box)
-	dash_label = _label("DASH READY  [SHIFT / RB]", 12, cyan)
-	dash_box.add_child(dash_label)
-	dash_bar = ProgressBar.new()
-	dash_bar.custom_minimum_size = Vector2(250, 6)
-	dash_bar.max_value = 1.0
-	dash_bar.value = 1.0
-	dash_bar.show_percentage = false
-	dash_bar.add_theme_stylebox_override("background", UI.flat_bar(UI.LINE))
-	dash_bar.add_theme_stylebox_override("fill", UI.flat_bar(UI.MUTED))
-	dash_box.add_child(dash_bar)
-
-	var controls := _label("ESC: PAUSE", 13, pale)
-	control_hint = controls
-	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	controls.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	controls.position = Vector2(-490, -28)
-	controls.size = Vector2(980, 20)
-	root.add_child(controls)
-
-	banner_label = _label("WAVE 1", 48, Color.WHITE)
+	autofire_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	autofire_label.offset_left = -330
+	autofire_label.offset_top = -64
+	autofire_label.offset_right = -32
+	autofire_label.offset_bottom = -42
+	autofire_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	control_hint = _label("Esc  Pause", 14, UI.HUD_MUTED)
+	root.add_child(control_hint)
+	control_hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	control_hint.offset_left = -330
+	control_hint.offset_top = -40
+	control_hint.offset_right = -32
+	control_hint.offset_bottom = -18
+	control_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	banner_label = _label("", 38, UI.PAPER)
 	banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	banner_label.position = Vector2(-400, 145)
-	banner_label.size = Vector2(800, 70)
-	banner_label.modulate.a = 0.0
 	root.add_child(banner_label)
-	toast_label = _label("", 24, cyan)
+	banner_label.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	banner_label.offset_left = -350
+	banner_label.offset_top = 140
+	banner_label.offset_right = 350
+	banner_label.offset_bottom = 194
+	banner_label.modulate.a = 0
+	toast_label = _label("", 22, UI.PAPER)
 	toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	toast_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	toast_label.position = Vector2(-350, -145)
-	toast_label.size = Vector2(700, 42)
-	toast_label.modulate.a = 0.0
 	root.add_child(toast_label)
-	combo_label = _label("STREAK x1", 18, UI.MUTED)
-	combo_label.position = Vector2(30, 117)
-	root.add_child(combo_label)
-	combo_bar = ProgressBar.new()
-	combo_bar.position = Vector2(30, 149)
-	combo_bar.max_value = 1.0
-	combo_bar.show_percentage = false
-	combo_bar.size = Vector2(150, 3)
-	root.add_child(combo_bar)
-	combo_bar.set_deferred("size", Vector2(150, 3))
-	encounter_label = _label("", 17, pale)
-	encounter_label.position = Vector2(420, 96)
-	encounter_label.size.x = 440
-	encounter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	root.add_child(encounter_label)
-	tip_label = _label("", 18, pale)
-	tip_label.position = Vector2(335, 598)
-	tip_label.size = Vector2(560, 54)
-	tip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	toast_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	toast_label.offset_left = -290
+	toast_label.offset_top = -172
+	toast_label.offset_right = 290
+	toast_label.offset_bottom = -138
+	toast_label.modulate.a = 0
+	tip_label = _label("", 16, UI.HUD_MUTED)
 	tip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	tip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	root.add_child(tip_label)
-	gameplay_hud = [combo_label, combo_bar, encounter_label, tip_label, score_label, wave_label, kills_label, health_panel, wave_panel, buffs_label, autofire_label, dash_panel, controls, banner_label, toast_label]
+	tip_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	tip_label.offset_left = -230
+	tip_label.offset_top = -78
+	tip_label.offset_right = 230
+	tip_label.offset_bottom = -30
+	gameplay_hud = [wave_group, score_group, health_panel, buffs_label, autofire_label, control_hint, banner_label, toast_label, tip_label]
 
 func _build_menu() -> void:
-	menu_overlay = ColorRect.new()
-	menu_overlay.color = Color.TRANSPARENT
-	menu_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	menu_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(menu_overlay)
-	menu_overlay.add_child(SillyMenuBackdropScript.new())
-	var edition := _label("A NIGHTMARE SURVIVAL GAME", 14, cyan)
-	edition.position = Vector2(88, 54)
-	menu_overlay.add_child(edition)
-	var box := VBoxContainer.new()
-	box.position = Vector2(88, 148)
-	box.custom_minimum_size.x = 380
-	box.add_theme_constant_override("separation", 6)
-	menu_overlay.add_child(box)
-	box.add_child(_label("PROJECT", 25, pale))
-	var title := _label("R.A.T.", 154, pale)
-	title.add_theme_constant_override("line_spacing", 0)
-	box.add_child(title)
-	var subtitle := _label("Small rat. Long night.", 22, cyan)
-	box.add_child(subtitle)
+	menu_overlay = _overlay()
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.offset_bottom = -60
+	menu_overlay.add_child(center)
+	var column := VBoxContainer.new()
+	column.custom_minimum_size.x = 620
+	column.add_theme_constant_override("separation", 18)
+	center.add_child(column)
+	var kicker := _label("THE NIGHTMARE GARDEN", 14, UI.MUTED)
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(kicker)
+	var title := _heading("Project R.A.T.", 86)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(title)
+	var goal := _label("Survive 15 waves. Defeat 3 bosses.", 23, UI.PAPER)
+	goal.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(goal)
+	var detail := _label("Choose upgrades. Find your build. Keep moving.", 17, UI.MUTED)
+	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(detail)
 	var space := Control.new()
-	space.custom_minimum_size.y = 30
-	box.add_child(space)
+	space.custom_minimum_size.y = 12
+	column.add_child(space)
 	menu_start = _button("Start run", true)
 	menu_start.pressed.connect(func(): start_requested.emit())
-	box.add_child(menu_start)
+	menu_start.custom_minimum_size = Vector2(320, 54)
+	menu_start.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(menu_start)
 	var options := _button("Settings")
 	options.pressed.connect(func(): settings_requested.emit())
-	box.add_child(options)
+	options.custom_minimum_size = Vector2(320, 46)
+	options.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	column.add_child(options)
+	menu_records = _label("", 16, UI.MUTED)
+	menu_records.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	column.add_child(menu_records)
 	var footer := VBoxContainer.new()
-	footer.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	footer.offset_left = 88
-	footer.offset_right = -88
-	footer.offset_top = -88
-	footer.add_theme_constant_override("separation", 18)
 	menu_overlay.add_child(footer)
+	footer.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	footer.offset_left = 80
+	footer.offset_right = -80
+	footer.offset_top = -84
+	footer.add_theme_constant_override("separation", 20)
 	_rule(footer)
-	menu_help = _label("", 14, cyan)
+	menu_help = _label("", 14, UI.MUTED)
+	menu_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	footer.add_child(menu_help)
 
 func _build_game_over() -> void:
-	game_over_overlay = ColorRect.new()
-	game_over_overlay.color = Color(0.063, 0.071, 0.067, 0.98)
-	game_over_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	game_over_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.add_child(game_over_overlay)
+	game_over_overlay = _overlay()
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	game_over_overlay.add_child(center)
@@ -314,19 +322,19 @@ func _build_game_over() -> void:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", 14)
 	center.add_child(box)
-	var title := _label("THE NIGHT WINS", 64, pale)
+	var title := _heading("Run complete", 58)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	final_score_label = _label("000000", 88, pale)
+	final_score_label = _label("0", 64, UI.PAPER)
 	final_score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(final_score_label)
-	final_detail_label = _label("WAVE 0  •  KILLS 0", 20, cyan)
+	final_detail_label = _label("", 20, UI.MUTED)
 	final_detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(final_detail_label)
-	best_label = _label("BEST 000000", 17, UI.MUTED)
+	best_label = _label("", 17, UI.MUTED)
 	best_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(best_label)
-	death_tip = _label("", 18, pale)
+	death_tip = _label("", 18, UI.MUTED)
 	death_tip.custom_minimum_size.x = 800
 	death_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	death_tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -345,24 +353,22 @@ func _build_game_over() -> void:
 	game_over_overlay.hide()
 
 func _build_pause() -> void:
-	pause_overlay = ColorRect.new()
-	pause_overlay.color = Color(0.063, 0.071, 0.067, 0.94)
-	pause_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_overlay = _overlay()
 	pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	root.add_child(pause_overlay)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	pause_overlay.add_child(center)
 	var layout := HBoxContainer.new()
-	layout.add_theme_constant_override("separation", 90)
+	layout.add_theme_constant_override("separation", 100)
 	center.add_child(layout)
 	var column := VBoxContainer.new()
-	column.custom_minimum_size.x = 360
-	column.add_theme_constant_override("separation", 12)
+	column.custom_minimum_size.x = 310
+	column.add_theme_constant_override("separation", 14)
 	layout.add_child(column)
-	column.add_child(_label("TAKE A BREATHER", 14, cyan))
-	column.add_child(_label("PAUSED", 80, pale))
+	column.add_child(_heading("Paused", 60))
+	var space := Control.new()
+	space.custom_minimum_size.y = 24
+	column.add_child(space)
 	resume_button = _button("Resume", true)
 	resume_button.pressed.connect(func(): resume_requested.emit())
 	column.add_child(resume_button)
@@ -373,43 +379,53 @@ func _build_pause() -> void:
 	menu.pressed.connect(func(): quit_to_menu_requested.emit())
 	column.add_child(menu)
 	var build := VBoxContainer.new()
-	build.custom_minimum_size.x = 440
-	build.add_theme_constant_override("separation", 22)
+	build.custom_minimum_size.x = 450
+	build.add_theme_constant_override("separation", 20)
 	layout.add_child(build)
-	build.add_child(_label("YOUR MUTATIONS", 16, cyan))
+	build.add_child(_label("Your upgrades", 23, UI.PAPER))
 	_rule(build)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(440, 260)
+	scroll.custom_minimum_size = Vector2(450, 280)
 	build.add_child(scroll)
-	build_label = _label("", 20, pale)
+	build_label = _label("", 20, UI.MUTED)
 	build_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	build_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scroll.add_child(build_label)
 	pause_overlay.hide()
 
 func _build_upgrade_draft() -> void:
-	upgrade_overlay = ColorRect.new()
-	upgrade_overlay.color = Color(0.063, 0.071, 0.067, 0.97)
-	upgrade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	upgrade_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	upgrade_overlay = _overlay()
 	upgrade_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	root.add_child(upgrade_overlay)
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	upgrade_overlay.add_child(center)
 	var stack := VBoxContainer.new()
-	stack.alignment = BoxContainer.ALIGNMENT_CENTER
-	stack.add_theme_constant_override("separation", 18)
+	stack.custom_minimum_size.x = 1072
+	stack.add_theme_constant_override("separation", 12)
 	center.add_child(stack)
-	var title := _label("ADAPT. SURVIVE.", 64, pale)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stack.add_child(title)
-	var detail := _label("Choose a mutation for the next wave.", 18, cyan)
-	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stack.add_child(detail)
+	stack.add_child(_label("Wave clear", 16, UI.MUTED))
+	stack.add_child(_heading("Choose an upgrade", 50))
+	stack.add_child(_label("Your choice lasts for the rest of this run.", 18, UI.MUTED))
+	var space := Control.new()
+	space.custom_minimum_size.y = 12
+	stack.add_child(space)
 	upgrade_cards = HBoxContainer.new()
-	upgrade_cards.add_theme_constant_override("separation", 18)
+	upgrade_cards.add_theme_constant_override("separation", 20)
 	stack.add_child(upgrade_cards)
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 24)
+	stack.add_child(footer)
+	draft_context = _label("", 17, UI.PAPER)
+	draft_context.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	draft_context.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	footer.add_child(draft_context)
+	reroll_button = _button("Reroll  [R]", false)
+	reroll_button.custom_minimum_size = Vector2(240, 44)
+	reroll_button.pressed.connect(func(): upgrade_reroll_requested.emit())
+	footer.add_child(reroll_button)
+	draft_build = _label("", 15, UI.MUTED)
+	draft_build.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stack.add_child(draft_build)
 	upgrade_overlay.hide()
 
 func show_upgrade_draft(options: Array[Dictionary]) -> void:
@@ -419,35 +435,48 @@ func show_upgrade_draft(options: Array[Dictionary]) -> void:
 	for index in range(options.size()):
 		var data := options[index]
 		var card := Button.new()
-		card.custom_minimum_size = Vector2(340, 380 if large_text else 320)
-		card.add_theme_color_override("font_focus_color", pale)
-		card.add_theme_stylebox_override("normal", UI.panel())
-		card.add_theme_stylebox_override("hover", UI.panel(Color("272c26"), UI.MUTED))
-		card.add_theme_stylebox_override("pressed", UI.panel(Color("363c32"), UI.PAPER))
-		card.add_theme_stylebox_override("focus", _focus_style())
+		card.custom_minimum_size = Vector2(344, 386 if large_text else 350)
+		card.add_theme_color_override("font_color", UI.PAPER)
+		card.add_theme_color_override("font_focus_color", UI.PAPER)
+		card.add_theme_stylebox_override("normal", UI.panel(Color(0.06, 0.055, 0.065, 0.80), UI.LINE))
+		card.add_theme_stylebox_override("hover", UI.panel(UI.SURFACE))
+		card.add_theme_stylebox_override("pressed", UI.panel(Color("322626")))
+		var focused := UI.panel(Color(0.59, 0.23, 0.23, 0.12), UI.ACCENT)
+		card.add_theme_stylebox_override("focus", focused)
 		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		var content := VBoxContainer.new()
+		card.add_child(content)
 		content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		content.offset_left = 26
-		content.offset_right = -26
+		content.offset_left = 24
+		content.offset_right = -24
 		content.offset_top = 24
 		content.offset_bottom = -24
-		content.add_theme_constant_override("separation", 16)
+		content.add_theme_constant_override("separation", 12)
 		content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		card.add_child(content)
-		var number := _label("0%d  /  MUTATION" % (index + 1), 14, cyan)
-		content.add_child(number)
-		_rule(content)
-		var title := _label(data["title"], 34 if large_text else 30, pale)
+		var icon := UpgradeIcon.new()
+		icon.kind = data["id"]
+		icon.custom_minimum_size = Vector2(64, 64)
+		icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		content.add_child(icon)
+		var tag := _label(String(data.get("tag", "Permanent upgrade")), 14, Color("c9bc91"))
+		tag.name = "MutationTag"
+		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		content.add_child(tag)
+		var title := _label(String(data["title"]).capitalize(), 25, UI.PAPER)
 		title.name = "MutationTitle"
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		content.add_child(title)
-		var description := _label(data["description"], 21 if large_text else 18, pale)
+		var description := _label(String(data["description"]).replace(" → ", " to "), 21 if large_text else 18, UI.MUTED)
 		description.name = "MutationDescription"
+		description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		content.add_child(description)
-		content.add_child(_label("Select   [%d]" % (index + 1), 14, cyan))
+		var choose := _label("Choose  [%d]" % (index + 1), 17, UI.PAPER)
+		choose.name = "MutationChoice"
+		choose.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		content.add_child(choose)
 		for child in content.get_children():
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.mouse_entered.connect(func(): ui_sound_requested.emit("ui_hover"))
@@ -463,6 +492,16 @@ func _on_upgrade_card_pressed(id: String) -> void:
 
 func hide_upgrade_draft() -> void:
 	upgrade_overlay.hide()
+
+func set_draft_context(next_wave: String, build: String, remaining: int, can_reroll: bool) -> void:
+	draft_context.text = next_wave
+	draft_build.text = build
+	reroll_button.text = "Reroll  [R]   %d left" % remaining
+	reroll_button.disabled = not can_reroll
+	reroll_button.tooltip_text = "Replace the offered upgrades. Two rerolls per run." if can_reroll else ("No rerolls left this run." if remaining == 0 else "All eligible choices are already shown.")
+
+func set_menu_records(score: int, wave: int) -> void:
+	menu_records.text = "Best score  %s     /     Best wave  %d" % [_format_score(score), wave] if wave > 0 else "Your first run starts here."
 
 func show_menu() -> void:
 	feedback_overlay.remaining = 0.0
@@ -492,22 +531,22 @@ func set_game_hud_visible(enabled: bool) -> void:
 func update_stats(score: int, wave: int, kills: int, health: float, max_health: float, progress: float, buffs: Array[String], dash_charge: float = 1.0) -> void:
 	buffs_label.add_theme_font_size_override("font_size", 18 if large_text else 15)
 	kills_label.add_theme_font_size_override("font_size", 18 if large_text else 15)
-	health_label.add_theme_font_size_override("font_size", 18 if large_text else 14)
-	dash_label.add_theme_font_size_override("font_size", 16 if large_text else 12)
-	score_label.text = "SCORE %06d" % score
-	wave_label.text = "WAVE %d" % wave
-	kills_label.text = "KILLS %d" % kills
-	health_label.text = "HP %d / %d" % [ceil(health), ceil(max_health)]
+	health_label.add_theme_font_size_override("font_size", 18 if large_text else 15)
+	dash_label.add_theme_font_size_override("font_size", 18 if large_text else 14)
+	score_label.text = _format_score(score)
+	wave_label.text = "Wave %02d" % wave
+	kills_label.text = "%d kills" % kills
+	health_label.text = "Health   %d / %d" % [ceil(health), ceil(max_health)]
 	health_bar.max_value = max_health
 	health_bar.value = health
 	wave_bar.value = clamp(progress, 0.0, 1.0)
-	progress_label.text = "WAVE PROGRESS"
+	progress_label.text = "Wave progress"
 	for marker in phase_markers:
 		marker.hide()
 	buffs_label.text = "\n".join(buffs)
 	dash_bar.value = dash_charge
-	dash_label.text = "DASH READY [%s / RB]" % dash_key if dash_charge >= 0.999 else "DASH %.1fs" % ((1.0 - dash_charge) * 1.35)
-	dash_label.add_theme_color_override("font_color", UI.MUTED if dash_charge >= 0.999 else pale)
+	dash_label.text = "Dash ready   [%s / RB]" % dash_key if dash_charge >= 0.999 else "Dash   %.1fs" % ((1.0 - dash_charge) * 1.35)
+	dash_label.add_theme_color_override("font_color", UI.HUD_MUTED if dash_charge >= 0.999 else pale)
 
 func set_boss_status(title: String, phase: int, health_ratio: float) -> void:
 	progress_label.text = "%s • PHASE %d/3" % [title, phase]
@@ -516,8 +555,8 @@ func set_boss_status(title: String, phase: int, health_ratio: float) -> void:
 		marker.show()
 
 func set_autofire(enabled: bool) -> void:
-	autofire_label.text = "AUTO-FIRE: %s  [%s]" % ["ON" if enabled else "OFF", fire_key]
-	autofire_label.add_theme_color_override("font_color", UI.MUTED if enabled else pale)
+	autofire_label.text = "Auto-fire %s   [%s]" % ["on" if enabled else "off", fire_key]
+	autofire_label.add_theme_color_override("font_color", UI.HUD_MUTED if enabled else pale)
 
 func show_wave_banner(wave: int, boss_kind: String = "") -> void:
 	var boss_names := {
@@ -525,7 +564,7 @@ func show_wave_banner(wave: int, boss_kind: String = "") -> void:
 		"junkyard_dog": "JUNKYARD DOG",
 		"barn_owl": "BARN OWL",
 	}
-	banner_label.text = String(boss_names.get(boss_kind, "WAVE %d" % wave))
+	banner_label.text = String(boss_names.get(boss_kind, "Wave %02d" % wave))
 	banner_label.add_theme_color_override("font_color", Color("ef6f6c") if not boss_kind.is_empty() else pale)
 	banner_label.modulate.a = 0.0
 	banner_label.position.y = 165
@@ -558,9 +597,9 @@ func show_game_over(score: int, wave: int, kills: int, best: int, is_new_best: b
 	set_game_hud_visible(false)
 	game_over_overlay.show()
 	retry_button.grab_focus()
-	final_score_label.text = "%06d" % score
-	final_detail_label.text = "WAVE %d  •  KILLS %d" % [wave, kills]
-	best_label.text = "NEW BEST %06d" % best if is_new_best else "BEST %06d" % best
+	final_score_label.text = _format_score(score)
+	final_detail_label.text = "Wave %d   /   %d kills" % [wave, kills]
+	best_label.text = "New best  " + _format_score(best) if is_new_best else "Best  " + _format_score(best)
 
 func set_paused(paused: bool) -> void:
 	pause_overlay.visible = paused
@@ -568,12 +607,13 @@ func set_paused(paused: bool) -> void:
 		resume_button.grab_focus()
 
 func update_combo(multiplier: int, remaining: float) -> void:
-	combo_label.text = "STREAK x%d" % multiplier
-	combo_label.add_theme_color_override("font_color", UI.MUTED if multiplier >= 4 else pale)
+	combo_label.text = "x%d streak" % multiplier if multiplier > 1 else ""
+	combo_label.add_theme_color_override("font_color", UI.PAPER if multiplier >= 4 else UI.HUD_MUTED)
 	combo_bar.value = remaining
+	combo_bar.visible = multiplier > 1
 
 func set_encounter(title: String) -> void:
-	encounter_label.text = title
+	encounter_label.text = title.capitalize()
 
 func set_build_text(text: String) -> void:
 	build_label.text = text.replace(" • ", "\n\n")
@@ -583,8 +623,8 @@ func set_control_labels(keys: Dictionary) -> void:
 	fire_key = OS.get_keycode_string(keys["toggle_autofire"])
 	var movement := "%s/%s/%s/%s" % [OS.get_keycode_string(keys["move_up"]), OS.get_keycode_string(keys["move_left"]), OS.get_keycode_string(keys["move_down"]), OS.get_keycode_string(keys["move_right"])]
 	aim_keys = "Arrows" if keys["aim_up"] == KEY_UP and keys["aim_left"] == KEY_LEFT and keys["aim_down"] == KEY_DOWN and keys["aim_right"] == KEY_RIGHT else "%s/%s/%s/%s" % [OS.get_keycode_string(keys["aim_up"]), OS.get_keycode_string(keys["aim_left"]), OS.get_keycode_string(keys["aim_down"]), OS.get_keycode_string(keys["aim_right"])]
-	control_hint.text = "%s / ESC: PAUSE" % OS.get_keycode_string(keys["pause"])
-	menu_help.text = "Move: %s  •  Aim: mouse / %s  •  Dash: %s" % [movement, aim_keys, dash_key]
+	control_hint.text = "%s / Esc   Pause" % OS.get_keycode_string(keys["pause"])
+	menu_help.text = "%s   Move       Mouse / %s   Aim       %s   Dash" % [movement, aim_keys, dash_key]
 
 func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	if not enabled or wave > 3:
@@ -598,24 +638,37 @@ func update_tip(player: Node, wave: int, enabled: bool) -> void:
 	else:
 		tip_label.text = "Red attack line: dodge."
 
-func show_death_tip(_source: String, streak: int, new_wave: bool) -> void:
-	death_tip.text = "Best streak x%d%s" % [streak, " • New wave record" if new_wave else ""]
+func show_death_tip(source: String, streak: int, new_wave: bool) -> void:
+	var hints := {
+		"bird": "Keep moving across the flock; dash through a gap when surrounded.",
+		"cat": "Wait for the pounce line to lock, then dodge sideways.",
+		"fox": "Dodge across the red ambush line, then attack during recovery.",
+		"raccoon": "Step sideways during the wind-up; punish the end of the charge.",
+		"owl": "Move between feather volleys; close in while the owl recovers.",
+		"feather": "Cross the gaps between feathers instead of retreating with the volley.",
+		"snake": "Keep circling when the snake winds up its venom shot.",
+		"venom": "Change direction after the venom shot is aimed.",
+		"alpha_cat": "Dodge across pounces and attack during the recovery window.",
+		"junkyard_dog": "Watch the charge line; move through the gap in each shockwave.",
+		"barn_owl": "Keep space for the feather fans and save your dash for the dive.",
+		"bone": "Keep moving across bone trails and avoid getting pinned at the fence.",
+		"sonic": "Look for the gap in the ring, or dash through it.",
+		"fizzy can": "Shoot the can from outside its blast radius, or dash clear before it bursts.",
+	}
+	death_tip.text = "Caught by %s. %s\nBest streak x%d%s" % [source.replace("_", " "), hints.get(source, "Dash through attacks when your escape route closes."), streak, " • New wave record" if new_wave else ""]
 
 func _build_victory() -> void:
-	victory_overlay = ColorRect.new()
-	victory_overlay.color = UI.INK
-	victory_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_child(victory_overlay)
+	victory_overlay = _overlay()
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	victory_overlay.add_child(center)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 24)
 	center.add_child(column)
-	var title := _label("DAYBREAK", 80, pale)
+	var title := _heading("You survived.", 64)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(title)
-	var detail := _label("", 22, pale)
+	var detail := _label("", 22, UI.MUTED)
 	detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail.name = "VictoryDetail"
 	column.add_child(detail)
@@ -631,9 +684,18 @@ func show_victory(score: int, streak: int) -> void:
 	set_game_hud_visible(false)
 	victory_overlay.show()
 	var detail := victory_overlay.find_child("VictoryDetail", true, false) as Label
-	detail.text = "Score %d • Best streak x%d" % [score, streak]
+	detail.text = "Score %s • Best streak x%d" % [_format_score(score), streak]
 	overtime_button.grab_focus()
 
 func hide_victory() -> void:
 	victory_overlay.hide()
 	set_game_hud_visible(true)
+
+func _format_score(value: int) -> String:
+	var digits := str(value)
+	var result := ""
+	for index in range(digits.length()):
+		if index > 0 and (digits.length() - index) % 3 == 0:
+			result += ","
+		result += digits[index]
+	return result

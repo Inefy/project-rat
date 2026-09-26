@@ -2,8 +2,19 @@
   "rat": {
     "directions": 8,
     "collection": "rat",
-    "triangles": 7050,
-    "visual_identity": "Big pink ears, red scarf, blue waistcoat, buck teeth and seed blaster"
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 20984,
+    "materials": 3,
+    "glb_bytes": 522232,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 77766,
+    "visual_identity": "Gray paint rat, pink ears and worm tail, human eyes and fingers, blue vest, red scarf and seed blaster"
   },
   "bird": {
     "directions": 8,
@@ -44,8 +55,19 @@
   "raccoon": {
     "directions": 8,
     "collection": "raccoon",
-    "triangles": 5700,
-    "visual_identity": "Hunched slate bandit, black mask, striped tail and oversized bin lid"
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 19724,
+    "materials": 4,
+    "glb_bytes": 490388,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 96065,
+    "visual_identity": "Hunched gray bandit, ringed upright tail, tired human eyes, long fingers and eyeball bin lid"
   },
   "fox": {
     "directions": 8,
@@ -59,55 +81,165 @@
   "alpha_cat": {
     "directions": 8,
     "collection": "alpha_cat",
-    "triangles": 4350,
-    "visual_identity": "Magenta monarch, triangular burgundy cape and crooked gold crown"
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 11964,
+    "materials": 2,
+    "glb_bytes": 300948,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 95514,
+    "visual_identity": "Towering black monarch, crooked gold crown, green ring eyes, huge human hands, ragged wine cape and blade tail"
   },
   "junkyard_dog": {
     "directions": 8,
     "collection": "junkyard_dog",
-    "triangles": 4926,
-    "visual_identity": "Wide square bulldog, heavy jowls, underbite and red spiked collar"
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 14992,
+    "materials": 3,
+    "glb_bytes": 382044,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 112997,
+    "visual_identity": "Squat ochre bulldog, mismatched eyes, human lips and teeth, spiked red collar and human forehands"
   },
   "barn_owl": {
     "directions": 8,
     "collection": "barn_owl",
-    "triangles": 4680,
-    "visual_identity": "Ivory heart face, swept dark wings, teal academic gown and mortarboard"
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 17168,
+    "materials": 3,
+    "glb_bytes": 440888,
+    "textures": 0,
+    "rigged": false,
+    "facings": 8,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 107893,
+    "visual_identity": "Ivory heart-faced owl, mismatched human eyes, dark hatched wings, teal chest marks and hanging human fingers"
   },
   "cheese": {
     "directions": 1,
     "collection": "cheese",
-    "triangles": 586
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 1180,
+    "materials": 1,
+    "glb_bytes": 30804,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 13443
   },
   "rapid": {
     "directions": 1,
     "collection": "rapid",
-    "triangles": 984
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 644,
+    "materials": 1,
+    "glb_bytes": 18372,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 9258
   },
   "triple": {
     "directions": 1,
     "collection": "triple",
-    "triangles": 768
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 3656,
+    "materials": 1,
+    "glb_bytes": 89800,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 8863
   },
   "power": {
     "directions": 1,
     "collection": "power",
-    "triangles": 408
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 1156,
+    "materials": 1,
+    "glb_bytes": 29632,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 6398
   },
   "haste": {
     "directions": 1,
     "collection": "haste",
-    "triangles": 588
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 672,
+    "materials": 1,
+    "glb_bytes": 19548,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 11589
   },
   "shield": {
     "directions": 1,
     "collection": "shield",
-    "triangles": 408
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 3436,
+    "materials": 2,
+    "glb_bytes": 85244,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 29070
   },
   "pierce": {
     "directions": 1,
     "collection": "pierce",
-    "triangles": 18
+    "source": "art/nightmare-cast/nightmare-cast.blend",
+    "triangles": 412,
+    "materials": 1,
+    "glb_bytes": 12376,
+    "textures": 0,
+    "rigged": false,
+    "facings": 1,
+    "sprite_size": [
+      192,
+      192
+    ],
+    "sprite_bytes": 7716
   },
   "seed": {
     "directions": 1,

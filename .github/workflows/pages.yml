@@ -112,17 +112,21 @@ jobs:
         run: godot --headless --path . --script tests/nightmare_art_test.gd
 
       - name: Export web build
-        run: godot --headless --path . --export-release Web build/web/index.html
+        # A fresh basename prevents an older service worker or HTTP cache from
+        # supplying a previous release's pack alongside the current loader.
+        run: godot --headless --path . --export-release Web "build/web/game-${GITHUB_SHA:0:12}.html"
 
       - name: Record published build and asset hashes
         run: |
           python - <<'PY'
-          import hashlib, json, os
+          import hashlib, json, os, shutil
           from pathlib import Path
           output = Path('build/web')
+          stem = 'game-' + os.environ['GITHUB_SHA'][:12]
+          shutil.copyfile(output / (stem + '.html'), output / 'index.html')
           assets = {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
                     for p in sorted(output.iterdir()) if p.is_file() and not p.name.startswith('.')}
-          (output / 'build-info.json').write_text(json.dumps({'commit': os.environ['GITHUB_SHA'], 'assets': assets}, indent=2) + '\n')
+          (output / 'build-info.json').write_text(json.dumps({'commit': os.environ['GITHUB_SHA'], 'game_pack': stem + '.pck', 'assets': assets}, indent=2) + '\n')
           PY
 
       - name: Upload Pages artifact

@@ -14,6 +14,8 @@ Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
 
 The latest `main` branch is automatically tested, exported, and deployed to GitHub Pages after every push.
 
+Published engine files and game packs use a unique name for each release so browser caches cannot mix game versions. `build-info.json` identifies the live commit and records asset hashes.
+
 To play locally:
 
 1. Install [Godot 4.7.2](https://godotengine.org/download/archive/4.7.2-stable/).

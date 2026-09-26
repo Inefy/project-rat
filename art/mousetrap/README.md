@@ -18,8 +18,8 @@ The game uses six transparent rendered poses in `assets/sprites/hazards/mouth_tr
 - First spawn attempt after 5–8 seconds of combat, then every 10–16 seconds.
 - Maximum two traps; spawn away from the rat, other traps, and explosive cans.
 - A 0.9-second appearance warning precedes activation.
-- Entering the mouth triggers a red warning for 0.34 seconds, followed by a 0.16-second clamp.
-- A bite deals 22 damage (14 in Cozy mode) only if the rat is still inside at impact. Existing dash invulnerability and shields apply.
+- Overlapping the mouth with the rat's collision body triggers a red warning for 0.16 seconds, followed by a 0.12-second clamp.
+- A bite deals 22 damage (14 in Cozy mode) when the rat overlaps the snapping or closed jaws. Existing dash invulnerability and shields apply. The closed jaws remain dangerous if the initial impact misses or invulnerability expires while the rat stays inside.
 - The jaws reopen and recover before another bite; one damage event per clamp.
 - After 18 seconds the trap becomes harmless and fades out over 0.65 seconds. Pausing freezes its timers.
 

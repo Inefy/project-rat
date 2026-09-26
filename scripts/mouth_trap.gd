@@ -3,12 +3,12 @@ extends Node2D
 const ATLAS = preload("res://assets/sprites/hazards/mouth_trap.png")
 const CELL := 320.0
 const DRAW_SIZE := 220.0
-const FOOTPRINT := Vector2(79.0, 33.0)
+const FOOTPRINT := Vector2(90.0, 37.0)
 const DAMAGE := 22.0
 const LIFETIME := 18.0
 const SPAWN_WARNING := 0.9
-const BITE_WARNING := 0.34
-const SNAP_TIME := 0.16
+const BITE_WARNING := 0.16
+const SNAP_TIME := 0.12
 const CLOSED_TIME := 0.55
 const OPEN_TIME := 0.38
 const RECOVERY_TIME := 0.8
@@ -19,6 +19,7 @@ var phase := Phase.APPEARING
 var age := 0.0
 var phase_clock := 0.0
 var bite_landed := false
+var jaws_snapped := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -36,8 +37,25 @@ func contains_rat() -> bool:
 	var rat = get_parent().player
 	if not is_instance_valid(rat) or not rat.alive:
 		return false
-	var relative := to_local(rat.global_position) / FOOTPRINT
+	# Include the rat's collision body, not just its center point. The old
+	# center-only check missed visible overlaps along the teeth and lip.
+	var relative: Vector2 = to_local(rat.global_position) / (FOOTPRINT + Vector2.ONE * rat.COLLISION_RADIUS)
 	return relative.length_squared() <= 1.0
+
+func _try_bite() -> void:
+	if bite_landed or not contains_rat():
+		return
+	var game = get_parent()
+	var rat = game.player
+	var away: Vector2 = global_position.direction_to(rat.global_position)
+	if away.is_zero_approx():
+		away = Vector2.DOWN.rotated(rotation)
+	var previous_health: float = rat.health
+	var previous_shields: int = rat.shield_charges
+	rat.take_player_damage(14.0 if game.settings.cozy else DAMAGE, away * 170.0, "mouth trap")
+	# A shield absorbs this bite. Brief invulnerability does not spend a bite
+	# that never connected; remaining in the closed jaws is still dangerous.
+	bite_landed = rat.health < previous_health or rat.shield_charges < previous_shields
 
 func _physics_process(delta: float) -> void:
 	var game = get_parent()
@@ -54,23 +72,22 @@ func _physics_process(delta: float) -> void:
 		Phase.ARMED:
 			if contains_rat():
 				bite_landed = false
+				jaws_snapped = false
 				_change_phase(Phase.WINDUP)
 		Phase.WINDUP:
 			if phase_clock >= BITE_WARNING:
 				_change_phase(Phase.SNAPPING)
 		Phase.SNAPPING:
 			# The impact belongs to the jaws meeting, not to entering a trigger area.
-			if not bite_landed and phase_clock >= SNAP_TIME * 0.65:
-				bite_landed = true
-				game.audio.play("enemy_hit", 0.04, 5.0)
-				if contains_rat():
-					var away: Vector2 = global_position.direction_to(game.player.global_position)
-					if away.is_zero_approx():
-						away = Vector2.DOWN.rotated(rotation)
-					game.player.take_player_damage(14.0 if game.settings.cozy else DAMAGE, away * 170.0, "mouth trap")
+			if phase_clock >= SNAP_TIME * 0.5:
+				if not jaws_snapped:
+					jaws_snapped = true
+					game.audio.play("enemy_hit", 0.04, 5.0)
+				_try_bite()
 			if phase_clock >= SNAP_TIME:
 				_change_phase(Phase.CLOSED)
 		Phase.CLOSED:
+			_try_bite()
 			if phase_clock >= CLOSED_TIME:
 				_change_phase(Phase.OPENING)
 		Phase.OPENING:

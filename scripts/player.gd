@@ -13,6 +13,7 @@ const LightTrailScript = preload("res://scripts/light_trail.gd")
 const ARENA := Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 const RAPID_INTERVAL_MULTIPLIER := 0.68
 const POWER_DAMAGE_MULTIPLIER := 1.35
+const COLLISION_RADIUS := 21.0
 
 var max_health := 100.0
 var health := 100.0
@@ -67,7 +68,7 @@ func _ready() -> void:
 	z_index = 20
 	var collision := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 21.0
+	circle.radius = COLLISION_RADIUS
 	collision.shape = circle
 	add_child(collision)
 

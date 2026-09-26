@@ -306,7 +306,7 @@ func _build_menu() -> void:
 	column.add_child(_label("THE NIGHTMARE GARDEN", 15, UI.ACCENT))
 	var title := _heading("PROJECT R.A.T.", 88)
 	column.add_child(title)
-	var tagline := _label("Run. Aim. Snack.", 26)
+	var tagline := _label("Rodent. Assault. Tactics.", 26)
 	column.add_child(tagline)
 	var goal := _label("Survive 15 waves. Defeat 3 bosses.\nBuild a rat that can go the distance.", 19, UI.MUTED)
 	goal.add_theme_constant_override("line_spacing", 5)

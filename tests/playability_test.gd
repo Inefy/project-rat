@@ -108,7 +108,7 @@ func _run() -> void:
 	owl.cleanup = true
 	owl.attack_cooldown = 99
 	owl._update_owl(1, Vector2.LEFT, 600)
-	check(owl.velocity.length() >= 220, "ranged straggler closes the gap promptly")
+	check(owl.velocity.is_zero_approx(), "perched owl stays anchored during cleanup")
 	game.audio.stop_all()
 	await create_timer(0.25, true).timeout
 	await process_frame

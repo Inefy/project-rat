@@ -71,7 +71,7 @@ func setup(kind: String, target_player: Node2D, wave_number: int, is_elite: bool
 			state_clock = 0.9 + randf() * 0.7
 		"owl":
 			max_health = 52.0 * health_scale
-			move_speed = minf(175.0, 82.0 + wave * 1.7)
+			move_speed = 0.0
 			contact_damage = 13.0 * damage_scale
 			score_value = 180 + wave * 8
 			radius = 23.0
@@ -202,11 +202,16 @@ func _physics_process(delta: float) -> void:
 		"alpha_cat", "junkyard_dog", "barn_owl":
 			boss_patterns.update(delta, direction, distance)
 
-	velocity += knockback_velocity
-	knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 720.0 * delta)
 	var previous_position := global_position
-	move_and_slide()
-	rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 8.0)) if velocity.length() > 5.0 else rotation
+	if enemy_kind == "owl":
+		# The perched owl is anchored, including during cleanup and blast impacts.
+		velocity = Vector2.ZERO
+		knockback_velocity = Vector2.ZERO
+	else:
+		velocity += knockback_velocity
+		knockback_velocity = knockback_velocity.move_toward(Vector2.ZERO, 720.0 * delta)
+		move_and_slide()
+		rotation = lerp_angle(rotation, velocity.angle(), minf(1.0, delta * 8.0)) if velocity.length() > 5.0 else rotation
 
 	if state in ["pounce", "charge", "dart"]:
 		_bounce_inside_arena()
@@ -255,17 +260,12 @@ func _update_cat(delta: float, direction: Vector2) -> void:
 				state_clock = 0.95 + randf() * 0.8
 
 func _update_owl(delta: float, direction: Vector2, distance: float) -> void:
-	var desired := Vector2.ZERO
-	var far_distance := 250.0 if cleanup else 380.0
-	var near_distance := 160.0 if cleanup else 240.0
-	if distance > far_distance:
-		desired = direction * maxf(move_speed, 220.0) if cleanup else direction * move_speed
-	elif distance < near_distance:
-		desired = -direction * move_speed
-	else:
-		desired = direction.rotated(PI * 0.5) * move_speed * 0.7
-	velocity = velocity.move_toward(desired, 280.0 * delta)
-	if _ranged_ready(delta, direction, distance, 740.0):
+	velocity = Vector2.ZERO
+	var fire := _ranged_ready(delta, direction, distance, 740.0)
+	# Follow the rat, then hold the advertised aim for the final warning beat.
+	var aim := ranged_direction if ranged_windup or fire else direction
+	rotation = lerp_angle(rotation, aim.angle(), minf(1.0, delta * 8.0))
+	if fire:
 		direction = ranged_direction
 		for spread in [-0.15, 0.0, 0.15]:
 			projectile_requested.emit(global_position + direction * 18.0, direction.rotated(spread), 335.0 + wave * 2.5, contact_damage * 0.62, "feather")
@@ -392,7 +392,8 @@ func take_damage(amount: float, knockback: Vector2 = Vector2.ZERO) -> void:
 			phase_changed.emit(enemy_kind, boss_phase)
 	hit.emit(global_position)
 	hit_flash = 0.11
-	knockback_velocity += knockback * (0.18 if enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] else 1.0)
+	if enemy_kind != "owl":
+		knockback_velocity += knockback * (0.18 if enemy_kind in ["alpha_cat", "junkyard_dog", "barn_owl"] else 1.0)
 	if health <= 0.0:
 		dying = true
 		set_deferred("collision_layer", 0)

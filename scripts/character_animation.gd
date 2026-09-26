@@ -16,7 +16,7 @@ const SHEETS := {
 	"barn_owl": preload("res://assets/sprites/movement/barn_owl.png"),
 }
 const STRIDE := {"rat": 140.0, "cat": 160.0, "snake": 170.0, "raccoon": 130.0, "fox": 125.0, "alpha_cat": 200.0, "junkyard_dog": 185.0}
-const WINGBEATS := {"bird": 3.5, "owl": 1.65, "barn_owl": 1.3}
+const WINGBEATS := {"bird": 3.5, "barn_owl": 1.3}
 
 var phase := 0.0
 var movement := 0.0

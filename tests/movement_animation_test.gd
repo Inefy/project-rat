@@ -34,7 +34,10 @@ func run() -> void:
 	Input.action_release("move_right")
 	check(game.player.position.x > 20.0, "the rat moves while animating")
 	for i in range(actors.size()):
-		check(not is_equal_approx(phases[i], actors[i].movement_animation.phase), CAST[i] + " advances movement poses")
+		if CAST[i] == "owl":
+			check(actors[i].velocity.is_zero_approx() and not actors[i].movement_animation.airborne, "perched owl rests while aiming")
+		else:
+			check(not is_equal_approx(phases[i], actors[i].movement_animation.phase), CAST[i] + " advances movement poses")
 		var atlas: Texture2D = actors[i].movement_animation.SHEETS[CAST[i]]
 		check(atlas.get_size() == Vector2(1280, 1440), CAST[i] + " has all directions, movement poses and rest pose")
 		var pixels := atlas.get_image()

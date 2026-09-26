@@ -4,7 +4,7 @@
 
 **Top-down browser game.** Aim around the rat in the nightmare garden, with independent movement and an overhead view of incoming attacks.
 
-**Run. Aim. Snack.** Project R.A.T. is an open-source cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid. Save the picnic across 15 waves, then choose whether to keep going in endless overtime.
+**Rodent. Assault. Tactics.** Project R.A.T. is an open-source cartoon survival shooter inspired by the escalating runs of *Vampire Survivors* and the reactive arena combat of *Geometry Wars*. You are a very determined rat defending a backyard picnic from an increasingly ridiculous animal raid. Save the picnic across 15 waves, then choose whether to keep going in endless overtime.
 
 Built with Godot 4.7.2 and designed to run natively in modern desktop browsers.
 

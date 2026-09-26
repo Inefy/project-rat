@@ -33,6 +33,7 @@ var kills_label: Label
 var health_label: Label
 var health_bar: ProgressBar
 var health_fill: StyleBoxFlat
+var health_frame: StyleBoxFlat
 var wave_bar: ProgressBar
 var progress_label: Label
 var phase_markers: Array[ColorRect] = []
@@ -220,21 +221,23 @@ func _build_game_hud() -> void:
 	root.add_child(health_panel)
 	health_panel.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	health_panel.offset_left = 24
-	health_panel.offset_top = -146
+	health_panel.offset_top = -184
 	health_panel.offset_right = 368
 	health_panel.offset_bottom = -24
-	health_panel.custom_minimum_size = Vector2(344, 122)
-	health_panel.add_theme_stylebox_override("panel", UI.panel(Color(0.055, 0.082, 0.095, 0.96), UI.LINE))
+	health_panel.custom_minimum_size = Vector2(344, 160)
+	health_frame = UI.panel(Color("101010"), UI.LINE)
+	health_frame.set_border_width_all(2)
+	health_panel.add_theme_stylebox_override("panel", health_frame)
 	health_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var vitals := VBoxContainer.new()
 	vitals.add_theme_constant_override("separation", 10)
 	health_panel.add_child(vitals)
-	health_label = _label("Health   100 / 100", 18)
+	health_label = _heading("HEALTH   100 / 100", 30)
 	vitals.add_child(health_label)
-	health_bar = _meter(vitals, UI.PAPER, 308)
-	health_fill = UI.flat_bar(UI.PAPER)
+	health_bar = _meter(vitals, UI.READY, 308)
+	health_fill = UI.flat_bar(UI.READY)
 	health_bar.add_theme_stylebox_override("fill", health_fill)
-	health_bar.custom_minimum_size.y = 8
+	health_bar.custom_minimum_size.y = 24
 	health_bar.max_value = 100
 	health_bar.value = 100
 	dash_label = _label("Dash ready   [Shift]", 16, UI.READY)
@@ -291,9 +294,6 @@ func _build_game_hud() -> void:
 
 func _build_menu() -> void:
 	menu_overlay = _overlay()
-	var scenery := preload("res://scripts/menu_backdrop.gd").new()
-	menu_overlay.add_child(scenery)
-	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var portrait := TextureRect.new()
 	portrait.texture = preload("res://assets/ui/rat-portrait.png")
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -672,15 +672,18 @@ func set_game_hud_visible(enabled: bool) -> void:
 func update_stats(score: int, wave: int, kills: int, health: float, max_health: float, progress: float, buffs: Array[String], dash_charge: float = 1.0) -> void:
 	buffs_label.add_theme_font_size_override("font_size", 20 if large_text else 16)
 	kills_label.add_theme_font_size_override("font_size", 20 if large_text else 16)
-	health_label.add_theme_font_size_override("font_size", 20 if large_text else 16)
+	health_label.add_theme_font_size_override("font_size", 34 if large_text else 30)
 	dash_label.add_theme_font_size_override("font_size", 19 if large_text else 16)
 	score_label.text = _format_score(score)
 	wave_label.text = ("Demo / Wave %02d" if demo_run else "Wave %02d") % wave
 	kills_label.text = "%d kills" % kills
-	health_label.text = "Health   %d / %d" % [ceil(health), ceil(max_health)]
+	var low_health := health <= max_health * 0.3
+	health_label.text = ("LOW HP   %d / %d" if low_health else "HEALTH   %d / %d") % [ceil(health), ceil(max_health)]
+	health_label.add_theme_color_override("font_color", UI.DANGER if low_health else UI.PAPER)
+	health_frame.border_color = UI.DANGER if low_health else UI.LINE
 	health_bar.max_value = max_health
 	health_bar.value = health
-	var health_color := UI.DANGER if health <= max_health * 0.3 else UI.PAPER
+	var health_color := UI.DANGER if low_health else (UI.ACCENT if health <= max_health * 0.6 else UI.READY)
 	if health_fill.bg_color != health_color:
 		health_fill.bg_color = health_color
 	wave_bar.value = clamp(progress, 0.0, 1.0)

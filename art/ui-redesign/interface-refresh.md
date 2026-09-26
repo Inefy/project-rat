@@ -2,14 +2,14 @@
 
 ## Direction
 
-A restrained survival-game interface: condensed display type, a readable sans-serif body, dark blue-green surfaces, warm off-white text, and a single amber action colour. The title uses the original rat artwork and a quiet garden silhouette, keeping the game's identity visible without introducing unrelated imagery.
+A restrained survival-game interface: condensed display type, a readable sans-serif body, plain black menu backgrounds, neutral dark surfaces, warm off-white text, and a single amber action colour. The title keeps the original rat artwork against black.
 
 ## Hierarchy and interaction
 
 - One primary action per menu. Secondary actions have visible surfaces and borders.
 - Consistent 52 px buttons, 24 px HUD safe margins, and a limited type scale.
 - Left-aligned upgrade descriptions, stable selection prompts, and clearly outlined keyboard/controller focus.
-- Opaque-enough HUD panels separate text from moving scenery. Health gets a thicker meter; low health is red, dash readiness is mint, and wave progression is amber.
+- Opaque-enough HUD panels separate text from moving scenery. Health uses a 24 px meter and large bold numbers. Its fill shifts from mint to amber below 60%, then red below 30%; low health also adds a red frame and a LOW HP label. Dash readiness is mint and wave progression is amber.
 - Short notifications fade without overshoot. Temporary buffs use sentence case.
 - Settings group sound/comfort and keyboard bindings. Scrollbars remain visible and follow keyboard focus.
 - Demo presets show the selected wave; the reward summary explains the practice run without adding steps.

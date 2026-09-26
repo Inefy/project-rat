@@ -16,16 +16,35 @@ func _physics_process(delta: float) -> void:
 	if game.game_state != "playing" or not is_instance_valid(game.player) or not game.player.alive:
 		return
 	var enemies: Array[Node2D] = []
+	var radii: Array[float] = []
+	var cell_size := 64.0
 	for enemy in get_tree().get_nodes_in_group("enemies"):
 		if not enemy.dying and not enemy.is_queued_for_deletion():
 			enemies.append(enemy)
+			var size := body_radius(enemy)
+			radii.append(size)
+			cell_size = maxf(cell_size, size * 2.0 + PADDING)
 	# Two short passes settle dense groups without a hard collision pile-up.
 	for pass_index in range(2):
+		# Only inspect nearby cells, even in 180-enemy overtime waves.
+		var grid := {}
+		for i in range(enemies.size()):
+			var cell := Vector2i((enemies[i].global_position / cell_size).floor())
+			if not grid.has(cell):
+				grid[cell] = []
+			grid[cell].append(i)
 		for i in range(enemies.size()):
 			var a := enemies[i]
-			for j in range(i + 1, enemies.size()):
+			var cell := Vector2i((a.global_position / cell_size).floor())
+			var neighbors: Array = []
+			for x in range(-1, 2):
+				for y in range(-1, 2):
+					neighbors.append_array(grid.get(cell + Vector2i(x, y), []))
+			for j in neighbors:
+				if j <= i:
+					continue
 				var b := enemies[j]
-				var gap := body_radius(a) + body_radius(b) + PADDING
+				var gap: float = radii[i] + radii[j] + PADDING
 				var offset := a.global_position - b.global_position
 				if offset.length_squared() >= gap * gap:
 					continue

@@ -32,7 +32,9 @@ The top-down game uses the Blender-rendered sprites in `assets/sprites/`. Origin
 
 ## Interface type
 
-The interface uses Newsreader for headings and DM Sans for controls and body text. The previous Barlow Condensed SemiBold font by Jeremy Tribby is retained in `assets/fonts/` with its SIL Open Font License 1.1. Source: https://github.com/google/fonts/tree/main/ofl/barlowcondensed.
+The interface uses Barlow Condensed SemiBold by Jeremy Tribby for headings and DM Sans for controls and body text. Both have their SIL Open Font License 1.1 files in `assets/fonts/`. Newsreader remains available as a source font from the previous interface. Barlow source: https://github.com/google/fonts/tree/main/ofl/barlowcondensed.
+
+`assets/ui/rat-portrait.png` is the project's original Blender-rendered rat portrait, copied from `art/nightmare-cast/rat-preview.png` for the title screen. Menu scenery is drawn in `scripts/menu_backdrop.gd`.
 
 ### Nightmare UI redesign
 

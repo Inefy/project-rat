@@ -34,14 +34,14 @@ func _ready() -> void:
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.add_child(center)
 	var column := VBoxContainer.new()
-	column.custom_minimum_size.x = 1036
+	column.custom_minimum_size.x = 1096
 	column.add_theme_constant_override("separation", 24)
 	center.add_child(column)
 	var header := HBoxContainer.new()
 	column.add_child(header)
 	var title := Label.new()
 	title.text = "Settings"
-	title.add_theme_font_size_override("font_size", 56)
+	title.add_theme_font_size_override("font_size", 48)
 	title.add_theme_font_override("font", UI.DISPLAY)
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
@@ -49,15 +49,23 @@ func _ready() -> void:
 	close_button.text = "Done"
 	close_button.custom_minimum_size = Vector2(112, 44)
 	close_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	close_button.add_theme_stylebox_override("normal", UI.panel(UI.ACCENT))
+	for state in ["normal", "hover", "pressed"]:
+		close_button.add_theme_stylebox_override(state, UI.panel(UI.ACCENT if state == "normal" else UI.ACCENT.lightened(0.12)))
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		close_button.add_theme_color_override(state, UI.INK)
 	close_button.pressed.connect(hide_settings)
 	header.add_child(close_button)
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 76)
+	columns.add_theme_constant_override("separation", 24)
 	column.add_child(columns)
 	var comfort := VBoxContainer.new()
 	comfort.custom_minimum_size.x = 460
 	comfort.add_theme_constant_override("separation", 8)
-	columns.add_child(comfort)
+	var comfort_panel := PanelContainer.new()
+	comfort_panel.add_theme_stylebox_override("panel", UI.panel(UI.SURFACE, UI.LINE))
+	columns.add_child(comfort_panel)
+	comfort_panel.add_child(comfort)
 	_section(comfort, "Sound & comfort")
 	_slider(comfort, "Volume", volume, func(value): volume = value; _save())
 	_slider(comfort, "Camera shake", shake, func(value): shake = value; _save())
@@ -65,16 +73,21 @@ func _ready() -> void:
 	space.custom_minimum_size.y = 16
 	comfort.add_child(space)
 	_toggle(comfort, "Aim assist", aim_assist, func(value): aim_assist = value; _save())
-	_toggle(comfort, "Easy mode", cozy, func(value): cozy = value; _save())
+	_toggle(comfort, "Cozy difficulty", cozy, func(value): cozy = value; _save())
 	_toggle(comfort, "Large text", large_text, func(value): large_text = value; _save())
 	_toggle(comfort, "Hints", tips, func(value): tips = value; _save())
 	var controls := VBoxContainer.new()
 	controls.custom_minimum_size.x = 500
 	controls.add_theme_constant_override("separation", 8)
-	columns.add_child(controls)
+	var controls_panel := PanelContainer.new()
+	controls_panel.add_theme_stylebox_override("panel", UI.panel(UI.SURFACE, UI.LINE))
+	columns.add_child(controls_panel)
+	controls_panel.add_child(controls)
 	_section(controls, "Keyboard")
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(500, 350)
+	scroll.follow_focus = true
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
 	controls.add_child(scroll)
 	var options := VBoxContainer.new()
 	options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -88,7 +101,7 @@ func _ready() -> void:
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(label)
 		var button := Button.new()
-		button.custom_minimum_size = Vector2(126, 36)
+		button.custom_minimum_size = Vector2(126, 44)
 		button.add_theme_font_size_override("font_size", 16)
 		button.add_theme_stylebox_override("normal", UI.panel(Color.TRANSPARENT, UI.LINE))
 		button.tooltip_text = "Change " + label.text.to_lower()
@@ -100,7 +113,7 @@ func _ready() -> void:
 		row.add_child(button)
 	_refresh_keys()
 	var reset := Button.new()
-	reset.text = "Reset keys"
+	reset.text = "Reset key bindings"
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_END
 	reset.pressed.connect(func():
 		keys = DEFAULT_KEYS.duplicate()
@@ -111,7 +124,7 @@ func _ready() -> void:
 	)
 	controls.add_child(reset)
 	var help := Label.new()
-	help.text = "Select a key to rebind it. Esc cancels."
+	help.text = "Select a key to rebind it. Scroll for more controls. Esc cancels."
 	help.add_theme_font_size_override("font_size", 14)
 	help.add_theme_color_override("font_color", UI.MUTED)
 	column.add_child(help)
@@ -121,7 +134,8 @@ func _section(parent: Node, text: String) -> void:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_override("font", UI.DISPLAY)
-	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_font_size_override("font_size", 26)
+	label.add_theme_color_override("font_color", UI.ACCENT)
 	parent.add_child(label)
 	var rule := ColorRect.new()
 	rule.color = UI.LINE
@@ -159,7 +173,7 @@ func _toggle(parent: Node, title: String, value: bool, callback: Callable) -> vo
 	var button := CheckButton.new()
 	button.text = title
 	button.button_pressed = value
-	button.custom_minimum_size.y = 44
+	button.custom_minimum_size.y = 48
 	button.toggled.connect(callback)
 	parent.add_child(button)
 
